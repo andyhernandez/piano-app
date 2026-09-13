@@ -12,6 +12,8 @@ export interface SyncProvider {
   pull(cursor: string | null): Promise<{ rows: { table: string; key: string; payload: unknown; deleted: boolean }[]; cursor: string | null }>;
   /** Upload a binary recording; returns a URL or storage key. */
   uploadRecording?(id: string, blob: Blob, mimeType: string): Promise<string>;
+  /** Register the parent's weekly digest email with the cloud (no-op locally). */
+  setDigestSubscription?(email: string | null, enabled: boolean): Promise<void>;
 }
 
 export class NoopSyncProvider implements SyncProvider {

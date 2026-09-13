@@ -11,6 +11,13 @@ let timer: ReturnType<typeof setInterval> | null = null;
 export function configureSync(parent: Parent | null) {
   if (parent?.sync) provider = new SupabaseSyncProvider(parent.sync.url, parent.sync.anonKey, parent.id);
   else provider = new NoopSyncProvider();
+  // Keep the cloud digest subscription in step with the parent's toggle; best-effort.
+  if (parent && provider.setDigestSubscription) void provider.setDigestSubscription(parent.email, parent.weeklyDigest).catch(() => {});
+}
+
+/** True when a cloud provider is configured (digest emails can be sent automatically). */
+export function cloudSyncEnabled() {
+  return provider.name !== "local-only";
 }
 
 export function syncProviderName() {

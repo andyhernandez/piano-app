@@ -58,6 +58,17 @@ export class SupabaseSyncProvider implements SyncProvider {
     };
   }
 
+  /** Register or update the parent's weekly digest subscription (see supabase/functions/weekly-digest). */
+  async setDigestSubscription(email: string | null, enabled: boolean): Promise<void> {
+    if (!email) return;
+    const res = await fetch(`${this.url}/rest/v1/kc_digest_subscriptions?on_conflict=owner`, {
+      method: "POST",
+      headers: this.headers({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+      body: JSON.stringify([{ owner: this.ownerId, email, enabled, updated_at: new Date().toISOString() }]),
+    });
+    if (!res.ok) throw new Error(`Digest subscription failed: ${res.status}`);
+  }
+
   async uploadRecording(id: string, blob: Blob, mimeType: string): Promise<string> {
     const path = `${this.ownerId}/${id}`;
     const res = await fetch(`${this.url}/storage/v1/object/recordings/${path}`, {

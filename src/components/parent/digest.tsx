@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { repo } from "@/lib/db/repo";
+import { cloudSyncEnabled } from "@/lib/sync/engine";
 import { useAppStore } from "@/lib/store/app-store";
 import { BADGE_META, currentScale } from "@/lib/engine/progression";
 import { scaleName } from "@/lib/music/scales";
@@ -47,7 +48,7 @@ export function DigestPanel({ child }: { child: Child }) {
     <Card>
       <CardHeader>
         <CardTitle>Weekly digest email</CardTitle>
-        <CardDescription>A short summary of the week&apos;s practice. Automatic sending needs cloud sync to be on (below); until then you can preview, copy or email it yourself.</CardDescription>
+        <CardDescription>{cloudSyncEnabled() ? "A short summary of the week's practice, emailed every Sunday by the weekly-digest cloud function once it is deployed (see supabase/README.md)." : "A short summary of the week's practice. Automatic sending needs cloud sync to be on (below); until then you can preview, copy or email it yourself."}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
