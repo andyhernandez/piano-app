@@ -21,6 +21,7 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, the production
 
 ## Deploy
 
+- **GitHub Pages (live):** every push to `main` runs `.github/workflows/pages.yml`, which builds a static export under the repository path and publishes it. On an iPad, open the site in Safari, tap Share → **Add to Home Screen** to run it full-screen.
 - **Vercel / any Node host:** `npm run build && npm start`.
 - **Docker:** `docker build -t keycadence . && docker run -p 3000:3000 keycadence` (Next.js standalone output).
 - **Cloud sync + weekly digest email:** see [supabase/README.md](supabase/README.md).

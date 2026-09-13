@@ -6,10 +6,13 @@ import { AppProviders } from "@/components/shared/app-providers";
 const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
 const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin"], weight: ["500", "600", "700"] });
 
+const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const metadata: Metadata = {
   title: "KeyCadence",
   description: "A gamified daily practice companion for young piano beginners.",
-  manifest: "/manifest.webmanifest",
+  manifest: `${base}/manifest.webmanifest`,
+  icons: { icon: `${base}/icon.svg`, apple: `${base}/apple-touch-icon.png` },
   appleWebApp: { capable: true, title: "KeyCadence", statusBarStyle: "default" },
 };
 

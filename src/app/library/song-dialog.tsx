@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import Link from "next/link";
 import { ExternalLink, Lock, Play, Square, Volume2 } from "lucide-react";
 import type { Child, Song } from "@/lib/types";
 import { useAudio } from "@/lib/hooks/use-audio";
@@ -134,7 +135,7 @@ function SongBody({ child, song }: { child: Child; song: Song }) {
         )}
         {unlocked && (
           <Button variant="secondary" asChild>
-            <a href="/session"><Play className="h-5 w-5" /> Practise it in a session</a>
+            <Link href="/session"><Play className="h-5 w-5" /> Practise it in a session</Link>
           </Button>
         )}
       </div>
