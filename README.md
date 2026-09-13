@@ -67,7 +67,7 @@ Audio and MIDI need a user gesture; the app unlocks the audio engine on the firs
 
 ## Cloud sync (optional)
 
-The parent dashboard accepts a Supabase URL and anon key. The schema, storage bucket, and the weekly digest edge function live in [`supabase/`](supabase/README.md); apply them with `supabase db push` and `supabase functions deploy weekly-digest`.
+Grown-ups → Account → Cloud sync → **Turn on sync** mirrors the household to the hosted KeyCadence cloud and gives you a secret family code to enter on other devices. Rows are locked behind that code by row-level security. Details, the weekly digest email, and using your own Supabase project are in [`supabase/README.md`](supabase/README.md).
 
 ## Native wrapper (Phase 2)
 

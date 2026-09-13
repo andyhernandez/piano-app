@@ -9,7 +9,7 @@ let provider: SyncProvider = new NoopSyncProvider();
 let timer: ReturnType<typeof setInterval> | null = null;
 
 export function configureSync(parent: Parent | null) {
-  if (parent?.sync) provider = new SupabaseSyncProvider(parent.sync.url, parent.sync.anonKey, parent.id);
+  if (parent?.sync) provider = new SupabaseSyncProvider(parent.sync.url, parent.sync.anonKey, parent.sync.familyCode);
   else provider = new NoopSyncProvider();
   // Keep the cloud digest subscription in step with the parent's toggle; best-effort.
   if (parent && provider.setDigestSubscription) void provider.setDigestSubscription(parent.email, parent.weeklyDigest).catch(() => {});
@@ -50,8 +50,47 @@ async function applyRemote(r: { table: string; key: string; payload: unknown; de
   const d = db();
   const table = (d as unknown as Record<string, { put: (v: unknown) => Promise<unknown>; delete: (k: string) => Promise<void> }>)[r.table];
   if (!table) return;
+  if (r.table === "parents") {
+    // A family has exactly one parent record. Adopt the remote one: keep this device's sync settings,
+    // drop any local placeholder parent, and re-home local children under the adopted id.
+    const remote = r.payload as Parent;
+    const local = await repo.firstParent();
+    if (local && local.id !== remote.id) {
+      const merged: Parent = { ...remote, sync: local.sync, childIds: Array.from(new Set([...remote.childIds, ...local.childIds])) };
+      await d.parents.delete(local.id);
+      await d.parents.put(merged);
+      const kids = await d.children.where("parentId").equals(local.id).toArray();
+      for (const k of kids) await d.children.put({ ...k, parentId: merged.id });
+      return;
+    }
+    if (local) { await d.parents.put({ ...remote, sync: local.sync }); return; }
+  }
   if (r.deleted) await table.delete(r.key);
   else await table.put(r.payload);
+}
+
+/** Turn sync on for this device: configure the provider, upload everything local, then pull. */
+export async function enableSync(parent: Parent, sync: NonNullable<Parent["sync"]>): Promise<{ pushed: number; pulled: number; error?: string }> {
+  const next: Parent = { ...parent, sync };
+  await repo.putParent(next);
+  configureSync(next);
+  await repo.enqueueAll();
+  await repo.setKV("sync.cursor", null);
+  return syncNow();
+}
+
+/**
+ * Join a family that already syncs from another device: switch to its code, pull everything, then push
+ * anything local. Returns the number of rows pulled.
+ */
+export async function joinFamily(parent: Parent, familyCode: string, cloud: { url: string; anonKey: string }): Promise<{ pulled: number; error?: string }> {
+  const next: Parent = { ...parent, sync: { provider: "supabase", url: cloud.url, anonKey: cloud.anonKey, familyCode } };
+  await repo.putParent(next);
+  configureSync(next);
+  await repo.enqueueAll();
+  await repo.setKV("sync.cursor", null);
+  const r = await syncNow();
+  return { pulled: r.pulled, error: r.error };
 }
 
 export function startBackgroundSync(intervalMs = 60_000) {

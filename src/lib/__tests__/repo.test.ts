@@ -33,3 +33,15 @@ describe("repo", () => {
     expect((await repo.teacherByCode("abc123"))?.id).toBe("t");
   });
 });
+
+describe("sync outbox", () => {
+  beforeEach(() => { resetDbForTests(); });
+  it("enqueueAll re-enqueues every synced row after the outbox was drained", async () => {
+    await repo.putParent({ id: "par_1", email: null, pin: null, childIds: ["kid_1"], createdAt: "", weeklyDigest: false, sync: null });
+    await repo.clearOps((await repo.pendingOps()).map((o) => o.id!));
+    expect(await repo.outboxCount()).toBe(0);
+    await repo.enqueueAll();
+    const ops = await repo.pendingOps();
+    expect(ops.map((o) => `${o.table}:${o.key}`)).toEqual(["parents:par_1"]);
+  });
+});

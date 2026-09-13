@@ -1,9 +1,6 @@
-// Weekly digest email (spec §7). Deploy with `supabase functions deploy weekly-digest` and schedule
-// it weekly with `supabase functions schedule` or pg_cron. Requires secrets:
-//   RESEND_API_KEY  - transactional email provider (https://resend.com)
-//   DIGEST_FROM     - e.g. "KeyCadence <digest@yourdomain.com>"
-// Reads kc_rows for each subscribed owner, summarises the last 7 days of sessions per child, and
-// sends one email per parent. No child names leave the household except in that parent's own email.
+// KeyCadence weekly digest email. Scheduled weekly via pg_cron; the run lock below means an
+// unauthenticated call can never send more than one digest per six days, so verify_jwt is off.
+// Secrets: RESEND_API_KEY (https://resend.com), DIGEST_FROM (e.g. "KeyCadence <digest@yourdomain.com>").
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -43,25 +40,41 @@ async function digestFor(owner: string) {
 }
 
 async function sendEmail(to: string, text: string) {
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) throw new Error("RESEND_API_KEY is not set (Edge Functions → Secrets)");
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: Deno.env.get("DIGEST_FROM"), to, subject: "Your KeyCadence week 🎹", text }),
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: Deno.env.get("DIGEST_FROM") ?? "KeyCadence <onboarding@resend.dev>", to, subject: "Your KeyCadence week 🎹", text }),
   });
   if (!res.ok) throw new Error(`email failed: ${res.status} ${await res.text()}`);
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req: Request) => {
+  const url = new URL(req.url);
+  const dryRun = url.searchParams.get("dry") === "1";
+
+  // Run lock: at most one real send every 6 days.
+  if (!dryRun) {
+    const { data: last } = await supabase.from("kc_digest_runs").select("started_at").order("started_at", { ascending: false }).limit(1).maybeSingle();
+    if (last && Date.now() - new Date(last.started_at).getTime() < 6 * 86_400_000) {
+      return new Response(JSON.stringify({ skipped: "digest already sent this week" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    await supabase.from("kc_digest_runs").insert({});
+  }
+
   const { data: subs, error } = await supabase.from("kc_digest_subscriptions").select("owner,email").eq("enabled", true);
   if (error) return new Response(error.message, { status: 500 });
   const results: Record<string, string> = {};
   for (const s of subs ?? []) {
     try {
-      await sendEmail(s.email, await digestFor(s.owner));
-      results[s.owner] = "sent";
+      const text = await digestFor(s.owner);
+      if (dryRun) results[s.owner] = text;
+      else { await sendEmail(s.email, text); results[s.owner] = "sent"; }
     } catch (e) {
       results[s.owner] = (e as Error).message;
     }
   }
-  return new Response(JSON.stringify(results), { headers: { "Content-Type": "application/json" } });
+  if (!dryRun) await supabase.from("kc_digest_runs").update({ result: results }).order("started_at", { ascending: false }).limit(1);
+  return new Response(JSON.stringify({ subscribers: (subs ?? []).length, results }), { headers: { "Content-Type": "application/json" } });
 });

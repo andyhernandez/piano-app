@@ -3,10 +3,9 @@ import type { SyncOp } from "../db/schema";
 
 /**
  * Supabase REST provider using PostgREST directly (no SDK dependency, keeps the bundle small).
- * Expected schema: one table `kc_rows(table_name text, key text, payload jsonb, deleted bool, updated_at timestamptz, owner uuid)`
- * with RLS keyed on owner, and a storage bucket `recordings`.
- *
- * Configure in Parent settings; anon key is only ever used from the parent's own device.
+ * Schema and policies live in supabase/migrations. Rows are scoped by `owner`, the family code, which is
+ * sent as the x-kc-owner header; row-level security only returns rows whose owner matches that header,
+ * so the publishable key on its own reveals nothing.
  */
 export class SupabaseSyncProvider implements SyncProvider {
   readonly name = "supabase";
@@ -16,6 +15,7 @@ export class SupabaseSyncProvider implements SyncProvider {
     return {
       apikey: this.anonKey,
       Authorization: `Bearer ${this.anonKey}`,
+      "x-kc-owner": this.ownerId,
       "Content-Type": "application/json",
       ...extra,
     };
@@ -73,7 +73,7 @@ export class SupabaseSyncProvider implements SyncProvider {
     const path = `${this.ownerId}/${id}`;
     const res = await fetch(`${this.url}/storage/v1/object/recordings/${path}`, {
       method: "POST",
-      headers: { apikey: this.anonKey, Authorization: `Bearer ${this.anonKey}`, "Content-Type": mimeType, "x-upsert": "true" },
+      headers: { apikey: this.anonKey, Authorization: `Bearer ${this.anonKey}`, "x-kc-owner": this.ownerId, "Content-Type": mimeType, "x-upsert": "true" },
       body: blob,
     });
     if (!res.ok) throw new Error(`Upload failed: ${res.status}`);

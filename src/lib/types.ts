@@ -302,8 +302,11 @@ export interface Parent {
   childIds: string[];
   createdAt: string;
   weeklyDigest: boolean;
-  /** Sync configuration; null = local-only. */
-  sync: { provider: "supabase"; url: string; anonKey: string } | null;
+  /**
+   * Sync configuration; null = local-only. `familyCode` is the secret that scopes this family's rows in the
+   * cloud (sent as the x-kc-owner header). Enter the same code on another device to share data.
+   */
+  sync: { provider: "supabase"; url: string; anonKey: string; familyCode: string } | null;
 }
 
 // ---------- Assessment ----------

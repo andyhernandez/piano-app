@@ -73,6 +73,16 @@ export const repo = {
   async pendingOps(limit = 200) { return db().syncOutbox.orderBy("createdAt").limit(limit).toArray(); },
   async clearOps(ids: number[]) { await db().syncOutbox.bulkDelete(ids); },
   async outboxCount() { return db().syncOutbox.count(); },
+  /** Re-enqueue every row of every synced table (used when sync is first turned on or a family is joined). */
+  async enqueueAll() {
+    const d = db();
+    const now = new Date().toISOString();
+    const tables = ["parents", "children", "sessions", "assessments", "assignments", "teachers", "customSongs"] as const;
+    for (const t of tables) {
+      const rows = (await (d[t] as unknown as { toArray: () => Promise<{ id: string }[]> }).toArray());
+      for (const row of rows) await d.syncOutbox.add({ table: t, op: "put", key: row.id, payload: row, createdAt: now });
+    }
+  },
 
   /** Wipe everything (parent-only action in settings). */
   async nuke() { await db().delete(); await db().open(); },
