@@ -1,0 +1,11 @@
+{
+  "name": "KeyCadence",
+  "short_name": "KeyCadence",
+  "description": "A gamified daily practice companion for young piano beginners.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#fbf7ef",
+  "theme_color": "#4f46e5",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
