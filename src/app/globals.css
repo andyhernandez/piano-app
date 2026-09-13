@@ -1,0 +1,103 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* KeyCadence palette: warm parchment, deep indigo ink, sunny accent. */
+  --background: #fbf7ef;
+  --foreground: #1f2140;
+  --card: #ffffff;
+  --card-foreground: #1f2140;
+  --muted: #efe9dc;
+  --muted-foreground: #6b6e8a;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #ffd166;
+  --secondary-foreground: #3a2f00;
+  --accent: #06d6a0;
+  --accent-foreground: #003d2e;
+  --destructive: #ef476f;
+  --destructive-foreground: #ffffff;
+  --border: #e6dfd0;
+  --ring: #4f46e5;
+  --radius: 1rem;
+  --key-white: #fffdf7;
+  --key-black: #2b2d42;
+  --key-scale: #c7d2fe;
+  --key-active: #ffd166;
+  --key-correct: #06d6a0;
+  --key-wrong: #ef476f;
+}
+
+.dark {
+  --background: #14162b;
+  --foreground: #f3f1ff;
+  --card: #1e2140;
+  --card-foreground: #f3f1ff;
+  --muted: #2a2d52;
+  --muted-foreground: #a7a9c9;
+  --primary: #818cf8;
+  --primary-foreground: #0f1030;
+  --secondary: #ffd166;
+  --secondary-foreground: #3a2f00;
+  --accent: #34d399;
+  --accent-foreground: #003d2e;
+  --destructive: #fb7185;
+  --destructive-foreground: #ffffff;
+  --border: #35396a;
+  --ring: #818cf8;
+  --key-white: #f4f2ff;
+  --key-black: #0f1030;
+  --key-scale: #4c51b3;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --font-sans: var(--font-nunito), system-ui, sans-serif;
+  --font-display: var(--font-fredoka), var(--font-nunito), system-ui, sans-serif;
+}
+
+* { border-color: var(--border); }
+
+html, body { height: 100%; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+.font-display { font-family: var(--font-display); }
+
+/* Big touch targets for kids on tablets. */
+button, [role="button"] { touch-action: manipulation; }
+
+/* VexFlow SVG inherits currentColor. */
+.staff svg { max-width: 100%; height: auto; }
+.staff svg path, .staff svg rect, .staff svg text { fill: currentColor; }
+.staff svg .vf-stave path, .staff svg line { stroke: currentColor; }
+
+@keyframes bounce-soft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12%); } }
+.animate-bounce-soft { animation: bounce-soft 0.6s ease-in-out infinite; }
+@keyframes pulse-ring { 0% { transform: scale(0.9); opacity: 0.9; } 100% { transform: scale(1.4); opacity: 0; } }
+.animate-pulse-ring { animation: pulse-ring 0.5s ease-out forwards; }

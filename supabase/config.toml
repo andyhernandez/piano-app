@@ -1,0 +1,5 @@
+# Minimal Supabase CLI config so `supabase db push` and `supabase functions deploy` work from the repo root.
+project_id = "keycadence"
+
+[functions.weekly-digest]
+verify_jwt = false
