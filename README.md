@@ -14,7 +14,24 @@ npm run build && npm start
 npm test           # unit tests (vitest)
 npm run typecheck  # tsc --noEmit
 npm run lint       # eslint
+npm run build && npm run e2e   # Playwright end-to-end smoke (desktop + tablet)
 ```
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, the production build, and the e2e suite on every push and pull request.
+
+## Deploy
+
+- **Vercel / any Node host:** `npm run build && npm start`.
+- **Docker:** `docker build -t keycadence . && docker run -p 3000:3000 keycadence` (Next.js standalone output).
+- **Cloud sync + weekly digest email:** see [supabase/README.md](supabase/README.md).
+
+## Device checklist before a release
+
+These paths cannot be exercised in CI and need a real instrument:
+
+- MIDI keyboard in Chrome or Edge: Scale Gym check, Rhythm Lab taps from keys, Sight Reading scoring, Theory Lab "play it" answers, Sandbox recording.
+- Acoustic piano with the microphone: onboarding calibration, Echo and Flash detection, chord verification in Theory Lab and Repertoire. Tune `confidenceThreshold` and the onset sensitivity in `src/lib/input/mic.ts` if the room is noisy.
+- iPad Safari and Android Chrome: multi-touch on the keyboard, tap-pad latency, audio unlock on first tap.
 
 Audio and MIDI need a user gesture; the app unlocks the audio engine on the first tap. Web MIDI works in Chrome/Edge/Android Chrome. Safari uses the microphone or timer mode.
 
@@ -50,21 +67,7 @@ Audio and MIDI need a user gesture; the app unlocks the audio engine on the firs
 
 ## Cloud sync (optional)
 
-The parent dashboard accepts a Supabase URL and anon key. The provider expects a table
-
-```sql
-create table kc_rows (
-  owner uuid not null,
-  table_name text not null,
-  key text not null,
-  payload jsonb,
-  deleted boolean default false,
-  updated_at timestamptz default now(),
-  primary key (owner, table_name, key)
-);
-```
-
-and a storage bucket named `recordings`, with row-level security keyed on `owner`.
+The parent dashboard accepts a Supabase URL and anon key. The schema, storage bucket, and the weekly digest edge function live in [`supabase/`](supabase/README.md); apply them with `supabase db push` and `supabase functions deploy weekly-digest`.
 
 ## Native wrapper (Phase 2)
 
