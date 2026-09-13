@@ -6,16 +6,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,9 +21,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - run: npm ci
       - name: Build static site
         run: npm run build
@@ -33,16 +28,9 @@ jobs:
           NEXT_OUTPUT: export
           NEXT_BASE_PATH: /${{ github.event.repository.name }}
           NEXT_TELEMETRY_DISABLED: "1"
-      - uses: actions/upload-pages-artifact@v3
+      # Publishes ./out to the gh-pages branch; GitHub Pages serves that branch automatically.
+      - uses: peaceiris/actions-gh-pages@v4
         with:
-          path: out
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          force_orphan: true
