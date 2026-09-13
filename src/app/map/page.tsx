@@ -11,6 +11,7 @@ import { AdventureMap, type RegionView } from "@/components/map/adventure-map";
 import { ProgressHeader } from "@/components/map/progress-header";
 import { RegionPanel } from "@/components/map/region-panel";
 import { ThemePicker } from "@/components/map/theme-picker";
+import { Switch } from "@/components/ui/switch";
 import { BadgeShelf } from "@/components/map/badge-shelf";
 import { Wardrobe } from "@/components/map/wardrobe";
 import { WeeklyChallenge, challengeFor, challengeDoneCount, CHALLENGE_TASKS } from "@/components/map/weekly-challenge";
@@ -19,6 +20,8 @@ import { MAP_THEMES, regionsNeededForTheme, themeById } from "@/components/map/t
 export default function MapPage() {
   const child = useActiveChild();
   const updateChild = useAppStore((s) => s.updateChild);
+  const allChildren = useAppStore((s) => s.children);
+  const [familyMode, setFamilyMode] = React.useState(false);
   const pushCelebration = useAppStore((s) => s.pushCelebration);
   const [today] = React.useState(() => dateKey());
   const days = React.useMemo(() => weekDaysOf(today), [today]);
@@ -96,9 +99,15 @@ export default function MapPage() {
 
         <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
           <div className="flex flex-col gap-3">
+            {allChildren.length > 1 && (
+              <label className="flex items-center gap-3 self-end rounded-full border-2 bg-card px-4 py-2 text-sm font-bold">
+                <Switch checked={familyMode} onCheckedChange={setFamilyMode} aria-label="Show the whole family on the map" />
+                Family map · see everyone&apos;s companion
+              </label>
+            )}
             <div className="relative">
               <ThemePicker theme={theme} unlocked={unlockedThemes} completedRegions={completedRegions} onChange={chooseTheme} />
-              <AdventureMap child={child} theme={theme} selectedRegionId={selected?.progress.regionId ?? null} onSelectRegion={setSelected} onOpenChest={openChest} />
+              <AdventureMap child={child} siblings={familyMode ? allChildren.filter((c) => c.id !== child.id) : []} theme={theme} selectedRegionId={selected?.progress.regionId ?? null} onSelectRegion={setSelected} onOpenChest={openChest} />
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 bg-card px-4 py-3">
               <div className="text-sm">

@@ -105,6 +105,8 @@ function blobPath(cx: number, cy: number, r: number, seed: number): string {
 
 export interface AdventureMapProps {
   child: Child;
+  /** Siblings sharing the world: their companions appear on their own current regions. */
+  siblings?: Child[];
   theme: MapTheme;
   selectedRegionId?: string | null;
   onSelectRegion: (region: RegionView) => void;
@@ -112,7 +114,7 @@ export interface AdventureMapProps {
 }
 
 /** The hand-drawn Adventure Map (§5). Pure SVG; the companion is an HTML overlay so it stays crisp. */
-export function AdventureMap({ child, theme, selectedRegionId, onSelectRegion, onOpenChest }: AdventureMapProps) {
+export function AdventureMap({ child, siblings = [], theme, selectedRegionId, onSelectRegion, onOpenChest }: AdventureMapProps) {
   const regions = React.useMemo(() => regionViews(child), [child]);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = React.useState(0);
@@ -134,6 +136,16 @@ export function AdventureMap({ child, theme, selectedRegionId, onSelectRegion, o
   const currentIdx = regions.findIndex((r) => r.isCurrent);
   const currentPt = currentIdx >= 0 ? points[currentIdx] : null;
   const companionSize = Math.max(56, Math.min(120, 130 * scale));
+  // Siblings stand beside the active kid when they share a region, otherwise on their own region.
+  const siblingSpots = React.useMemo(() => {
+    const idxOf = (c: Child) => regions.findIndex((r) => r.progress.regionId === currentRegionId(c));
+    return siblings.map((s, i) => {
+      const idx = idxOf(s);
+      const pt = idx >= 0 ? points[idx] : null;
+      const shared = idx === currentIdx;
+      return { child: s, pt, offset: shared ? (i + 1) * 46 : 0 };
+    }).filter((s) => s.pt);
+  }, [siblings, regions, points, currentIdx]);
 
   const decorations = React.useMemo(() => decorationsFor(width, height, points), [width, height, points]);
 
@@ -203,6 +215,20 @@ export function AdventureMap({ child, theme, selectedRegionId, onSelectRegion, o
           <Companion state={child.companion} mood="idle" size={companionSize} />
         </motion.div>
       )}
+      {scale > 0 && siblingSpots.map(({ child: s, pt, offset }) => (
+        <motion.div
+          key={s.id}
+          className="pointer-events-none absolute flex flex-col items-center"
+          initial={false}
+          animate={{ left: `${((pt!.x + offset) / width) * 100}%`, top: `${((pt!.y - 30) / height) * 100}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 18 }}
+          style={{ transform: "translate(-50%, -65%)", opacity: 0.9 }}
+          title={`${s.name} and ${s.companion.name}`}
+        >
+          <Companion state={s.companion} mood="idle" size={Math.round(companionSize * 0.7)} />
+          <span className="-mt-1 rounded-full bg-card/90 px-2 text-[10px] font-bold">{s.avatar} {s.name}</span>
+        </motion.div>
+      ))}
     </div>
   );
 }
