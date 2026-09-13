@@ -23,9 +23,11 @@ export class MicInputSource implements InputSource {
   private ctx: AudioContext | null = null;
   private stream: MediaStream | null = null;
   private analyser: AnalyserNode | null = null;
+  /** Separate high-resolution analyser (8192-point FFT, ~5 Hz bins) for onsets and chord verification. */
+  private spec: AnalyserNode | null = null;
   private timeBuf = new Float32Array(2048);
-  private freqBuf = new Float32Array(1024);
-  private linBuf = new Float32Array(1024);
+  private freqBuf = new Float32Array(4096);
+  private linBuf = new Float32Array(4096);
   private raf = 0;
   private onset = new OnsetDetector();
   private currentMidi: number | null = null;
@@ -41,8 +43,12 @@ export class MicInputSource implements InputSource {
     this.analyser.fftSize = 2048;
     this.analyser.smoothingTimeConstant = 0;
     src.connect(this.analyser);
-    this.freqBuf = new Float32Array(this.analyser.frequencyBinCount);
-    this.linBuf = new Float32Array(this.analyser.frequencyBinCount);
+    this.spec = this.ctx.createAnalyser();
+    this.spec.fftSize = 8192;
+    this.spec.smoothingTimeConstant = 0;
+    src.connect(this.spec);
+    this.freqBuf = new Float32Array(this.spec.frequencyBinCount);
+    this.linBuf = new Float32Array(this.spec.frequencyBinCount);
     this.connected = true;
     const track = this.stream.getAudioTracks()[0];
     this.label = track?.label || "Microphone";
@@ -50,9 +56,9 @@ export class MicInputSource implements InputSource {
   }
 
   private loop = () => {
-    if (!this.analyser || !this.ctx) return;
+    if (!this.analyser || !this.spec || !this.ctx) return;
     this.analyser.getFloatTimeDomainData(this.timeBuf);
-    this.analyser.getFloatFrequencyData(this.freqBuf);
+    this.spec.getFloatFrequencyData(this.freqBuf);
     const t = nowMs();
     // Onsets
     dbToLinear(this.freqBuf, this.linBuf);
@@ -106,14 +112,15 @@ export class MicInputSource implements InputSource {
   }
 
   async verifyChord(midis: number[], windowMs = 500): Promise<"heard" | "unscored"> {
-    if (!this.analyser || !this.ctx) return "unscored";
+    if (!this.spec || !this.ctx) return "unscored";
+    const spec = this.spec;
     const end = nowMs() + windowMs;
     const noiseDb = 20 * Math.log10(Math.max(1e-6, this.calibration.noiseFloor)) - 20;
     let best = 0;
     await new Promise<void>((resolve) => {
       const tick = () => {
-        this.analyser!.getFloatFrequencyData(this.freqBuf);
-        best = Math.max(best, chordTonesPresent(this.freqBuf, this.ctx!.sampleRate, this.analyser!.fftSize, midis, noiseDb));
+        spec.getFloatFrequencyData(this.freqBuf);
+        best = Math.max(best, chordTonesPresent(this.freqBuf, this.ctx!.sampleRate, spec.fftSize, midis, noiseDb));
         if (nowMs() < end && best < midis.length) requestAnimationFrame(tick); else resolve();
       };
       tick();
@@ -125,7 +132,7 @@ export class MicInputSource implements InputSource {
     cancelAnimationFrame(this.raf);
     this.stream?.getTracks().forEach((t) => t.stop());
     this.ctx?.close().catch(() => {});
-    this.stream = null; this.ctx = null; this.analyser = null;
+    this.stream = null; this.ctx = null; this.analyser = null; this.spec = null;
     this.connected = false;
     this.emitter.clear();
   }

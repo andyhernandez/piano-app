@@ -17,6 +17,8 @@ export interface ExNote {
   bar: number;
   /** Beat offset within the bar (0-based, quarter beats). */
   beat: number;
+  /** Hand that plays the main voice of this note. */
+  hand: Hand;
 }
 
 export interface Exercise {
@@ -103,12 +105,39 @@ export function generateExercise(opts: GeneratorOptions): Exercise {
   const stable = degrees.filter((d) => ((d - 1) % 7) + 1 === 1 || ((d - 1) % 7) + 1 === 5); // tonic/dominant
   let currentDeg = stable[0] ?? 1;
 
+  let pendingTie = false;
   for (let bar = 0; bar < bars; bar++) {
     const hand: Hand = hands === "LH" ? "LH" : hands === "alternating" ? (bar % 2 === 0 ? "RH" : "LH") : "RH";
     const octave = hand === "RH" ? rhOctave : lhOctave;
     let beat = 0;
     const isPhraseEnd = bar % 2 === 1; // 2-bar phrases
     const isLast = bar === bars - 1;
+
+    if (isLast) {
+      // Final bar: walk stepwise to the nearest stable tone (never more than 2 degrees away), then hold it.
+      const target = nearest(stable, currentDeg);
+      let deg = pendingTie ? currentDeg : currentDeg;
+      pendingTie = false;
+      const steps: number[] = [];
+      while (deg !== target) { deg += Math.sign(target - deg); steps.push(deg); }
+      // If we're already there, or ties forced a repeat, just hold.
+      const approach = steps.slice(0, Math.min(steps.length, 2));
+      approach.forEach((d) => {
+        const midi = degreeToMidi(d, scale, octave);
+        const note: ExNote = { midi, beats: 1, bar, beat, hand };
+        if (hands === "together") note.midiLH = lhFor(spec, scale, bar, beat, lhOctave);
+        notes.push(note);
+        beat += 1;
+      });
+      const holdBeats = (BEATS_PER_BAR - beat) as Dur;
+      const midi = degreeToMidi(target, scale, octave);
+      const note: ExNote = { midi, beats: holdBeats, bar, beat, hand };
+      if (hands === "together") note.midiLH = lhFor(spec, scale, bar, beat, lhOctave);
+      notes.push(note);
+      currentDeg = target;
+      continue;
+    }
+
     while (beat < BEATS_PER_BAR) {
       const remaining = BEATS_PER_BAR - beat;
       const candidates = spec.rhythms.filter((r) => r.value <= remaining);
@@ -117,19 +146,20 @@ export function generateExercise(opts: GeneratorOptions): Exercise {
       let dur = weightedPick(rng, (filtered.length ? filtered : candidates).map((r) => ({ value: r.value, weight: r.weight })));
       // Phrase ends land long.
       if (isPhraseEnd && remaining >= 2 && beat >= 2) dur = remaining >= 4 ? 4 : 2;
-      if (isLast && beat === 0 && remaining === 4) dur = 4;
 
-      const restHere = spec.rests && !isLast && rng() < 0.08 && beat > 0 && dur <= 1;
+      const restHere = !pendingTie && spec.rests && rng() < 0.08 && beat > 0 && dur <= 1;
       if (restHere) {
-        notes.push({ midi: null, beats: dur, bar, beat });
+        notes.push({ midi: null, beats: dur, bar, beat, hand });
         beat += dur;
         continue;
       }
       // Choose next degree.
-      const forceStable = (isLast && beat + dur >= BEATS_PER_BAR) || (bar === 0 && beat === 0);
       let nextDeg: number;
-      if (forceStable) {
-        nextDeg = nearest(stable, currentDeg);
+      if (pendingTie) {
+        nextDeg = currentDeg;
+        pendingTie = false;
+      } else if (bar === 0 && beat === 0) {
+        nextDeg = currentDeg; // start on a stable tone (currentDeg is initialised to one)
       } else if (isPhraseEnd && beat + dur >= BEATS_PER_BAR) {
         // Rest on a stable tone or the third.
         const restful = degrees.filter((d) => [1, 3, 5].includes(((d - 1) % 7) + 1));
@@ -144,21 +174,24 @@ export function generateExercise(opts: GeneratorOptions): Exercise {
         nextDeg = currentDeg + Math.sign(nextDeg - currentDeg);
         midi = degreeToMidi(nextDeg, scale, octave);
       }
-      // Accidentals: occasional chromatic neighbour (raised 4th or lowered 7th).
-      if (spec.accidentals && rng() < 0.07 && !forceStable) {
+      // Accidentals: occasional chromatic neighbour, never on a phrase end.
+      if (spec.accidentals && rng() < 0.07 && !(isPhraseEnd && beat + dur >= BEATS_PER_BAR)) {
         midi += rng() < 0.5 ? 1 : -1;
       }
-      const note: ExNote = { midi, beats: dur, bar, beat };
+      const note: ExNote = { midi, beats: dur, bar, beat, hand };
       if (hands === "together") {
         note.midiLH = lhFor(spec, scale, bar, beat, lhOctave);
       }
-      if (spec.ties && rng() < 0.08 && beat + dur >= BEATS_PER_BAR && !isLast) note.tie = true;
+      if (spec.ties && rng() < 0.08 && beat + dur >= BEATS_PER_BAR && !isLast) {
+        note.tie = true;
+        pendingTie = true;
+      }
       notes.push(note);
       currentDeg = nextDeg;
       beat += dur;
     }
   }
-  // If a note was tied across a bar, the first note of the next bar must match pitch.
+  // A tied note carries its pitch (including any accidental) into the next note.
   for (let i = 0; i < notes.length - 1; i++) {
     if (notes[i].tie) notes[i + 1].midi = notes[i].midi;
   }
@@ -215,10 +248,11 @@ export function exerciseBeats(ex: Exercise): number {
 }
 
 /** Absolute beat position for each sounding note. */
-export function noteTimeline(ex: Exercise): { midi: number; beat: number; beats: number; index: number }[] {
-  const out: { midi: number; beat: number; beats: number; index: number }[] = [];
+export interface TimelineNote { midi: number; beat: number; beats: number; index: number; hand: Hand }
+export function noteTimeline(ex: Exercise): TimelineNote[] {
+  const out: TimelineNote[] = [];
   ex.notes.forEach((n, i) => {
-    if (n.midi != null) out.push({ midi: n.midi, beat: n.bar * ex.timeSig[0] + n.beat, beats: n.beats, index: i });
+    if (n.midi != null) out.push({ midi: n.midi, beat: n.bar * ex.timeSig[0] + n.beat, beats: n.beats, index: i, hand: n.hand });
   });
   return out;
 }

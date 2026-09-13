@@ -123,10 +123,11 @@ export function chordTonesPresent(spectrumDb: Float32Array, sampleRate: number, 
     const f0 = 440 * Math.pow(2, (m - 69) / 12);
     let energy = -Infinity;
     for (const h of [1, 2, 3]) {
-      const bin = Math.round((f0 * h) / binHz);
-      for (let b = bin - 1; b <= bin + 1; b++) {
-        if (b >= 0 && b < spectrumDb.length) energy = Math.max(energy, spectrumDb[b] - (h === 1 ? 0 : 6));
-      }
+      const f = f0 * h;
+      // A quarter-tone is ~3%; never look wider than that so neighbouring semitones don't bleed in.
+      const lo = Math.max(0, Math.round((f * 0.97) / binHz));
+      const hi = Math.min(spectrumDb.length - 1, Math.round((f * 1.03) / binHz));
+      for (let b = lo; b <= hi; b++) energy = Math.max(energy, spectrumDb[b] - (h === 1 ? 0 : 6));
     }
     if (energy > noiseFloorDb + thresholdDb) present++;
   }
