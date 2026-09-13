@@ -17,6 +17,16 @@ import { SkillRadar } from "@/components/assessment/skill-radar";
 import { deriveWeights, weightsToPercent } from "@/lib/engine/weights";
 import { BLOCK_LABELS, BLOCK_ORDER } from "@/lib/types";
 
+/** True when the current local time falls inside the parent's quiet hours (which may wrap midnight). */
+function inQuietHours(q: { start: string; end: string } | null): boolean {
+  if (!q) return false;
+  const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const a = toMin(q.start), b = toMin(q.end);
+  return a <= b ? cur >= a && cur < b : cur >= a || cur < b;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const children = useAppStore((s) => s.children);
@@ -41,6 +51,7 @@ export default function HomePage() {
   const days = weekDays(today);
   const practisedDays = new Set(weekSessions.filter((s) => s.completed).map((s) => s.date));
   const weights = child.settings.weightsOverride ?? deriveWeights(child.skillProfile);
+  const quiet = inQuietHours(child.settings.quietHours);
   const pct = weightsToPercent(weights);
 
   return (
@@ -56,6 +67,9 @@ export default function HomePage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            {quiet && (
+              <p className="rounded-2xl bg-muted px-4 py-2 text-sm font-bold text-muted-foreground">🌙 It&apos;s quiet time right now. You can still practise if a grown-up says it&apos;s okay.</p>
+            )}
             <Button size="xl" className="w-full" onClick={() => router.push("/session")}>
               <Play className="h-7 w-7" /> {doneToday ? "Practise again" : "Start today's session"}
             </Button>

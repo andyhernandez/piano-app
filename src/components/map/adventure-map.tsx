@@ -196,9 +196,9 @@ export function AdventureMap({ child, theme, selectedRegionId, onSelectRegion, o
         <motion.div
           className="pointer-events-none absolute"
           initial={false}
-          animate={{ left: `${(currentPt.x / width) * 100}%`, top: `${((currentPt.y - 62) / height) * 100}%` }}
+          animate={{ left: `${(currentPt.x / width) * 100}%`, top: `${((currentPt.y - 30) / height) * 100}%` }}
           transition={{ type: "spring", stiffness: 120, damping: 18 }}
-          style={{ transform: "translate(-50%, -100%)" }}
+          style={{ transform: "translate(-50%, -65%)" }}
         >
           <Companion state={child.companion} mood="idle" size={companionSize} />
         </motion.div>
