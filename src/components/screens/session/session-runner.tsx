@@ -63,6 +63,8 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
   const [metaOverride, setMetaOverride] = React.useState<React.ReactNode | null>(null);
   const [recording, setRecording] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  // After "Resume" on the input-lost screen, the same outage is not raised again until the device comes back.
+  const ignoreLostRef = React.useRef(false);
 
   const running = !paused && !lost && !busy;
   const { seconds: elapsed, reset } = useStopwatch(running);
@@ -79,7 +81,11 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
     }
     const u1 = input.onChange(sync);
     const u2 = input.onNote(() => setLastNoteAt(Date.now()));
-    const poll = setInterval(() => { if (input.mode !== "timer" && !input.connected) setLost(true); }, 1000);
+    const poll = setInterval(() => {
+      const gone = input.mode !== "timer" && !input.connected;
+      if (!gone) ignoreLostRef.current = false;
+      else if (!ignoreLostRef.current) setLost(true);
+    }, 1000);
     return () => { cancelled = true; u1(); u2(); clearInterval(poll); };
   }, [input, child.settings.inputModePreference, child.settings.micCalibration, setInputMode]);
 
@@ -138,7 +144,7 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
     <>
       <Pill tone="clay" icon="error">NO INPUT</Pill>
       <Clock seconds={elapsed} dim />
-      <Button variant="secondary" size="control" onClick={() => setLost(false)}>Resume</Button>
+      <Button variant="secondary" size="control" onClick={() => { ignoreLostRef.current = true; setLost(false); }}>Resume</Button>
     </>
   ) : (
     <>

@@ -353,7 +353,7 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
           </div>
         </SheetPanel>
         <Keyboard from={kbFrom} to={kbTo} tones={tones} height={88} onNoteOn={onKeyOn} onNoteOff={onKeyOff} disabled={paused} />
-        <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 340px", gap: 14, paddingBottom: 22 }}>
+        <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 14, paddingBottom: 22 }}>
           <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: 11, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
             <SectionLabel>HOW EVEN EACH FINGER WAS</SectionLabel>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flex: 1, minHeight: 0 }}>

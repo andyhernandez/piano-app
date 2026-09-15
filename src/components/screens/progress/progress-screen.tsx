@@ -59,8 +59,8 @@ export function ProgressScreen() {
   const rows: LogRow[] = recent.map((s) => {
     const head = sessionHeadline(s);
     // Fixed widths on the first three cells so the columns line up from row to row; the headline takes the rest.
-    const cell = (text: string, width: number) => <span style={{ display: "inline-block", width }}>{text}</span>;
-    return { cells: [cell(dayLabel(s.date), 58), cell(fmtClock(s.durationSec), 48), cell(`${completedBlocks(s)}/${Math.max(6, s.blocks.length)}`, 30), head.text], marked: head.marked };
+    const cell = (text: string, width: number, right = false) => <span style={{ display: "block", width, textAlign: right ? "right" : "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{text}</span>;
+    return { cells: [cell(dayLabel(s.date), 58), cell(fmtClock(s.durationSec), 48), cell(`${completedBlocks(s)}/${Math.max(6, s.blocks.length)}`, 30), cell(head.text, 176, true)], marked: head.marked };
   });
   const firstKey = tempos[0]?.scale;
   const lastKey = tempos[tempos.length - 1]?.scale;

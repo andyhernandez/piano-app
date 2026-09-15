@@ -4,7 +4,7 @@ import type { BlockType, Child, InputMode, Session } from "@/lib/types";
 import { getInput } from "@/lib/input/manager";
 import { DISCIPLINE, fmtClock } from "@/lib/engine/record";
 import { Button, Headline, Icon, Panel, Pill } from "@/components/ds";
-import { blockHeadline } from "./words";
+import { blockHeadline, capitalize, numberWord } from "./words";
 
 /**
  * E1 — the keyboard or microphone stopped answering mid-block. The clock is stopped; nothing is lost. Three
@@ -75,7 +75,7 @@ export function InputLost({ session, child, type, lostMode, lastNoteAt, onResolv
       </div>
       <Panel style={{ flexDirection: "row", alignItems: "center", gap: 22, flex: "none" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 600 }}>{kept.length ? `${kept.length === 1 ? "One block is" : `${kept.length} blocks are`} already in the record` : "The clock is stopped"}</div>
+          <div style={{ fontSize: 17, fontWeight: 600 }}>{kept.length ? `${capitalize(numberWord(kept.length))} block${kept.length === 1 ? " is" : "s are"} already in the record` : "The clock is stopped"}</div>
           <div style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>
             {kept.length ? `${kept.map((b) => `${DISCIPLINE[b.type].short} ${fmtClock(b.durationSec)}${blockHeadline(b).text !== "DONE" ? ` · ${blockHeadline(b).text.toLowerCase()}` : ""}`).join(", ")}. ` : ""}
             The rest of the block is marked as measured by whatever you pick.

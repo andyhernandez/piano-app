@@ -3,7 +3,7 @@ import * as React from "react";
 import type { BlockProps } from "./types";
 import type { MidiScore } from "@/lib/types";
 import type { NoteState } from "@/components/ds";
-import { BottomBar, Button, Choice, LogTable, Metric, Pill, SectionLabel, SheetPanel, Staff, Tempo, rhythmToStaff } from "@/components/ds";
+import { BottomBar, Button, LogTable, Metric, Pill, SectionLabel, SheetPanel, Staff, Tempo, rhythmToStaff } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { useAppStore } from "@/lib/store/app-store";
@@ -253,7 +253,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
   }, [phase, pattern, activeBeat]);
   const staff = rhythmToStaff(pattern, showLast ? last.states : liveStates);
   const hidePage = game === "echo" && (roundActive || (!rounds.length && phase === "idle"));
-  const region = activeBeat !== null && (phase === "listen" || phase === "tap") ? [{ bar: Math.floor(activeBeat / pattern.beatsPerBar), beat: activeBeat % pattern.beatsPerBar, width: (STAFF_W - 110) / pattern.bars / pattern.beatsPerBar }] : [];
+  const region = activeBeat !== null && (phase === "listen" || phase === "tap") ? [{ bar: Math.floor(activeBeat / pattern.beatsPerBar), beat: activeBeat % pattern.beatsPerBar, width: (STAFF_W - 136) / pattern.bars / pattern.beatsPerBar }] : [];
 
   const instruction = paused
     ? "Paused."
@@ -294,7 +294,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
           ) : (
             <Staff
               systems={[{ clef: "none", top: 40, timeSignature: [pattern.beatsPerBar, 4], timeLeft: 22 }]}
-              layout={{ bars: pattern.bars, beatsPerBar: pattern.beatsPerBar, left: 70, right: 40 }}
+              layout={{ bars: pattern.bars, beatsPerBar: pattern.beatsPerBar, left: 96, right: 40 }}
               notes={staff.notes}
               rests={staff.rests}
               regions={region}
@@ -303,7 +303,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
             />
           )}
         </SheetPanel>
-        <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 340px", gap: 14, paddingBottom: 22 }}>
+        <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 14, paddingBottom: 22 }}>
           <button
             type="button"
             disabled={paused}
@@ -321,8 +321,10 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
           <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: 11, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <SectionLabel>THIS BLOCK</SectionLabel>
-              <div style={{ marginLeft: "auto" }}>
-                <Choice options={["clap", "echo"] as Game[]} value={game} onChange={switchGame} labels={{ clap: "With the page", echo: "Echo" }} />
+              <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+                {(["clap", "echo"] as Game[]).map((g) => (
+                  <Button key={g} variant={game === g ? "quiet" : "secondary"} size="pill" onClick={() => switchGame(g)} disabled={roundActive} style={game === g ? { boxShadow: "inset 0 0 0 1px var(--kc-mint)", color: "var(--kc-ink)" } : undefined}>{g === "clap" ? "With the page" : "Echo"}</Button>
+                ))}
               </div>
             </div>
             <LogTable rows={rows} emphasize={1} />

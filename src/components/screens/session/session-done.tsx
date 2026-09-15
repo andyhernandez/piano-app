@@ -88,12 +88,15 @@ export function SessionDone({ result }: { result: DoneResult }) {
   const days = weekCells(child, week, session.date);
   const wp = weekProgress(child, week, session.date);
   const todayIdx = weekDays(session.date).indexOf(session.date);
-  const left = DAY_NAMES.filter((_, i) => i > todayIdx && !child.settings.restDays.includes(i)).slice(0, Math.max(0, wp.target - wp.played));
-  const weekCopy = wp.played >= wp.target
+  const left = DAY_NAMES.filter((_, i) => i > todayIdx && !child.settings.restDays.includes(i));
+  const need = wp.target - wp.played;
+  const weekCopy = need <= 0
     ? `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days. That makes the week.`
-    : left.length
+    : need === 1 && left.length
       ? `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days. ${left.length === 1 ? left[0] : `${left.slice(0, -1).join(", ")} or ${left[left.length - 1]}`} makes the week.`
-      : `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days this week.`;
+      : left.length >= need
+        ? `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days. ${capitalize(numberWord(need))} more make the week.`
+        : `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days this week.`;
 
   // What tomorrow leans on: the two weakest measured blocks.
   const lean = order
@@ -117,7 +120,7 @@ export function SessionDone({ result }: { result: DoneResult }) {
             <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 620 }}>{lede}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
-            <StatTile label="TIME PLAYED" value={fmtClock(session.durationSec)} unit={`of ${session.plannedMinutes} planned`} />
+            <StatTile label="TIME PLAYED" value={fmtClock(session.durationSec)} unit={`of ${session.plannedMinutes}`} />
             <StatTile label="READING LEVEL" value={readingLevel} unit={readingUp ? "up one" : readingHeld ? "held" : reading ? "played" : "—"} />
             <StatTile label="FASTEST CLEAN" value={cleanBpm ?? prevBest ?? "—"} unit={cleanBpm != null || prevBest != null ? "bpm" : undefined} delta={newBest && prevBest != null ? `+${cleanBpm! - prevBest}` : undefined} tone={newBest ? "amber" : "default"} />
             <StatTile label="AHEAD OF BEAT" value={aheadMs != null ? Math.abs(aheadMs) : "—"} unit={aheadMs != null ? (aheadMs < 0 ? "ms behind" : "ms") : undefined} tone={aheadMs != null && Math.abs(aheadMs) >= 25 ? "clay" : "default"} />
@@ -154,7 +157,7 @@ export function SessionDone({ result }: { result: DoneResult }) {
           {lean.length > 0 && (
             <div style={{ borderTop: "1px solid var(--kc-border)", paddingTop: 22, display: "flex", flexDirection: "column", gap: 11 }}>
               <SectionLabel>WHAT TOMORROW LEANS ON</SectionLabel>
-              {lean.map((q) => <QueueRow key={q.index} index={q.index} title={q.title} detail={q.detail} duration={q.duration} draggable={false} style={{ minHeight: 72, padding: "12px 16px" }} />)}
+              {lean.map((q) => <QueueRow key={q.index} index={q.index} title={q.title} detail={q.detail} duration={q.duration} draggable={false} menu={<span />} style={{ minHeight: 72, padding: "12px 16px" }} />)}
               {readingUp && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>Reading starts at level {readingLevel} tomorrow.</p>}
             </div>
           )}
