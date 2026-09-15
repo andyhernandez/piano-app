@@ -46,7 +46,7 @@ export function StepMode({ mode, onMode, scale, minutes, onContinue }: { mode: M
             <OwnItem>Reorder, retime, skip, save routines</OwnItem>
             <OwnItem>Tempo, level, key, hands and loop points exposed</OwnItem>
             <OwnItem>Accuracy, evenness and drift in milliseconds</OwnItem>
-            <OwnItem>Run past the timer when it's going well</OwnItem>
+            <OwnItem>Run past the timer when it&apos;s going well</OwnItem>
           </div>
           <div style={preview("own")}>
             <SectionLabel size="meta">What you see</SectionLabel>
@@ -57,7 +57,7 @@ export function StepMode({ mode, onMode, scale, minutes, onContinue }: { mode: M
       </div>
       <StepActions style={{ marginTop: 0 }}>
         <Button icon="arrow_forward" onClick={onContinue}>{mode === "guided" ? "Use guided" : "Use own plan"}</Button>
-        <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>Change it whenever — it's one setting, not a commitment.</span>
+        <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>Change it whenever — it&apos;s one setting, not a commitment.</span>
       </StepActions>
     </div>
   );

@@ -1,12 +1,6 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { TodayScreen } from "@/components/screens/today/today-screen";
 
-/** STUB: replaced by a screen implementation. */
 export default function TodayPage() {
-  return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Today · coming next.</div>
-    </Screen>
-  );
+  return <TodayScreen />;
 }

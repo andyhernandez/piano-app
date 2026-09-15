@@ -1,6 +1,6 @@
-import type { BlockType, Child, Session } from "../types";
+import type { BlockType, Child, ScaleId, Session } from "../types";
 import { BLOCK_ORDER } from "../types";
-import { dateKey, weekDays, weekKey, addDays, parseDateKey } from "../utils/date";
+import { dateKey, weekDays, weekKey, addDays, parseDateKey, daysBetween } from "../utils/date";
 
 /** The six disciplines in the design's language. */
 export const DISCIPLINE: Record<BlockType, { title: string; short: string; label: string }> = {
@@ -104,21 +104,75 @@ export function completedBlocks(s: Session): number {
   return s.blocks.filter((b) => b.completed).length;
 }
 
-/** The clean-scale tempo series (bpm) by session, oldest first, for the Progress chart. */
-export function cleanScaleTempos(sessions: Session[]): { date: string; bpm: number }[] {
+/** The clean-scale tempo series (bpm) by session, oldest first, for the Progress chart. `scale` is the key that run was in. */
+export function cleanScaleTempos(sessions: Session[]): { date: string; bpm: number; scale: ScaleId }[] {
   return sessions
     .slice()
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
     .map((s) => {
       const b = s.blocks.find((x) => x.type === "scales");
       const bpm = typeof b?.details?.bpm === "number" ? b.details.bpm : null;
-      return b?.midiScore && b.midiScore.badge === "clean-scale" && bpm ? { date: s.date, bpm } : null;
+      return b?.midiScore && b.midiScore.badge === "clean-scale" && bpm ? { date: s.date, bpm, scale: s.scale } : null;
     })
-    .filter((x): x is { date: string; bpm: number } => !!x);
+    .filter((x): x is { date: string; bpm: number; scale: ScaleId } => !!x);
 }
 
 /** Best (fastest) clean scale tempo across sessions. */
 export function fastestClean(sessions: Session[]): number | null {
   const t = cleanScaleTempos(sessions);
   return t.length ? Math.max(...t.map((x) => x.bpm)) : null;
+}
+
+/**
+ * How far ahead of the click the last measured timing block landed, in ms. Positive = early, negative = late.
+ * Blocks that only stored an unsigned deviation report it as-is. Null until a timing block has been measured.
+ */
+export function aheadOfBeatMs(sessions: Session[]): number | null {
+  const ordered = sessions.slice().sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  for (const s of ordered) {
+    const b = s.blocks.find((x) => x.type === "rhythm" && x.midiScore);
+    if (!b?.midiScore) continue;
+    const c = b.midiScore.components;
+    const d = b.details ?? {};
+    const signed = [c.aheadMs, c.meanOffsetMs, d.aheadMs, d.meanOffsetMs].find((v) => typeof v === "number");
+    if (typeof signed === "number") return Math.round(signed);
+    if (typeof c.avgDeviationMs === "number") return Math.round(c.avgDeviationMs);
+  }
+  return null;
+}
+
+/** Sessions per piece, from the Pieces block's details (`songId` or `songIds`). */
+export function sessionsBySong(sessions: Session[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const s of sessions) {
+    for (const b of s.blocks) {
+      if (b.type !== "repertoire") continue;
+      const d = b.details ?? {};
+      const ids = Array.isArray(d.songIds) ? (d.songIds as unknown[]) : typeof d.songId === "string" ? [d.songId] : [];
+      for (const id of ids) if (typeof id === "string") m.set(id, (m.get(id) ?? 0) + 1);
+    }
+  }
+  return m;
+}
+
+/** "3 min", "1 h 04 m" for stat tiles: minutes under an hour stay in minutes. */
+export function fmtMinutes(minutes: number): string {
+  return minutes < 60 ? `${Math.round(minutes)}` : fmtHours(minutes);
+}
+
+/** Whole weeks since an ISO date, at least 1. */
+export function weeksSince(iso: string, today = dateKey()): number {
+  const start = dateKey(new Date(iso));
+  return Math.max(1, Math.floor(daysBetween(start, today) / 7) + 1);
+}
+
+/** "June", "September" for the month a date key falls in. */
+export function monthName(date: string): string {
+  return parseDateKey(date).toLocaleDateString("en-GB", { month: "long" });
+}
+
+/** "12 Sep" style short date. */
+export function shortDate(date: string): string {
+  const d = parseDateKey(date);
+  return `${d.getDate()} ${d.toLocaleDateString("en-GB", { month: "short" })}`;
 }

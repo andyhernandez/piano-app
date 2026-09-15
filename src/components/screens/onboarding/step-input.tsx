@@ -3,6 +3,7 @@ import * as React from "react";
 import { Button, Headline, Icon, Metric, Pill, SectionLabel } from "@/components/ds";
 import { getInput } from "@/lib/input/manager";
 import { micPermissionState } from "@/lib/input/mic";
+import { probeMidi } from "@/lib/input/midi";
 import { midiToName } from "@/lib/music/notes";
 import type { InputMode } from "@/lib/types";
 
@@ -20,20 +21,21 @@ export function StepInput({ choice, onChoice, onContinue }: { choice: InputMode;
   const [heard, setHeard] = React.useState(0);
   const [mic, setMic] = React.useState<MicState>("unknown");
   const [attempt, setAttempt] = React.useState(0);
+  const retry = () => { setProbe("probing"); setAttempt((a) => a + 1); };
   const touched = React.useRef(false);
 
   // Probe the keyboard. A found keyboard becomes the default choice unless the person already picked something.
   React.useEffect(() => {
     let cancelled = false;
     const input = getInput();
-    setProbe("probing");
-    void input.use("midi", null).then(() => {
+    void probeMidi().then(async (present) => {
       if (cancelled) return;
-      const found = input.mode === "midi";
+      if (present) await input.use("midi", null);
+      if (cancelled) return;
+      const found = present && input.mode === "midi";
       setProbe(found ? "found" : "none");
       setDevice(input.label);
       if (found && !touched.current) onChoice("midi");
-      if (!found) input.stop();
     });
     void micPermissionState().then((s) => { if (!cancelled) setMic(s); });
     return () => { cancelled = true; };
@@ -99,7 +101,7 @@ export function StepInput({ choice, onChoice, onContinue }: { choice: InputMode;
             <Metric label="Notes heard" value={heard} />
             <Metric label="Last note" value={lastNote ?? "—"} />
           </div>
-          <Button variant="secondary" size="control" onClick={() => setAttempt((a) => a + 1)}>Detect again</Button>
+          <Button variant="secondary" size="control" onClick={retry}>Detect again</Button>
         </div>
       ) : (
         <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: 11, padding: "24px 26px", display: "flex", alignItems: "center", gap: 22 }}>
@@ -112,7 +114,7 @@ export function StepInput({ choice, onChoice, onContinue }: { choice: InputMode;
             <Metric label="Notes heard" value={heard} />
             <Metric label="Last note" value={lastNote ?? "—"} />
           </div>
-          <Button variant="secondary" size="control" disabled={probe === "probing"} onClick={() => setAttempt((a) => a + 1)}>Detect again</Button>
+          <Button variant="secondary" size="control" disabled={probe === "probing"} onClick={retry}>Detect again</Button>
         </div>
       )}
 
@@ -126,7 +128,7 @@ export function StepInput({ choice, onChoice, onContinue }: { choice: InputMode;
           </button>
           <button type="button" onClick={() => pick("mic")} style={card("mic")}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Icon name="mic" size={20} color={choice === "mic" ? "var(--kc-mint)" : "var(--kc-ink-dim)"} /><span style={{ fontSize: 17, fontWeight: 600 }}>Microphone</span></div>
-            <div style={{ fontSize: 14, color: "var(--kc-ink-muted)", lineHeight: 1.45 }}>Pitch and pulse from sound. Good enough to catch a wrong note in a slow scale; it can't separate two hands.</div>
+            <div style={{ fontSize: 14, color: "var(--kc-ink-muted)", lineHeight: 1.45 }}>Pitch and pulse from sound. Good enough to catch a wrong note in a slow scale; it can&apos;t separate two hands.</div>
             <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 10 }}><Pill tone={choice === "mic" ? "mint" : "neutral"}>Five of six</Pill><span style={{ fontSize: 12, color: mic === "denied" ? "var(--kc-clay)" : "var(--kc-ink-faint)" }}>{micLine}</span></div>
           </button>
           <button type="button" onClick={() => pick("timer")} style={card("timer")}>

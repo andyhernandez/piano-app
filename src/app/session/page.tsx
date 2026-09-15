@@ -1,12 +1,6 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { SessionRunner } from "@/components/screens/session/session-runner";
 
-/** STUB: replaced by a screen implementation. */
 export default function SessionPage() {
-  return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Session · coming next.</div>
-    </Screen>
-  );
+  return <SessionRunner />;
 }

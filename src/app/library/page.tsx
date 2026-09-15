@@ -1,12 +1,6 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { LibraryScreen } from "@/components/screens/library/library-screen";
 
-/** STUB: replaced by a screen implementation. */
 export default function LibraryPage() {
-  return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Library · coming next.</div>
-    </Screen>
-  );
+  return <LibraryScreen />;
 }

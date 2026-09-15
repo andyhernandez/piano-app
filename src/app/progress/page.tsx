@@ -1,12 +1,6 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { ProgressScreen } from "@/components/screens/progress/progress-screen";
 
-/** STUB: replaced by a screen implementation. */
 export default function ProgressPage() {
-  return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Progress · coming next.</div>
-    </Screen>
-  );
+  return <ProgressScreen />;
 }

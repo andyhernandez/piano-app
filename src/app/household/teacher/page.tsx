@@ -1,12 +1,6 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { TeacherLinkScreen } from "@/components/screens/household/teacher-link-screen";
 
-/** STUB: replaced by a screen implementation. */
 export default function TeacherLinkPage() {
-  return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Teacher link · coming next.</div>
-    </Screen>
-  );
+  return <TeacherLinkScreen />;
 }

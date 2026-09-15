@@ -1,12 +1,6 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { HouseholdScreen } from "@/components/screens/household/household-screen";
 
-/** STUB: replaced by a screen implementation. */
 export default function HouseholdPage() {
-  return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Household · coming next.</div>
-    </Screen>
-  );
+  return <HouseholdScreen />;
 }
