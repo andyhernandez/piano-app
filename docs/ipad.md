@@ -42,6 +42,11 @@ npm run ios
 3. Press **Run** (⌘R). The first time, the iPad asks you to trust the developer certificate: Settings → General →
    VPN & Device Management → your Apple ID → Trust.
 
+Without opening Xcode, `scripts/ipad-install.sh` does the same from the terminal: it builds with `xcodebuild`, then
+installs and launches on the iPad with `devicectl`. It reads `DEVELOPMENT_TEAM`, `IPAD_UDID` and `IPAD_COREDEVICE`
+from the environment (`xcrun devicectl list devices` prints the identifiers) and expects `npm run build:static &&
+npx cap sync ios` to have run first.
+
 After that the app is on the Home Screen like any other. To ship a new version, pull, run `npm run ios` again and
 press Run. With a paid account you can instead **Product → Archive** and upload to TestFlight so the iPad updates
 itself.
