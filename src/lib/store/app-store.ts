@@ -1,7 +1,6 @@
 "use client";
 import { create } from "zustand";
 import type { AssessmentResult, Assignment, BlockResult, BlockType, BlockWeights, Child, ChildSettings, InputMode, Parent, ScaleId, Session, SkillProfile } from "../types";
-import { BLOCK_ORDER } from "../types";
 import { repo } from "../db/repo";
 import { newId } from "../utils/id";
 import { dateKey, weekDays, weekKey } from "../utils/date";
@@ -11,6 +10,7 @@ import { XP_PER_BLOCK, XP_SESSION_BONUS, XP_ASSESSMENT_RETAKE, companionLevel } 
 import { currentScale, initialMapProgress, awardBadge, hasBadge, spendKeyAndAdvance } from "../engine/progression";
 import { DEFAULT_ROADMAP } from "../music/roadmap";
 import { starsFor } from "../engine/scoring";
+import { orderedBlocks } from "../engine/queue";
 import { configureSync, syncNow } from "../sync/engine";
 
 export interface SessionPlan {
@@ -20,14 +20,6 @@ export interface SessionPlan {
   minutes: number;
 }
 
-export interface Celebration {
-  id: string;
-  kind: "xp" | "badge" | "streak" | "freeze" | "key" | "levelup" | "unlock" | "session";
-  title: string;
-  detail?: string;
-  emoji?: string;
-}
-
 interface AppState {
   booted: boolean;
   parent: Parent | null;
@@ -35,7 +27,6 @@ interface AppState {
   activeChildId: string | null;
   activeSession: Session | null;
   plan: SessionPlan | null;
-  celebrations: Celebration[];
   inputMode: InputMode;
   parentUnlocked: boolean;
 
@@ -61,8 +52,6 @@ interface AppState {
 
   spendKey(): Promise<void>;
   grantFreezeToActive(): Promise<void>;
-  pushCelebration(c: Omit<Celebration, "id">): void;
-  dismissCelebration(id: string): void;
 }
 
 export function defaultSettings(): ChildSettings {
@@ -95,7 +84,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeChildId: null,
   activeSession: null,
   plan: null,
-  celebrations: [],
   inputMode: "timer",
   parentUnlocked: false,
 
@@ -220,7 +208,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (!hasBadge(next, "assessment-complete")) next = awardBadge(next, "assessment-complete");
       return next;
     });
-    if (retake) get().pushCelebration({ kind: "xp", title: `+${XP_ASSESSMENT_RETAKE} XP`, detail: "Skill profile updated", emoji: "📊" });
     return profile;
   },
 
@@ -260,7 +247,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   async recordBlock(result) {
     const { activeSession } = get();
     if (!activeSession) return;
-    const blocks = [...activeSession.blocks.filter((b) => b.type !== result.type), result];
+    const same = (b: BlockResult) => (result.slot !== undefined && b.slot !== undefined ? b.slot === result.slot : b.type === result.type);
+    const blocks = [...activeSession.blocks.filter((b) => !same(b)), result];
     const xp = result.completed ? XP_PER_BLOCK : 0;
     const stars = starsFor(result.midiScore);
     const session: Session = {
@@ -279,8 +267,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (result.midiScore?.badge) next = awardBadge(next, result.midiScore.badge, session.id);
         return next;
       });
-      get().pushCelebration({ kind: "xp", title: `+${XP_PER_BLOCK} XP`, detail: "Block complete", emoji: "⭐" });
-      if (result.midiScore?.badge) get().pushCelebration({ kind: "badge", title: "Badge earned!", detail: result.midiScore.badge, emoji: "🏅" });
     }
   },
 
@@ -289,22 +275,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!activeSession) return null;
     const child = get().children.find((c) => c.id === activeSession.childId);
     if (!child) return null;
-    const allDone = BLOCK_ORDER.every((b) => activeSession.blocks.some((r) => r.type === b && (r.completed || r.skipped)));
+    const order = orderedBlocks(child);
+    const settled = (i: number, t: BlockType) => activeSession.blocks.some((r) => (r.slot !== undefined ? r.slot === i : r.type === t) && (r.completed || r.skipped));
+    const allDone = order.every((t, i) => settled(i, t));
     const completedCount = activeSession.blocks.filter((b) => b.completed).length;
-    const completed = allDone && completedCount >= 4; // finishing counts if most blocks were done
+    const completed = allDone && completedCount >= Math.min(4, order.length); // finishing counts if most blocks were done
     const bonus = completed ? XP_SESSION_BONUS : 0;
     const session: Session = { ...activeSession, endedAt: new Date().toISOString(), completed, xpEarned: activeSession.xpEarned + bonus };
     await repo.putSession(session);
 
     const today = session.date;
-    const prevLevel = companionLevel(child.xp);
-    let earnedFreeze = false;
-    let earnedKey = false;
     const updated = await get().updateChild(child.id, (c) => {
       let next: Child = { ...c, xp: c.xp + bonus };
       if (completed) {
         const r = recordPractice(c.streak, today);
-        earnedFreeze = r.earnedFreeze;
         next.streak = r.streak;
         if (!hasBadge(next, "first-session")) next = awardBadge(next, "first-session", session.id);
         next.companion = { ...next.companion, level: companionLevel(next.xp) };
@@ -321,7 +305,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         const sessions = await repo.sessionsBetween(child.id, days[0], days[6]);
         const distinct = new Set(sessions.filter((s) => s.completed).map((s) => s.date));
         if (distinct.size >= updated.settings.practiceDaysPerWeek) {
-          earnedKey = true;
           await get().updateChild(child.id, (c) => {
             let next: Child = { ...c, keys: c.keys + 1, completedWeeks: [...c.completedWeeks, wk] };
             next = awardBadge(next, "week-complete", session.id);
@@ -332,14 +315,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const finalChild = get().children.find((c) => c.id === child.id) ?? updated;
-    // Celebrations
     if (completed) {
-      get().pushCelebration({ kind: "session", title: "Session complete!", detail: `+${XP_SESSION_BONUS} XP bonus`, emoji: "🎉" });
-      get().pushCelebration({ kind: "streak", title: `${finalChild.streak.current}-day streak`, emoji: "🔥" });
     }
-    if (earnedFreeze) get().pushCelebration({ kind: "freeze", title: "Streak freeze earned", detail: "Your companion can nap on a missed day.", emoji: "🧊" });
-    if (earnedKey) get().pushCelebration({ kind: "key", title: "You earned a Key!", detail: "Open the next region on the map.", emoji: "🗝️" });
-    if (companionLevel(finalChild.xp) > prevLevel) get().pushCelebration({ kind: "levelup", title: `${finalChild.companion.name} reached level ${companionLevel(finalChild.xp)}`, emoji: "✨" });
 
     set({ activeSession: null, plan: null });
     void syncNow();
@@ -359,11 +336,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { activeChildId, children } = get();
     const child = children.find((c) => c.id === activeChildId);
     if (!child || child.keys <= 0) return;
-    const { child: next, unlockedSongs, nextRegion } = spendKeyAndAdvance(child);
+    const { child: next } = spendKeyAndAdvance(child);
     await repo.putChild(next);
     set((s) => ({ children: s.children.map((c) => (c.id === next.id ? next : c)) }));
-    get().pushCelebration({ kind: "unlock", title: "Region complete!", detail: unlockedSongs.length ? `${unlockedSongs.length} new songs unlocked` : "New area opened", emoji: "🗺️" });
-    if (nextRegion) get().pushCelebration({ kind: "unlock", title: "New region unlocked", detail: nextRegion.replace("-", " "), emoji: "🌄" });
   },
 
   async grantFreezeToActive() {
@@ -372,12 +347,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().updateChild(activeChildId, (c) => ({ ...c, streak: grantFreeze(c.streak) }));
   },
 
-  pushCelebration(c) {
-    set((s) => ({ celebrations: [...s.celebrations, { ...c, id: newId("cel") }] }));
-  },
-  dismissCelebration(id) {
-    set((s) => ({ celebrations: s.celebrations.filter((c) => c.id !== id) }));
-  },
 }));
 
 /** Convenience selector for the active child. */

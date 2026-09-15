@@ -235,6 +235,8 @@ export interface MidiScore {
 
 export interface BlockResult {
   type: BlockType;
+  /** Position in the day's queue. Lets an own plan run the same block twice without the results colliding. */
+  slot?: number;
   plannedSec: number;
   durationSec: number;
   completed: boolean;

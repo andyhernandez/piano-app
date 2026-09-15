@@ -36,7 +36,7 @@ export function SessionRunner() {
 const CLOCK_IN_BLOCK: Partial<Record<BlockType, boolean>> = { reading: true };
 
 function firstUnfinished(order: BlockType[], session: Session): number {
-  const i = order.findIndex((t) => !session.blocks.some((b) => b.type === t && (b.completed || b.skipped)));
+  const i = order.findIndex((t, slot) => !session.blocks.some((b) => (b.slot !== undefined ? b.slot === slot : b.type === t) && (b.completed || b.skipped)));
   return i < 0 ? order.length - 1 : i;
 }
 
@@ -115,10 +115,10 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
 
   const complete = React.useCallback(async (partial: Omit<BlockResult, "type" | "plannedSec" | "durationSec">) => {
     setBusy(true);
-    await recordBlock({ type, plannedSec: seconds, durationSec: elapsed, inputMode: liveMode, ...partial });
+    await recordBlock({ type, slot: index, plannedSec: seconds, durationSec: elapsed, inputMode: liveMode, ...partial });
     setBusy(false);
     advance();
-  }, [recordBlock, type, seconds, elapsed, liveMode, advance]);
+  }, [recordBlock, type, index, seconds, elapsed, liveMode, advance]);
 
   const skip = React.useCallback(() => { void complete({ completed: false, skipped: true }); }, [complete]);
   const stopForToday = async () => {
@@ -130,7 +130,7 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
   const finishNow = async () => {
     onFinishing();
     setBusy(true);
-    await recordBlock({ type, plannedSec: seconds, durationSec: elapsed, inputMode: liveMode, completed: false, skipped: false });
+    await recordBlock({ type, slot: index, plannedSec: seconds, durationSec: elapsed, inputMode: liveMode, completed: false, skipped: false });
     await finish();
   };
 

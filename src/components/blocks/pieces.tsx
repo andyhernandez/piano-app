@@ -306,9 +306,9 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
               </div>
             </div>
             <SheetPanel padding={22} style={{ flex: 1, minHeight: 0 }}>
-              <div ref={sheetRef} style={{ width: "100%", maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
+              <div ref={sheetRef} style={{ width: "100%", maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 44 }}>
                 {view === "lead-sheet"
-                  ? rowsOfBars.map((row, r) => { const { bars: lb, melody } = leadRow(row); return <LeadSheet key={r} width={leadWidth} height={perRow === 8 ? 118 : 132} bars={lb} melody={melody} />; })
+                  ? rowsOfBars.map((row, r) => { const { bars: lb, melody } = leadRow(row); return <LeadSheet key={r} width={leadWidth} height={perRow === 8 ? 132 : 150} bars={lb} melody={melody} />; })
                   : <ChordChart bars={chartBars} perRow={4} cellHeight={bars.length > 12 ? 64 : 80} style={{ maxWidth: 900 }} />}
               </div>
             </SheetPanel>

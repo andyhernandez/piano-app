@@ -253,7 +253,7 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
   const currentLine = currentNote ? Math.floor(currentNote.bar / BARS_PER_LINE) : 0;
   const grand = ex.hands === "together" || ex.hands === "alternating";
   const lineGap = 18;
-  const lineH = grand ? 264 : 132;
+  const lineH = grand ? 264 : 176;
   const visible = measured ? lines.slice(currentLine, currentLine + (grand ? 2 : 3)) : lines;
   const regionFor = (firstBar: number): StaffRegion[] => (currentNote && currentNote.bar >= firstBar && currentNote.bar < firstBar + BARS_PER_LINE ? [{ bar: currentNote.bar - firstBar, beat: currentNote.beat, width: 48 }] : []);
 
@@ -284,7 +284,7 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
           <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)" }}>Nothing is listening, so the page doesn&apos;t move on its own — play it through twice at your own pace.</p>
           <SheetPanel padding={22} style={{ flex: 1, minHeight: 0 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxHeight: "100%", overflow: "auto" }}>
-              {lines.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={820} height={grand ? 280 : 150} />)}
+              {lines.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={820} height={grand ? 300 : 200} />)}
             </div>
           </SheetPanel>
           <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 22 }}>

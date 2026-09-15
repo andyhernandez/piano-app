@@ -90,7 +90,11 @@ export function TodayScreen() {
   const top = BLOCK_ORDER.reduce((a, b) => (plan.weights[b] > plan.weights[a] ? b : a), BLOCK_ORDER[0]);
   const flat = BLOCK_ORDER.every((b) => Math.abs(plan.weights[b] - plan.weights[top]) < 0.03);
   const inProgress = !!activeSession;
-  const copy = guidedCopy(next, keyName, inProgress);
+  const finishedToday = !inProgress && data.sessions.some((s) => s.date === today && s.endedAt !== null);
+  const minutesToday = data.sessions.filter((s) => s.date === today).reduce((a, s) => a + Math.round(s.durationSec / 60), 0);
+  const copy = finishedToday
+    ? { title: "Done for today.", lede: `${capitalize(words(minutesToday))} minute${minutesToday === 1 ? "" : "s"} in the record. Another session adds to it; nothing is lost by stopping here.` }
+    : guidedCopy(next, keyName, inProgress);
   const offerCheck = !child.skillProfile && skippedCheck === false;
 
   const begin = async () => {
@@ -138,7 +142,7 @@ export function TodayScreen() {
             <QueueEditor child={child} plan={plan} session={activeSession} />
           )}
           <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 16 }}>
-            <Button icon="play_arrow" onClick={() => void begin()} disabled={starting || (!next && !inProgress)}>{inProgress ? "Continue" : "Begin practice"}</Button>
+            <Button icon="play_arrow" onClick={() => void begin()} disabled={starting || (!next && !inProgress)}>{inProgress ? "Continue" : finishedToday ? "Practise again" : "Begin practice"}</Button>
             {offerCheck && (
               <>
                 <Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>Take the skill check</Button>
