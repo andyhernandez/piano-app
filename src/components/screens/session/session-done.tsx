@@ -120,7 +120,7 @@ export function SessionDone({ result }: { result: DoneResult }) {
             <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 620 }}>{lede}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
-            <StatTile label="TIME PLAYED" value={fmtClock(session.durationSec)} unit={`of ${session.plannedMinutes}`} />
+            <StatTile label="TIME PLAYED" value={minutes} unit={`of ${session.plannedMinutes} min`} />
             <StatTile label="READING LEVEL" value={readingLevel} unit={readingUp ? "up one" : readingHeld ? "held" : reading ? "played" : "—"} />
             <StatTile label="FASTEST CLEAN" value={cleanBpm ?? prevBest ?? "—"} unit={cleanBpm != null || prevBest != null ? "bpm" : undefined} delta={newBest && prevBest != null ? `+${cleanBpm! - prevBest}` : undefined} tone={newBest ? "amber" : "default"} />
             <StatTile label="AHEAD OF BEAT" value={aheadMs != null ? Math.abs(aheadMs) : "—"} unit={aheadMs != null ? (aheadMs < 0 ? "ms behind" : "ms") : undefined} tone={aheadMs != null && Math.abs(aheadMs) >= 25 ? "clay" : "default"} />
