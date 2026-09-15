@@ -129,6 +129,22 @@ export interface ChildSettings {
   /** Consecutive "No-Stop" sessions at current reading level. */
   noStopStreak: number;
   sightReadingFactoryLink: string | null;
+  /** Guided shows one next action; Own plan shows the whole editable queue and the numbers. */
+  mode: "guided" | "own";
+  /** Practice ends at the session length. Advisory, never a lock. */
+  hardStop: boolean;
+  /** Planned rest days, 0 = Monday … 6 = Sunday. */
+  restDays: number[];
+  /** Two bars of click before an exercise that measures timing. */
+  countIn: boolean;
+}
+
+/** What a linked teacher receives from this profile. */
+export interface TeacherShare {
+  log: boolean;
+  figures: boolean;
+  recordings: boolean;
+  skillChecks: boolean;
 }
 
 export interface Child {
@@ -155,6 +171,11 @@ export interface Child {
   completedWeeks: string[];
   /** Region ids for which the weekly bonus challenge has been claimed, keyed by week. */
   weeklyChallenges: Record<string, { regionId: string; tasks: Record<string, boolean>; claimed: boolean }>;
+  /** Age band chosen at first run; drives defaults such as the hard stop. */
+  ageBand?: "child" | "adult";
+  /** One line shown under the name in the household: "11 · two years of lessons". */
+  blurb?: string;
+  teacherShare?: TeacherShare;
 }
 
 export interface CompanionState {
@@ -212,6 +233,8 @@ export interface BlockResult {
   midiScore?: MidiScore;
   /** Blob key in the recordings table. */
   recordingId?: string;
+  /** What measured this block; can differ from the session's mode after a mid-session switch. */
+  inputMode?: InputMode;
   /** Free-form structured details (e.g. scale played, exercise seed, chords asked). */
   details?: Record<string, unknown>;
   notes?: string;
@@ -234,6 +257,8 @@ export interface Session {
   starsEarned: number;
   /** Teacher note shown at session start, if any. */
   teacherNote?: string;
+  /** Presentation the session ran in. */
+  mode?: "guided" | "own";
 }
 
 export interface Recording {
@@ -302,6 +327,8 @@ export interface Parent {
   childIds: string[];
   createdAt: string;
   weeklyDigest: boolean;
+  /** Which household actions sit behind the four-digit code. Practising never does. */
+  codeFor?: { settings: boolean; teacherLink: boolean; deleteRecording: boolean };
   /**
    * Sync configuration; null = local-only. `familyCode` is the secret that scopes this family's rows in the
    * cloud (sent as the x-kc-owner header). Enter the same code on another device to share data.

@@ -42,7 +42,7 @@ interface AppState {
   boot(): Promise<void>;
   refreshChildren(): Promise<void>;
   createParent(pin: string | null): Promise<Parent>;
-  createChild(input: { name: string; avatar: string; companion: Child["companion"] }): Promise<Child>;
+  createChild(input: { name: string; avatar?: string; companion?: Child["companion"]; ageBand?: Child["ageBand"]; blurb?: string; settings?: Partial<ChildSettings> }): Promise<Child>;
   setActiveChild(id: string | null): Promise<void>;
   updateChild(id: string, patch: Partial<Child> | ((c: Child) => Child)): Promise<Child | null>;
   updateSettings(id: string, patch: Partial<ChildSettings>): Promise<void>;
@@ -77,8 +77,14 @@ export function defaultSettings(): ChildSettings {
     theoryLevel: 1,
     noStopStreak: 0,
     sightReadingFactoryLink: null,
+    mode: "guided",
+    hardStop: true,
+    restDays: [2, 6],
+    countIn: true,
   };
 }
+
+export const DEFAULT_TEACHER_SHARE = { log: true, figures: true, recordings: true, skillChecks: false };
 
 export const useAppStore = create<AppState>((set, get) => ({
   booted: false,
@@ -95,15 +101,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     const parent = (await repo.firstParent()) ?? null;
     const children = parent ? await repo.listChildren(parent.id) : [];
     const activeChildId = (await repo.getKV<string>("activeChildId")) ?? children[0]?.id ?? null;
-    // Reconcile streaks with the calendar on boot.
+    // Reconcile streaks with the calendar on boot, and fill in fields older records lack.
     const today = dateKey();
     for (const c of children) {
+      let dirty = false;
       const reconciled = reconcile(c.streak, today);
-      if (reconciled !== c.streak && JSON.stringify(reconciled) !== JSON.stringify(c.streak)) {
-        c.streak = reconciled;
-        await repo.putChild(c);
-      }
+      if (JSON.stringify(reconciled) !== JSON.stringify(c.streak)) { c.streak = reconciled; dirty = true; }
+      const settings = { ...defaultSettings(), ...c.settings };
+      if (JSON.stringify(settings) !== JSON.stringify(c.settings)) { c.settings = settings; dirty = true; }
+      if (!c.teacherShare) { c.teacherShare = { ...DEFAULT_TEACHER_SHARE }; dirty = true; }
+      if (dirty) await repo.putChild(c);
     }
+    if (parent && !parent.codeFor) { parent.codeFor = { settings: true, teacherLink: true, deleteRecording: true }; await repo.putParent(parent); }
     configureSync(parent);
     set({ booted: true, parent, children, activeChildId });
     void syncNow();
@@ -122,15 +131,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     return parent;
   },
 
-  async createChild({ name, avatar, companion }) {
+  async createChild({ name, avatar, companion, ageBand, blurb, settings }) {
     let { parent } = get();
     if (!parent) parent = await get().createParent(null);
     const child: Child = {
       id: newId("kid"),
       parentId: parent.id,
       name,
-      avatar,
-      companion,
+      avatar: avatar ?? name.slice(0, 1).toUpperCase(),
+      companion: companion ?? { species: "note-sprite", name: "", level: 1, outfit: "default" },
+      ageBand,
+      blurb,
+      teacherShare: { ...DEFAULT_TEACHER_SHARE },
       skillProfile: null,
       xp: 0,
       stars: 0,
@@ -141,7 +153,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       roadmap: DEFAULT_ROADMAP,
       mapProgress: initialMapProgress(DEFAULT_ROADMAP),
       unlocks: { songs: [], outfits: ["default"], mapThemes: ["parchment"], grooves: ["pop"], keyboardSkins: ["classic"], badges: [] },
-      settings: defaultSettings(),
+      settings: { ...defaultSettings(), ...(settings ?? {}) },
       createdAt: new Date().toISOString(),
       completedWeeks: [],
       weeklyChallenges: {},
@@ -224,6 +236,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       xpEarned: 0,
       starsEarned: 0,
       teacherNote,
+      mode: child.settings.mode,
     };
     await repo.putSession(session);
     set({ activeSession: session, plan, inputMode });

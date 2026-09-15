@@ -1,13 +1,13 @@
 {
   "name": "KeyCadence",
   "short_name": "KeyCadence",
-  "description": "A gamified daily practice companion for young piano beginners.",
+  "description": "A practice tool for piano students and adult returners sharing one instrument.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "landscape",
-  "background_color": "#fbf7ef",
-  "theme_color": "#4f46e5",
+  "background_color": "#101326",
+  "theme_color": "#101326",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
     { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
