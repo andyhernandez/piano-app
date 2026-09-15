@@ -155,9 +155,10 @@ export function sessionsBySong(sessions: Session[]): Map<string, number> {
   return m;
 }
 
-/** "3 min", "1 h 04 m" for stat tiles: minutes under an hour stay in minutes. */
+/** Minutes for a stat tile: "41" under an hour, "1:04" from an hour up (the kit's "13:40"). */
 export function fmtMinutes(minutes: number): string {
-  return minutes < 60 ? `${Math.round(minutes)}` : fmtHours(minutes);
+  if (minutes < 60) return `${Math.round(minutes)}`;
+  return `${Math.floor(minutes / 60)}:${String(Math.round(minutes % 60)).padStart(2, "0")}`;
 }
 
 /** Whole weeks since an ISO date, at least 1. */

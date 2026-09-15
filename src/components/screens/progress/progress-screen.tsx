@@ -86,7 +86,7 @@ export function ProgressScreen() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0,1fr))", gap: 11 }}>
             <StatTile label="DAYS PRACTISED" value={String(week.played)} unit={`of ${week.target} this week`} />
-            <StatTile label="TIME THIS WEEK" value={fmtMinutes(week.minutes)} unit={week.minutes < 60 ? `of ${week.targetMinutes} min` : `of ${fmtMinutes(week.targetMinutes)}`} />
+            <StatTile label="TIME THIS WEEK" value={fmtMinutes(week.minutes)} unit={week.minutes < 60 ? `of ${week.targetMinutes} min` : `of ${fmtMinutes(week.targetMinutes)} h`} />
             <StatTile label="SCALE TEMPO" value={fastest != null ? String(fastest) : "—"} unit={fastest != null ? "bpm" : "no clean run yet"} delta={tempoDelta > 0 ? `+${tempoDelta}` : undefined} />
             <StatTile label="AHEAD OF BEAT" value={ahead != null ? String(ahead) : "—"} unit={ahead != null ? "ms" : "not measured yet"} tone={ahead != null && Math.abs(ahead) > 40 ? "amber" : "default"} />
             <StatTile label="WEEKS AT TARGET" value={String(weeks)} unit={weeks === 1 ? "so far" : "in a row"} tone={weeks > 0 ? "mint" : "default"} />

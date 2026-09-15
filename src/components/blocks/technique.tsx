@@ -309,10 +309,10 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
   const advice = runs.length === 0
     ? `Play the first run at ${bpm}; the log fills in as you go.`
     : evenBest && runs.length >= 2
-      ? `Run ${evenBest.i + 1} was the even one. Play run ${runIdx + 1} at the same tempo rather than faster.`
+      ? `Run ${evenBest.i + 1} was the even one. Keep run ${runIdx + 1} at that tempo.`
       : last?.report
-        ? `Run ${runIdx} was ${last.report}. ${last.report === "clean" ? `Try run ${runIdx + 1} four clicks faster.` : `Keep run ${runIdx + 1} at the same tempo.`}`
-        : `One run in. Play run ${runIdx + 1} at the same tempo rather than faster.`;
+        ? `Run ${runIdx} was ${last.report}. ${last.report === "clean" ? `Run ${runIdx + 1} four clicks faster.` : `Same tempo for run ${runIdx + 1}.`}`
+        : `One run in. Same tempo for run ${runIdx + 1}, not faster.`;
 
   const chartCopy = !measured
     ? "Nothing is listening — the chart needs a keyboard or the microphone."
@@ -352,7 +352,7 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
             <span style={{ position: "absolute", left: 12, top: 178, fontFamily: "var(--kc-font-mono)", fontSize: 10, letterSpacing: "0.07em", color: "var(--kc-paper-ink-dim)" }}>{upPage ? "UP" : "BACK"} · {hand === "LH" ? "LH" : "RH"}</span>
           </div>
         </SheetPanel>
-        <Keyboard from={kbFrom} to={kbTo} tones={tones} height={88} onNoteOn={onKeyOn} onNoteOff={onKeyOff} disabled={paused} />
+        <Keyboard from={kbFrom} to={kbTo} tones={tones} height={72} onNoteOn={onKeyOn} onNoteOff={onKeyOff} disabled={paused} />
         <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 14, paddingBottom: 22 }}>
           <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: 11, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
             <SectionLabel>HOW EVEN EACH FINGER WAS</SectionLabel>
