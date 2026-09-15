@@ -121,7 +121,7 @@ export function TodayScreen() {
               {guided ? copy.title : <>{capitalize(words(Math.round(totalSeconds / 60)))} minutes, in {keyName}</>}
             </h1>
             <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 520 }}>
-              {guided ? copy.lede : `${flat ? "Evenly weighted" : `Weighted toward ${DISCIPLINE[top].short.toLowerCase()}`}. Edit anything below — the shape is yours.`}
+              {guided ? copy.lede : `${flat ? "Evenly weighted" : `Weighted toward ${DISCIPLINE[top].title.toLowerCase()}`}. Edit anything below — the shape is yours.`}
             </p>
           </div>
           {guided ? (
@@ -137,18 +137,18 @@ export function TodayScreen() {
           ) : (
             <QueueEditor child={child} plan={plan} session={activeSession} />
           )}
-          <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 16 }}>
             <Button icon="play_arrow" onClick={() => void begin()} disabled={starting || (!next && !inProgress)}>{inProgress ? "Continue" : "Begin practice"}</Button>
             {offerCheck && (
               <>
                 <Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>Take the skill check</Button>
-                <button type="button" onClick={() => void notNow()} style={{ background: "transparent", border: "none", padding: 0, fontSize: 13, color: "var(--kc-ink-faint)", cursor: "pointer", fontFamily: "inherit" }}>Not now</button>
+                <button type="button" onClick={() => void notNow()} style={{ background: "transparent", border: "none", padding: 0, fontSize: 13, color: "var(--kc-ink-faint)", cursor: "pointer", fontFamily: "inherit", flex: "none" }}>Not now</button>
               </>
             )}
-            <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>
+            <span style={{ fontSize: 14, color: "var(--kc-ink-dim)", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {child.settings.hardStop ? `Stops at ${child.settings.sessionMinutes} minutes unless you keep going.` : "The timer keeps counting; nothing interrupts."}
             </span>
-            <button type="button" onClick={toggleMode} disabled={inProgress} style={{ marginLeft: "auto", background: "transparent", border: "none", padding: 0, fontSize: 13, color: "var(--kc-ink-faint)", cursor: inProgress ? "default" : "pointer", fontFamily: "inherit", opacity: inProgress ? 0.5 : 1 }}>
+            <button type="button" onClick={toggleMode} disabled={inProgress} style={{ flex: "none", background: "transparent", border: "none", padding: 0, fontSize: 13, color: "var(--kc-ink-faint)", cursor: inProgress ? "default" : "pointer", fontFamily: "inherit", opacity: inProgress ? 0.5 : 1 }}>
               {guided ? "Switch to own plan" : "Switch to guided"}
             </button>
           </div>

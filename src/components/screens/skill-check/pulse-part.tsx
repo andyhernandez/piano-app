@@ -157,10 +157,10 @@ export function PulsePart({ paused, onDone }: PartProps<PulseResult>) {
   return (
     <div style={{ flex: 1, minHeight: 0, padding: "34px 38px", display: "flex", flexDirection: "column", gap: 24 }}>
       <Headline size={34} title="Tap with the click." lede="Keep the beat with whatever is under your hand: a key, the pad below, or the space bar. Early and late both count as drift." />
-      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 300px", gap: 18 }}>
+      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 300px", gap: 18 }}>
         <div style={PANEL}>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <IconButton icon={phase === "running" ? "graphic_eq" : "play_arrow"} size={52} label={isClick ? "Start the click" : "Start the count-in"} disabled={paused || phase === "running"} onClick={() => void start()} style={phase === "running" ? { borderColor: "var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
+            <IconButton icon={phase === "running" ? "graphic_eq" : "play_arrow"} size={52} label={isClick ? "Start the click" : "Start the count-in"} disabled={paused || phase === "running"} onClick={() => void start()} style={phase === "running" ? { border: "1px solid var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 17, fontWeight: 600 }}>{title}</div>
               <div style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>{sub}</div>
@@ -176,7 +176,7 @@ export function PulsePart({ paused, onDone }: PartProps<PulseResult>) {
             </div>
           ) : (
             <SheetPanel padding={14} style={{ flex: "none", height: 150 }}>
-              <Staff notes={staff!.notes} rests={staff!.rests} systems={[{ clef: "none", top: 40, timeSignature: [4, 4], timeLeft: 20 }]} layout={{ bars: staff!.bars, beatsPerBar: 4, left: 70, right: 30 }} regions={pos != null && tapping ? [{ bar: Math.floor(pos / 4), beat: pos % 4, width: 40 }] : []} width={980} height={120} lineGap={18} />
+              <Staff notes={staff!.notes} rests={staff!.rests} systems={[{ clef: "none", top: 40, timeSignature: [4, 4], timeLeft: 20 }]} layout={{ bars: staff!.bars, beatsPerBar: 4, left: 70, right: 30 }} regions={pos != null && tapping ? [{ bar: Math.floor(pos / 4), beat: pos % 4, width: 40 }] : []} width={700} height={120} lineGap={18} />
             </SheetPanel>
           )}
           <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center" }}>

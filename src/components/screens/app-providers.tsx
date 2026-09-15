@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { useAppStore } from "@/lib/store/app-store";
+import { getInput } from "@/lib/input/manager";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const boot = useAppStore((s) => s.boot);
@@ -8,7 +9,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   React.useEffect(() => { void boot(); }, [boot]);
   React.useEffect(() => {
     // Dev handle for scripted screenshots: seed state through the store's own actions.
-    if (process.env.NODE_ENV !== "production") (window as unknown as { __kc?: typeof useAppStore }).__kc = useAppStore;
+    if (process.env.NODE_ENV !== "production") Object.assign(window, { __kc: useAppStore, __kcInput: getInput() });
   }, []);
   if (!booted) {
     return (

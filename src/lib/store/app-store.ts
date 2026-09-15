@@ -116,7 +116,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     if (parent && !parent.codeFor) { parent.codeFor = { settings: true, teacherLink: true, deleteRecording: true }; await repo.putParent(parent); }
     configureSync(parent);
-    set({ booted: true, parent, children, activeChildId });
+    // A session started today and never ended (the tab closed mid-block) resumes at its next unfinished block.
+    let activeSession: Session | null = null;
+    let plan: SessionPlan | null = null;
+    if (activeChildId) {
+      const open = (await repo.sessionsOn(activeChildId, today)).find((s) => !s.endedAt) ?? null;
+      if (open) {
+        activeSession = open;
+        plan = { blockSeconds: blockDurations(open.weights, open.plannedMinutes), weights: open.weights, scale: open.scale, minutes: open.plannedMinutes };
+      }
+    }
+    set({ booted: true, parent, children, activeChildId, activeSession, plan, inputMode: activeSession?.inputMode ?? "timer" });
     void syncNow();
   },
 

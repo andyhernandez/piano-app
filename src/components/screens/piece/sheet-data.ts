@@ -20,8 +20,8 @@ export function resolveChart(song: Song, scale: Scale): ResolvedBar[] {
   }));
 }
 
-export function chartBars(bars: ResolvedBar[], current: number | null, playedUpTo: number): ChordBar[] {
-  return bars.map((b, i) => ({ chord: b.chords.map((c) => c.symbol).join("  "), current: i === current, played: i < playedUpTo }));
+export function chartBars(bars: ResolvedBar[], current: number | null): ChordBar[] {
+  return bars.map((b, i) => ({ chord: b.chords.map((c) => c.symbol).join("  "), current: i === current, played: current != null && i < current ? true : undefined }));
 }
 
 export function leadBars(bars: ResolvedBar[], upTo: number): LeadSheetBar[] {
@@ -65,7 +65,12 @@ export function melodyFor(bars: ResolvedBar[], level: Level, scale: Scale, first
     const abs = firstBar + i;
     const state = playhead == null ? undefined : abs < playhead ? "played" : abs === playhead ? "current" : "upcoming";
     for (const s of barStrokes(bar, level)) {
-      for (const m of s.midis) out.push({ bar: i, beat: s.beat, step: midiToStep(m, "treble", flats), value: valueFor(s.beats), state });
+      // Keep each chord inside the staff: shift by octaves until its root sits between the second space and the first ledger.
+      const root = Math.min(...s.midis);
+      let shift = 0;
+      while (midiToStep(root + shift, "treble", flats) > 9) shift += 12;
+      while (midiToStep(root + shift, "treble", flats) < 3) shift -= 12;
+      for (const m of s.midis) out.push({ bar: i, beat: s.beat, step: midiToStep(m + shift, "treble", flats), value: valueFor(s.beats), state });
     }
   });
   return out;

@@ -1,12 +1,19 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Screen } from "@/components/ds";
+import { TeacherScreen } from "@/components/screens/teacher/teacher-screen";
 
-/** STUB: replaced by a screen implementation. */
+function TeacherWithCode() {
+  const params = useSearchParams();
+  const code = params.get("code");
+  return <TeacherScreen code={code ? code.toUpperCase() : null} />;
+}
+
 export default function TeacherPage() {
   return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Teacher · coming next.</div>
-    </Screen>
+    <Suspense fallback={<Screen>{null}</Screen>}>
+      <TeacherWithCode />
+    </Suspense>
   );
 }

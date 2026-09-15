@@ -146,7 +146,7 @@ export function TeacherLinkScreen() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 19, fontWeight: 600 }}>{teacher.name}</div>
                 <div style={{ fontSize: 14, color: "var(--kc-ink-muted)" }}>
-                  Linked since {dayMonth(teacher.createdAt)} · invite code <span style={{ fontFamily: "var(--kc-font-mono)" }}>{teacher.inviteCode}</span>{data.assignment?.note ? ` · last note ${stamp(data.assignment.updatedAt).toLowerCase()}` : " · no note yet"}
+                  Linked since {dayMonth(teacher.createdAt)} · invite code <span style={{ fontFamily: "var(--kc-font-mono)" }}>{teacher.inviteCode}</span>{data.assignment?.note ? ` · last note ${stamp(data.assignment.updatedAt).charAt(0)}${stamp(data.assignment.updatedAt).slice(1).toLowerCase()}` : " · no note yet"}
                 </div>
               </div>
               {confirmUnlink ? (

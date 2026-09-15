@@ -155,7 +155,7 @@ export function ReadingPart({ scale: scaleId, paused, onDone }: PartProps<Readin
   const barOf = pos != null ? Math.floor(pos / 4) : null;
   const status = over
     ? held === 0 ? "Level 1 is where it stopped." : held === TOTAL ? `Level ${held} held. That's the top of the ladder.` : `Level ${held} held. Level ${held + 1} is where it stopped.`
-    : phase === "result" ? `Level ${level} held.` : phase === "ready" ? (level === 1 ? "Level 1 first. Hold it and the next is a little harder." : `Level ${held} held. Level ${level} next.`) : phase === "countin" ? `Count-in — ${count}.` : `Level ${level} — playing.`;
+    : phase === "result" ? `Level ${level} held.` : phase === "ready" ? (level === 1 ? "Level 1 first. Each one held is a little harder." : `Level ${held} held. Level ${level} next.`) : phase === "countin" ? `Count-in — ${count}.` : `Level ${level} — playing.`;
 
   return (
     <>

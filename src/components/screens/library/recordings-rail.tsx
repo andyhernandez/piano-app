@@ -95,7 +95,7 @@ export function RecordingsRail({ recordings, onDeleted }: { recordings: Recordin
         return (
           <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-              <IconButton icon={isPlaying ? "stop" : "play_arrow"} label={`${isPlaying ? "Stop" : "Play"} ${title}`} onClick={() => void play(r)} style={isPlaying ? { borderColor: "var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
+              <IconButton icon={isPlaying ? "stop" : "play_arrow"} label={`${isPlaying ? "Stop" : "Play"} ${title}`} onClick={() => void play(r)} style={isPlaying ? { border: "1px solid var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
               <div style={{ flex: "none", width: 132, cursor: "pointer" }} onClick={() => setSelected((s) => (s === r.id ? null : r.id))} role="button" aria-expanded={selected === r.id}>
                 <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
                 <div style={{ fontFamily: "var(--kc-font-mono)", fontSize: 12, color: "var(--kc-ink-dim)" }}>{meta}</div>
@@ -139,7 +139,7 @@ function DeleteRow({ recording, title, onDeleted }: { recording: Recording; titl
           {gated && (
             <TextField value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 4)); setWrong(false); }} inputMode="numeric" placeholder="Household code" aria-label="Household code" autoFocus style={{ width: 132, fontFamily: "var(--kc-font-mono)", letterSpacing: "0.2em", height: 32 }} />
           )}
-          <Button variant="secondary" size="pill" onClick={remove} disabled={gated && code.length < 4} style={{ borderColor: "var(--kc-clay)", color: "var(--kc-clay)" }}>Delete {title}</Button>
+          <Button variant="secondary" size="pill" onClick={remove} disabled={gated && code.length < 4} style={{ border: "1px solid var(--kc-clay)", color: "var(--kc-clay)" }}>Delete {title}</Button>
           <Button variant="quiet" size="pill" onClick={() => { setConfirm(false); setCode(""); setWrong(false); }}>Keep</Button>
           {wrong && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--kc-clay)" }}><Icon name="error" size={16} />Not the code.</span>}
         </div>

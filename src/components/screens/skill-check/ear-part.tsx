@@ -188,15 +188,15 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
   return (
     <div style={{ flex: 1, minHeight: 0, padding: "34px 38px", display: "flex", flexDirection: "column", gap: 24 }}>
       <Headline size={34} title="Listen, then play it back." lede="Nothing is written down for this one. Play it as many times as you like — the check is whether you find it, not how fast." />
-      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 300px", gap: 18 }}>
+      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 300px", gap: 18 }}>
         <div style={PANEL}>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <IconButton icon={phase === "playing" ? "volume_up" : "play_arrow"} size={52} label="Play the phrase" onClick={() => void play()} style={phase === "playing" ? { borderColor: "var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
+            <IconButton icon={phase === "playing" ? "volume_up" : "play_arrow"} size={52} label="Play the phrase" onClick={() => void play()} style={phase === "playing" ? { border: "1px solid var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 17, fontWeight: 600 }}>Phrase {index + 1} of {phrases.length}</div>
               <div style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>{capitalize(numberWord(n))} notes, {shape(phrase, pool)}, in {key}{heard ? ` · played ${heard === 1 ? "once" : heard === 2 ? "twice" : `${heard} times`}` : ""}</div>
             </div>
-            <Pill tone={tries && !done ? "amber" : "neutral"}>{heard ? `Heard ${heard}×` : "Not yet heard"}{tries && !done ? ` · try ${Math.min(MAX_TRIES, tries + 1)}` : ""}</Pill>
+            <Pill>{heard ? `Heard ${heard}×` : "Not yet heard"}{tries && !done ? ` · try ${Math.min(MAX_TRIES, tries + 1)}` : ""}</Pill>
           </div>
           <Waveform bars={phraseBars(phrase, pool)} height={40} tone={heard ? "mint" : "resting"} />
           <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center" }}>

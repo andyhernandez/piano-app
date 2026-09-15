@@ -1,12 +1,12 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { Suspense } from "react";
+import { Screen } from "@/components/ds";
+import { PieceScreen } from "@/components/screens/piece/piece-screen";
 
-/** STUB: replaced by a screen implementation. */
 export default function PiecePage() {
   return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>Piece · coming next.</div>
-    </Screen>
+    <Suspense fallback={<Screen>{null}</Screen>}>
+      <PieceScreen />
+    </Suspense>
   );
 }

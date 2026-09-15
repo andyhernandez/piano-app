@@ -336,7 +336,7 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
             : <Button variant="quiet" size="control" icon="stop" onClick={endRun}>End run</Button>}
         </div>
         <SheetPanel padding={18} style={{ flex: "none", height: 252 }}>
-          <div style={{ position: "relative", width: STAFF_W, height: 190 }}>
+          <div style={{ position: "relative", width: STAFF_W, height: 200 }}>
             <Staff
               systems={[{ clef, top: 46, keySignature: keySignatureFor(scale, clef), timeSignature: "common", timeLeft: 132 }]}
               layout={LAYOUT}
@@ -347,9 +347,9 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
               height={170}
             />
             {fingerLabels.map((l, i) => (
-              <span key={i} style={{ position: "absolute", left: l.x, top: 160, transform: "translateX(-50%)", fontFamily: "var(--kc-font-mono)", fontSize: 11, color: states.get(pageStart + i) === "missed" ? "var(--kc-clay)" : "var(--kc-paper-ink-dim)" }}>{l.f}</span>
+              <span key={i} style={{ position: "absolute", left: l.x, top: 178, transform: "translateX(-50%)", fontFamily: "var(--kc-font-mono)", fontSize: 11, color: states.get(pageStart + i) === "missed" ? "var(--kc-clay)" : "var(--kc-paper-ink-dim)" }}>{l.f}</span>
             ))}
-            <span style={{ position: "absolute", left: 12, top: 160, fontFamily: "var(--kc-font-mono)", fontSize: 10, letterSpacing: "0.07em", color: "var(--kc-paper-ink-dim)" }}>{upPage ? "UP" : "BACK"} · {hand === "LH" ? "LH" : "RH"}</span>
+            <span style={{ position: "absolute", left: 12, top: 178, fontFamily: "var(--kc-font-mono)", fontSize: 10, letterSpacing: "0.07em", color: "var(--kc-paper-ink-dim)" }}>{upPage ? "UP" : "BACK"} · {hand === "LH" ? "LH" : "RH"}</span>
           </div>
         </SheetPanel>
         <Keyboard from={kbFrom} to={kbTo} tones={tones} height={88} onNoteOn={onKeyOn} onNoteOff={onKeyOff} disabled={paused} />

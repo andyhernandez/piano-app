@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Screen, Panel, PieceRow, SectionLabel, Button, Choice } from "@/components/ds";
+import { Screen, Panel, PieceRow, SectionLabel, IconButton, Choice } from "@/components/ds";
 import { AppHeader } from "@/components/screens/today/app-header";
 import { useActiveChild } from "@/lib/store/app-store";
 import { repo } from "@/lib/db/repo";
@@ -66,13 +66,13 @@ export function LibraryScreen() {
       <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 340px" }}>
         <div style={{ padding: "32px 36px", display: "flex", flexDirection: "column", gap: 18, minHeight: 0 }}>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <h1 style={{ margin: 0, fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em" }}>Library</h1>
               <p style={{ margin: "8px 0 0", fontSize: 15, color: "var(--kc-ink-muted)", maxWidth: 470 }}>Nothing is locked. Above your level, you get the lead sheet instead of the full score.</p>
             </div>
             <div style={{ marginLeft: "auto", flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
               <Choice<Filter> options={FILTERS} value={filter} onChange={setFilter} />
-              <Button variant="quiet" size="control" icon="add" onClick={() => setAdding((a) => !a)} style={adding ? { color: "var(--kc-ink)" } : undefined}>Add a piece</Button>
+              <IconButton icon="add" shape="square" size={40} label="Add a piece" onClick={() => setAdding((a) => !a)} style={adding ? { border: "1px solid var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, minHeight: 0, overflowY: "auto", paddingRight: 2 }}>
@@ -98,7 +98,7 @@ export function LibraryScreen() {
                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.4, color: "var(--kc-ink-dim)" }}>{next.why}</p>
               </>
             ) : (
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.4, color: "var(--kc-ink-dim)" }}>Nothing yet. Add a piece, or take what this week's key suggests.</p>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.4, color: "var(--kc-ink-dim)" }}>{"Nothing yet. Add a piece, or take what this week's key suggests."}</p>
             )}
           </Panel>
         </div>
