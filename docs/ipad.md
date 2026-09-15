@@ -52,16 +52,19 @@ itself.
 |---------------------------|--------------------------|------------------------|
 | Timer only                | yes                      | yes                    |
 | Microphone (pitch, onset) | yes, after permission    | yes, after permission  |
-| MIDI keyboard over USB    | no (iOS Safari has no Web MIDI) | not yet: needs a small CoreMIDI plugin |
+| MIDI keyboard, USB        | no (iOS Safari has no Web MIDI) | yes, through CoreMIDI  |
+| MIDI keyboard, Bluetooth  | no                       | yes, pair once from Settings or setup |
 
-The MIDI gap is the same in both: iOS WebKit does not implement Web MIDI. The input layer is built behind an interface
-(`src/lib/input/`), so a native CoreMIDI bridge can be added to the Capacitor app without touching the blocks. Until
-then the microphone is the measured path on an iPad; a USB or Bluetooth keyboard still plays through the piano, it
-just is not heard by the app.
+iOS WebKit does not implement Web MIDI, so the website cannot hear a keyboard. The native app carries its own bridge:
+`ios/App/App/MidiPlugin.swift` opens CoreMIDI, connects every source (USB class-compliant keyboards through a USB-C or
+Lightning adapter, Bluetooth MIDI, network sessions) and forwards note events to the page, where
+`src/lib/input/native-midi.ts` presents them as the same MIDI source the blocks already use. Bluetooth keyboards pair
+once through Apple's own sheet (the "Pair over Bluetooth" button on the setup screen, or "Pair" in Settings → Input).
 
 ### Files
 
 - `capacitor.config.ts` — app id `com.andyhernandez.keycadence`, name, web directory.
 - `ios/App/App/Info.plist` — microphone usage text, orientations.
+- `ios/App/App/MidiPlugin.swift`, `KeyCadenceViewController.swift` — the CoreMIDI bridge and where it is registered.
 - `ios/App/App/Assets.xcassets` — icon and splash generated from `public/icon.svg`.
 - `npm run build:static` — the export on its own; `npm run ios:add` recreates the iOS project from scratch.

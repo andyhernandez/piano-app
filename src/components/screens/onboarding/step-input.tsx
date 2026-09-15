@@ -3,7 +3,7 @@ import * as React from "react";
 import { Button, Headline, Icon, Metric, Pill, SectionLabel } from "@/components/ds";
 import { getInput } from "@/lib/input/manager";
 import { micPermissionState } from "@/lib/input/mic";
-import { probeMidi } from "@/lib/input/midi";
+import { nativeMidiAvailable, pairBluetoothKeyboard, probeAnyMidi } from "@/lib/input/native-midi";
 import { midiToName } from "@/lib/music/notes";
 import type { InputMode } from "@/lib/types";
 
@@ -28,7 +28,7 @@ export function StepInput({ choice, onChoice, onContinue }: { choice: InputMode;
   React.useEffect(() => {
     let cancelled = false;
     const input = getInput();
-    void probeMidi().then(async (present) => {
+    void probeAnyMidi().then(async (present) => {
       if (cancelled) return;
       if (present) await input.use("midi", null);
       if (cancelled) return;
@@ -114,6 +114,7 @@ export function StepInput({ choice, onChoice, onContinue }: { choice: InputMode;
             <Metric label="Notes heard" value={heard} />
             <Metric label="Last note" value={lastNote ?? "—"} />
           </div>
+          {nativeMidiAvailable() && <Button variant="secondary" size="control" icon="bluetooth" onClick={() => void pairBluetoothKeyboard().then(retry)}>Pair over Bluetooth</Button>}
           <Button variant="secondary" size="control" disabled={probe === "probing"} onClick={retry}>Detect again</Button>
         </div>
       )}

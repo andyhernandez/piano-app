@@ -2,7 +2,8 @@
 import type { InputMode, NoteEvent, OnsetEvent } from "../types";
 import type { InputSource } from "./source";
 import { Emitter } from "./source";
-import { MidiInputSource, probeMidi } from "./midi";
+import { MidiInputSource } from "./midi";
+import { NativeMidiInputSource, nativeMidiAvailable, probeAnyMidi } from "./native-midi";
 import { MicInputSource, type MicCalibration, micPermissionState } from "./mic";
 import { TapInputSource } from "./tap";
 
@@ -33,7 +34,7 @@ class InputManager {
       await this.use(preference, calibration);
       return this.mode;
     }
-    if (await probeMidi()) {
+    if (await probeAnyMidi()) {
       await this.use("midi", calibration);
       return this.mode;
     }
@@ -49,7 +50,7 @@ class InputManager {
     this.teardownSource();
     try {
       if (mode === "midi") {
-        const s = new MidiInputSource();
+        const s: InputSource = nativeMidiAvailable() ? new NativeMidiInputSource() : new MidiInputSource();
         await s.start();
         if (!s.connected) { s.stop(); throw new Error("no device"); }
         this.attach(s);

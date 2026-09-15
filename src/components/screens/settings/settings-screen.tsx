@@ -12,6 +12,7 @@ import { AppHeader } from "../today/app-header";
 import { CodePrompt, useCodeLocked } from "../household/code-gate";
 import { Stepper } from "./stepper";
 import { MicCalibrationPanel } from "./mic-calibration";
+import { nativeMidiAvailable, pairBluetoothKeyboard } from "@/lib/input/native-midi";
 import { SyncPanel } from "./sync-panel";
 
 type Pref = InputMode | "auto";
@@ -154,6 +155,11 @@ export function SettingsScreen() {
                   <Button size="control" variant="secondary" onClick={() => setCalibrating((c) => !c)}>{s.micCalibration ? "Measure again" : "Calibrate"}</Button>
                 </Row>
                 {calibrating && <div style={{ paddingTop: 16 }}><MicCalibrationPanel childId={child.id} onClose={() => setCalibrating(false)} /></div>}
+                {nativeMidiAvailable() && (
+                  <Row title="Bluetooth keyboard" detail="A USB keyboard is heard as soon as it is plugged in. A Bluetooth one pairs once through Apple's sheet." last>
+                    <Button size="control" variant="secondary" icon="bluetooth" onClick={() => void pairBluetoothKeyboard()}>Pair</Button>
+                  </Row>
+                )}
               </div>
             </Panel>
 
