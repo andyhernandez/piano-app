@@ -1,0 +1,10 @@
+body {
+  margin: 0;
+  background: var(--kc-canvas);
+  font-family: var(--kc-font-sans);
+  color: var(--kc-ink);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--kc-mint); text-decoration: none; border-bottom: 1px solid rgba(90, 209, 192, 0.4); }
+a:hover { color: #8fe4d6; border-bottom-color: #8fe4d6; }
+* { box-sizing: border-box; }

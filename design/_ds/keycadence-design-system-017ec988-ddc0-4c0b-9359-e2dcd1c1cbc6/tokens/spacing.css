@@ -1,0 +1,26 @@
+:root {
+  /* One scale, six steps, nothing between them. Applied with gap, never
+     margin, so groups survive reordering and deletion. */
+  --kc-space-1:  6px;   /* cells in a strip; icon to label */
+  --kc-space-2: 10px;   /* cards in a grid; chips in a row */
+  --kc-space-3: 14px;   /* badge tile to its text; label to control */
+  --kc-space-4: 22px;   /* panel padding; rows within a panel */
+  --kc-space-5: 32px;   /* between sections of a screen */
+  --kc-space-6: 38px;   /* screen edge padding */
+
+  /* Panels pad asymmetrically — text reads wider than it is tall. */
+  --kc-pad-card:   16px 18px;
+  --kc-pad-panel:  20px 22px;
+  --kc-pad-roomy:  24px 26px;
+  --kc-pad-screen: 36px 38px;
+
+  /* Control heights. 44px is the floor for anything touchable. */
+  --kc-h-primary:   48px;
+  --kc-h-touch:     44px;
+  --kc-h-control:   40px;
+  --kc-h-icon:      34px;
+  --kc-h-pill:      32px;
+  --kc-h-toggle:    26px;
+  --kc-h-header:    72px;
+  --kc-tile:        54px;  /* format badge */
+}

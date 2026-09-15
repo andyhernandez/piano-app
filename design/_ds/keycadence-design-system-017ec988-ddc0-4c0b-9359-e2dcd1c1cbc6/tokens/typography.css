@@ -1,0 +1,57 @@
+:root {
+  /* Two systems. Instrument Sans carries language; JetBrains Mono carries
+     anything that can be compared to another number. Noto Music is notation
+     and is never substituted. */
+  --kc-font-sans:  "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --kc-font-mono:  "JetBrains Mono", ui-monospace, monospace;
+  --kc-font-music: "Noto Music", serif;
+  --kc-font-icon:  "Material Symbols Rounded";
+  --kc-font-dynamics: Georgia, serif; /* dynamics only — see readme */
+
+  /* Sans scale */
+  --kc-text-display:   42px;  /* screen headline */
+  --kc-text-section:   26px;  /* section heading */
+  --kc-text-screen:    19px;  /* screen title in a header bar */
+  --kc-text-row:       17px;  /* row / card title */
+  --kc-text-base:      15px;  /* body, descriptions */
+  --kc-text-small:     13px;  /* secondary, captions */
+  --kc-text-xsmall:    12px;  /* dense labels inside cards */
+
+  /* Weights — only two are used */
+  --kc-weight-regular: 400;
+  --kc-weight-semibold: 600;
+  --kc-weight-bold:    700;  /* mint buttons only */
+
+  /* Tracking — negative at display sizes, positive on mono labels */
+  --kc-track-display: -0.03em;
+  --kc-track-section: -0.02em;
+  --kc-track-title:   -0.01em;
+  --kc-track-label:    0.12em;
+  --kc-track-meta:     0.07em;
+
+  /* Leading */
+  --kc-leading-display: 1.02;
+  --kc-leading-title:   1.05;
+  --kc-leading-tight:   1.3;   /* stacked labels */
+  --kc-leading-body:    1.45;
+  --kc-leading-lede:    1.55;
+
+  /* Mono scale */
+  --kc-mono-figure:  32px;  /* timers, hero figures */
+  --kc-mono-metric:  20px;  /* tempo, drift, minutes */
+  --kc-mono-inline:  15px;  /* a metric inside a row */
+  --kc-mono-label:   12px;  /* SECTION LABEL, .12em */
+  --kc-mono-caption: 11px;  /* a label inside a card, where 12 crowds */
+  --kc-mono-meta:    10px;  /* supporting meta, .07em */
+  --kc-mono-micro:    9px;  /* codepoints */
+
+  /* Notation: one size on a staff. See readme for the UI exceptions. */
+  --kc-music-specimen: 28px;
+  --kc-music-badge:    21px;  /* treble in a 54px tile */
+  --kc-music-badge-bass: 24px; /* +3px — the system's only per-glyph fix */
+  --kc-music-pair:     14px;
+  --kc-music-cell:     17px;
+
+  /* Measure */
+  --kc-measure: 620px;
+}

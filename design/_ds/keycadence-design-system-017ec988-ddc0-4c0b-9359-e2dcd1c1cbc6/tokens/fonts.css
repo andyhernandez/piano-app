@@ -1,0 +1,12 @@
+/* KeyCadence webfonts.
+   All four families are served from Google Fonts. No binaries are vendored into
+   this project, so there are no local @font-face rules to declare — consumers
+   get the faces through these @import statements.
+
+   Instrument Sans        language
+   JetBrains Mono         anything measured
+   Noto Music             musical notation (never redrawn)
+   Material Symbols Rounded  chrome icons, weight 300, unfilled
+*/
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Music&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,300,0,0&display=block");

@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/keycadence-design-system-017ec988-ddc0-4c0b-9359-e2dcd1c1cbc6/styles.css">
+<script src="_ds/keycadence-design-system-017ec988-ddc0-4c0b-9359-e2dcd1c1cbc6/_ds_bundle.js"></script>
+<style>
+  body { margin:0; background:#0c0f20; font-family:var(--kc-font-sans); color:var(--kc-ink); }
+  a { color:var(--kc-mint); text-decoration:none; border-bottom:1px solid rgba(90,209,192,.4); }
+  a:hover { color:#8fe4d6; border-bottom-color:#8fe4d6; }
+</style>
+</helmet>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:56px">
+
+<div style="display:flex;align-items:flex-start;gap:22px;max-width:1194px">
+<span style="flex:none;background:var(--kc-mint);color:var(--kc-mint-ink);font-family:var(--kc-font-mono);font-size:13px;font-weight:600;letter-spacing:.1em;padding:7px 13px;border-radius:4px">15</span>
+<div style="display:flex;flex-direction:column;gap:10px">
+<h1 style="margin:0;font-size:42px;font-weight:600;letter-spacing:-0.03em;line-height:1.05">Every screen, in journey order</h1>
+<p style="margin:0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">The five journeys the app has but the kit didn't: first run, the skill check, the two session blocks nobody had drawn, the household and teacher views, and what the session looks like when there's no MIDI. Built on the bound design system — every value is a token.</p>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="font-family:var(--kc-font-mono);font-size:12px;letter-spacing:.12em;color:var(--kc-ink-dim)">A · FIRST RUN, ONCE</span>
+<span style="flex:1;height:1px;background:var(--kc-border)"></span>
+<span style="font-size:14px;color:var(--kc-ink-faint)">Four steps. The mode branch is the only one, and it is reversible.</span>
+</div>
+
+<div style="display:flex;gap:22px;flex-wrap:wrap;width:max-content">
+
+<div data-screen-label="A1 Who is playing" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,14px">SETTING UP · STEP 1 OF 4</x-import>
+<div style="margin-left:auto;width:200px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SegmentBar" total="{{ n4 }}" filled="{{ n0 }}" current="{{ n0 }}" height="{{ n6 }}" radius="{{ n3 }}" hint-size="200px,6px"></x-import>
+</div>
+</div>
+<div style="flex:1;min-height:0;padding:38px;display:flex;flex-direction:column;gap:32px">
+<div>
+<h1 style="margin:0;font-size:42px;font-weight:600;letter-spacing:-0.03em;line-height:1.05">Who's playing?</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">One profile per player. Everyone gets their own record, their own key and their own weekly target — the keyboard is the only thing you share.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+<div style="background:var(--kc-mint-wash);border:1.5px solid var(--kc-mint);border-radius:11px;padding:24px 26px;height:196px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:22px;font-weight:600">Maya</div>
+<div style="font-size:15px;color:var(--kc-ink-muted);line-height:1.4">11 · two years of lessons · Ms. Rivera on Mondays</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="mint" icon="check" hint-size="auto,32px">THIS PROFILE</x-import>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;height:196px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:22px;font-weight:600">Andy</div>
+<div style="font-size:15px;color:var(--kc-ink-muted);line-height:1.4">Adult · played as a teenager, starting again</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="120px,40px">Switch to Andy</x-import>
+</div>
+<div style="border:1px dashed var(--kc-border-dashed);border-radius:11px;padding:24px 26px;height:196px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px">
+<span style="font-family:var(--kc-font-icon);font-size:34px;color:var(--kc-ink-faint)">person_add</span>
+<div style="font-size:17px;font-weight:600;color:var(--kc-ink-muted)">Add someone</div>
+<div style="font-size:14px;color:var(--kc-ink-faint);text-align:center;line-height:1.4">Takes about a minute</div>
+</div>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;align-items:center;gap:22px">
+<div style="flex:1">
+<div style="font-size:17px;font-weight:600">A grown-up looks after settings</div>
+<div style="font-size:14px;color:var(--kc-ink-dim);line-height:1.4">Mode, weekly target and the teacher link sit behind a four-digit code. Practicing never does.</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Require a code for settings" hint-size="46px,26px"></x-import>
+</div>
+<div style="margin-top:auto;display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="arrow_forward" hint-size="180px,48px">Continue as Maya</x-import>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Four steps, then you're playing.</span>
+</div>
+</div>
+</div>
+
+<div data-screen-label="A2 Instrument and input" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,14px">SETTING UP · STEP 2 OF 4</x-import>
+<div style="margin-left:auto;width:200px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SegmentBar" total="{{ n4 }}" filled="{{ n1 }}" current="{{ n1 }}" height="{{ n6 }}" radius="{{ n3 }}" hint-size="200px,6px"></x-import>
+</div>
+</div>
+<div style="flex:1;min-height:0;padding:38px;display:flex;flex-direction:column;gap:26px">
+<div>
+<h1 style="margin:0;font-size:42px;font-weight:600;letter-spacing:-0.03em;line-height:1.05">Your keyboard is already talking to us.</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">Found over USB while you were reading step one. Everything below works without it — it just means we can hear exactly which note you played, not only that you played.</p>
+</div>
+<div style="background:var(--kc-mint-wash);border:1.5px solid var(--kc-mint);border-radius:11px;padding:24px 26px;display:flex;align-items:center;gap:22px">
+<span style="font-family:var(--kc-font-icon);font-size:34px;color:var(--kc-mint)">piano</span>
+<div style="flex:1">
+<div style="font-size:22px;font-weight:600">Roland FP-30X</div>
+<div style="font-size:15px;color:var(--kc-ink-muted)">88 keys · sustain pedal detected</div>
+</div>
+<div style="display:flex;gap:26px">
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="60px,12px">LATENCY</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">6 ms</div></div>
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="60px,12px">LAST NOTE</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">D4</div></div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="150px,40px">Play a few notes</x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="260px,16px">WHAT CHANGES IF YOU PRACTICE WITHOUT IT</x-import>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-mint-edge);border-radius:11px;padding:20px 22px;height:186px;box-sizing:border-box;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">piano</span><span style="font-size:17px;font-weight:600">Keyboard connected</span></div>
+<div style="font-size:14px;color:var(--kc-ink-muted);line-height:1.45">Every note and its timing. Sight reading marks the exact notehead you missed; timing reports drift in milliseconds.</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="mint" hint-size="auto,32px">ALL SIX BLOCKS</x-import>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;height:186px;box-sizing:border-box;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-dim)">mic</span><span style="font-size:17px;font-weight:600">Microphone</span></div>
+<div style="font-size:14px;color:var(--kc-ink-muted);line-height:1.45">Pitch and pulse from sound. Good enough to catch a wrong note in a slow scale; it can't separate two hands.</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">FIVE OF SIX</x-import>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;height:186px;box-sizing:border-box;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-dim)">timer</span><span style="font-size:17px;font-weight:600">Timer only</span></div>
+<div style="font-size:14px;color:var(--kc-ink-muted);line-height:1.45">An acoustic piano in another room. You say when a block is done; the record keeps minutes, not accuracy.</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">FOUR OF SIX</x-import>
+</div>
+</div>
+</div>
+<div style="margin-top:auto;display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="arrow_forward" hint-size="160px,48px">Use the keyboard</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="150px,40px">Set up the mic instead</x-import>
+<span style="margin-left:auto;font-size:14px;color:var(--kc-ink-faint)">Switchable mid-session from the header.</span>
+</div>
+</div>
+</div>
+
+<div data-screen-label="A3 Guided or own plan" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,14px">SETTING UP · STEP 3 OF 4</x-import>
+<div style="margin-left:auto;width:200px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SegmentBar" total="{{ n4 }}" filled="{{ n2 }}" current="{{ n2 }}" height="{{ n6 }}" radius="{{ n3 }}" hint-size="200px,6px"></x-import>
+</div>
+</div>
+<div style="flex:1;min-height:0;padding:38px;display:flex;flex-direction:column;gap:26px">
+<div>
+<h1 style="margin:0;font-size:42px;font-weight:600;letter-spacing:-0.03em;line-height:1.05">How much should the app decide?</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">Same engine either way — the same six disciplines, the same weighting, the same record. This only changes how much of it is on screen at once.</p>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0">
+<div style="background:var(--kc-mint-wash);border:1.5px solid var(--kc-mint);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:16px;min-height:0">
+<div style="display:flex;align-items:baseline;gap:12px">
+<h2 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Guided</h2>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="mint" icon="check" hint-size="auto,32px">CHOSEN</x-import>
+</div>
+<p style="margin:0;font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">One instruction at a time. Good for practicing alone at eleven, and for an adult who wants to be told what to do for twenty minutes.</p>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:15px;color:var(--kc-ink-muted)">
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">check</span><span>The next exercise, its settings already chosen</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">check</span><span>Coaching after each attempt, naming the bar</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">check</span><span>A quiet timer and a plain progress strip</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-faint)">remove</span><span style="color:var(--kc-ink-dim)">No reordering, no tempo dial, no raw numbers</span></div>
+</div>
+<div style="margin-top:auto;background:var(--kc-base);border:1px solid var(--kc-mint-edge);border-radius:10px;padding:16px 18px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="120px,12px">WHAT YOU SEE</x-import>
+<div style="font-size:19px;font-weight:600;margin-top:8px">Start with the G major scale.</div>
+<div style="font-size:14px;color:var(--kc-ink-dim);margin-top:4px">Two octaves, hands separately first.</div>
+</div>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:16px;min-height:0">
+<div style="display:flex;align-items:baseline;gap:12px">
+<h2 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Own plan</h2>
+</div>
+<p style="margin:0;font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">The whole queue, editable, with the real numbers. For anyone who already knows what they want to work on today.</p>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:15px;color:var(--kc-ink-muted)">
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-muted)">check</span><span>Reorder, retime, skip, save routines</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-muted)">check</span><span>Tempo, level, key, hands and loop points exposed</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-muted)">check</span><span>Accuracy, evenness and drift in milliseconds</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-muted)">check</span><span>Run past the timer when it's going well</span></div>
+</div>
+<div style="margin-top:auto;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:10px;padding:16px 18px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="120px,12px">WHAT YOU SEE</x-import>
+<div style="font-size:19px;font-weight:600;margin-top:8px">Twenty minutes, in G major</div>
+<div style="font-size:14px;color:var(--kc-ink-dim);margin-top:4px">Six rows, weighted toward reading. Edit anything.</div>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="arrow_forward" hint-size="150px,48px">Use guided</x-import>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Change it whenever — it's one setting, not a commitment.</span>
+</div>
+</div>
+</div>
+
+<div data-screen-label="A4 Weekly target" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,14px">SETTING UP · STEP 4 OF 4</x-import>
+<div style="margin-left:auto;width:200px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SegmentBar" total="{{ n4 }}" filled="{{ n3 }}" current="{{ n3 }}" height="{{ n6 }}" radius="{{ n3 }}" hint-size="200px,6px"></x-import>
+</div>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 336px">
+<div style="padding:38px;display:flex;flex-direction:column;gap:28px;min-height:0">
+<div>
+<h1 style="margin:0;font-size:42px;font-weight:600;letter-spacing:-0.03em;line-height:1.05">How often, and for how long?</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">Pick something you'll actually hit. Five days beats seven you resent, and the streak counts weeks at target — so a rest day costs nothing.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">DAYS A WEEK</x-import>
+<div style="display:flex;gap:10px">
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-panel);border:1px solid var(--kc-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px">3</span><span style="font-size:12px;color:var(--kc-ink-faint)">days</span></div>
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-panel);border:1px solid var(--kc-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px">4</span><span style="font-size:12px;color:var(--kc-ink-faint)">days</span></div>
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-mint-wash);border:1.5px solid var(--kc-mint);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px;color:var(--kc-mint)">5</span><span style="font-size:12px;color:var(--kc-mint)">days</span></div>
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-panel);border:1px solid var(--kc-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px">6</span><span style="font-size:12px;color:var(--kc-ink-faint)">days</span></div>
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-panel);border:1px solid var(--kc-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px">7</span><span style="font-size:12px;color:var(--kc-ink-faint)">days</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">SESSION LENGTH</x-import>
+<div style="display:flex;gap:10px">
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-panel);border:1px solid var(--kc-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px">10</span><span style="font-size:12px;color:var(--kc-ink-faint)">minutes</span></div>
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-panel);border:1px solid var(--kc-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px">15</span><span style="font-size:12px;color:var(--kc-ink-faint)">minutes</span></div>
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-mint-wash);border:1.5px solid var(--kc-mint);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px;color:var(--kc-mint)">20</span><span style="font-size:12px;color:var(--kc-mint)">minutes</span></div>
+<div style="flex:1;height:76px;border-radius:10px;background:var(--kc-panel);border:1px solid var(--kc-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="font-family:var(--kc-font-mono);font-size:26px">30</span><span style="font-size:12px;color:var(--kc-ink-faint)">minutes</span></div>
+</div>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;align-items:center;gap:22px">
+<div style="flex:1">
+<div style="font-size:17px;font-weight:600">Stop me at twenty minutes</div>
+<div style="font-size:14px;color:var(--kc-ink-dim);line-height:1.4">Off by default for adults, on by default under thirteen. Either way the timer is advisory, never a lock.</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Hard stop at session length" hint-size="46px,26px"></x-import>
+</div>
+<div style="margin-top:auto;display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="arrow_forward" hint-size="200px,48px">Take the skill check</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="control" hint-size="120px,40px">Skip for now</x-import>
+</div>
+</div>
+<div style="border-left:1px solid var(--kc-border);background:var(--kc-panel);padding:32px 28px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">WHAT A WEEK WILL LOOK LIKE</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.WeekStrip" days="{{ previewDays }}" target="{{ n20 }}" hint-size="100%,60px"></x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-dim)">Five filled, two dashed. Choose which days are rest days now or leave it — the app learns them from what you actually do.</p>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">ADDS UP TO</x-import>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--kc-font-mono);font-size:32px;color:var(--kc-mint)">1 h 40 m</span></div>
+<div style="font-size:15px;color:var(--kc-ink-muted);line-height:1.45">a week, or about 7 hours a month. Ms. Rivera asks for five days of twenty minutes.</div>
+</div>
+<div style="margin-top:auto;border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">ABOUT THE STREAK</x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-muted)">It counts <b>weeks you hit five days</b>, not days in a row. Miss a Tuesday and Wednesday covers it. Nothing you have earned can be taken away.</p>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="font-family:var(--kc-font-mono);font-size:12px;letter-spacing:.12em;color:var(--kc-ink-dim)">B · SKILL CHECK, FIVE MINUTES</span>
+<span style="flex:1;height:1px;background:var(--kc-border)"></span>
+<span style="font-size:14px;color:var(--kc-ink-faint)">Three axes. Re-taken every four weeks; the weighting re-derives from it.</span>
+</div>
+
+<div style="display:flex;gap:22px;flex-wrap:wrap;width:max-content">
+
+<div data-screen-label="B1 Skill check ear" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:56px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:18px;padding:0 30px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="150px,12px">SKILL CHECK · 1 OF 3</x-import>
+<span style="font-size:17px;font-weight:600">Ear</span>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Six phrases · two to five notes · no page</span>
+<div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+<span style="font-family:var(--kc-font-mono);font-size:20px">01:12</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="90px,40px">Pause</x-import>
+</div>
+</div>
+<div style="height:2px;flex:none;background:var(--kc-raised)"><div style="width:50%;height:100%;background:var(--kc-mint)"></div></div>
+<div style="flex:1;min-height:0;padding:34px 38px;display:flex;flex-direction:column;gap:24px">
+<div>
+<h1 style="margin:0;font-size:34px;font-weight:600;letter-spacing:-0.03em;line-height:1.05">Listen, then play it back.</h1>
+<p style="margin:8px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">Nothing is written down for this one. Play it as many times as you like — the check is whether you find it, not how fast.</p>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 300px;gap:18px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:20px;min-height:0">
+<div style="display:flex;align-items:center;gap:18px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.IconButton" icon="play_arrow" size="{{ n52 }}" label="Play the phrase" hint-size="52px,52px"></x-import>
+<div style="flex:1;min-width:0">
+<div style="font-size:17px;font-weight:600">Phrase 4 of 6</div>
+<div style="font-size:14px;color:var(--kc-ink-dim)">Three notes, stepwise, in G major · played twice</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">HEARD 2×</x-import>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Waveform" bars="{{ phraseBars }}" height="{{ n40 }}" tone="mint" hint-size="100%,40px"></x-import>
+<div style="flex:1;min-height:0;display:flex;align-items:center">
+<div style="width:100%;height:132px;background:var(--kc-raised);border:1px solid var(--kc-border);border-radius:10px;display:flex;gap:3px;padding:5px;box-sizing:border-box;position:relative">
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:var(--kc-mint);border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:var(--kc-mint);border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:var(--kc-mint);border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="flex:1;background:#f0efec;border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:5px;right:5px;top:5px;height:76px;pointer-events:none">
+<div style="position:absolute;left:4.9%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:12.0%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:26.3%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:33.4%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:40.5%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:54.8%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:61.9%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:76.2%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:83.3%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+<div style="position:absolute;left:90.4%;width:4.4%;height:100%;background:var(--kc-base);border-radius:0 0 4px 4px"></div>
+</div>
+</div>
+</div>
+<div style="font-size:15px;color:var(--kc-ink-muted)">You played <b>G — A — B</b>. That's the phrase.</div>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="140px,16px">SO FAR</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.LogTable" rows="{{ earRows }}" emphasize="{{ n1 }}" hint-size="100%,150px"></x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-dim)">Phrase 3 went up where the tune went down — a common miss, and not a problem.</p>
+<div style="margin-top:auto">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" hint-size="100%,48px">Next phrase</x-import>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div data-screen-label="B2 Skill check reading" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:56px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:18px;padding:0 30px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="150px,12px">SKILL CHECK · 2 OF 3</x-import>
+<span style="font-size:17px;font-weight:600">Reading</span>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Getting harder until you stop · right hand only</span>
+<div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+<span style="font-family:var(--kc-font-mono);font-size:20px">02:48</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="90px,40px">Pause</x-import>
+</div>
+</div>
+<div style="height:2px;flex:none;background:var(--kc-raised)"><div style="width:72%;height:100%;background:var(--kc-mint)"></div></div>
+<div style="flex:1;min-height:0;padding:30px 38px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:baseline;gap:18px">
+<p style="margin:0;font-size:17px;color:var(--kc-ink-muted)">Play it once through. Don't stop to fix a note — if you lose your place, wait for the next bar.</p>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="mint" hint-size="auto,32px">LEVEL 4 OF 8</x-import>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SheetPanel" padding="{{ n18 }}" style="flex:none;height:300px" hint-size="100%,300px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Staff" systems="{{ oneSystem }}" layout="{{ twoBarsLayout }}" notes="{{ readingNotes }}" regions="{{ currentBar }}" width="{{ n1050 }}" height="{{ n180 }}" hint-size="100%,180px"></x-import>
+</x-import>
+</div>
+<div style="flex:none;border-top:1px solid var(--kc-border);background:var(--kc-panel);padding:18px 38px 22px;display:flex;align-items:center;gap:28px">
+<div style="width:300px;display:flex;flex-direction:column;gap:6px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="120px,16px">HOW FAR YOU GOT</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SegmentBar" total="{{ n8 }}" filled="{{ n3 }}" current="{{ n3 }}" height="{{ n8 }}" radius="{{ n3 }}" hint-size="100%,8px"></x-import>
+<span style="font-size:14px;color:var(--kc-ink-muted)">Level 4 held. Level 5 is where it stopped.</span>
+</div>
+<div style="display:flex;gap:26px">
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">NOTES RIGHT</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">14 / 16</div></div>
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">IN TIME</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">11 / 16</div></div>
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">STOPPED</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px;color:var(--kc-clay)">once</div></div>
+</div>
+<div style="margin-left:auto;display:flex;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="130px,40px">That was too hard</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" size="control" hint-size="160px,40px">Next — timing</x-import>
+</div>
+</div>
+</div>
+
+<div data-screen-label="B3 Skill check result" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,14px">SKILL CHECK · DONE</x-import>
+<span style="margin-left:auto;font-size:14px;color:var(--kc-ink-dim)">Maya · 14 September · 4 minutes 52 seconds</span>
+</div>
+<div style="flex:1;min-height:0;padding:38px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;align-items:flex-end;gap:16px">
+<div>
+<h1 style="margin:0;font-size:38px;font-weight:600;letter-spacing:-0.03em;line-height:1.05;max-width:620px">A good ear, a slower eye. Reading gets the time.</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">This isn't a grade and it isn't stored as one. It sets how today's twenty minutes get divided, and it re-runs every four weeks.</p>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:22px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">WHERE YOU ARE</x-import>
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Ear" value="{{ n78 }}" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<span style="font-size:14px;color:var(--kc-ink-dim);padding-left:97px">Five of six phrases back on the first or second hearing.</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Reading" value="{{ n42 }}" tone="clay" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<span style="font-size:14px;color:var(--kc-ink-dim);padding-left:97px">Level 4 held; notes were right more often than they were in time.</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Timing" value="{{ n61 }}" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<span style="font-size:14px;color:var(--kc-ink-dim);padding-left:97px">Steady at 72, ahead of the beat by 22 ms as it got faster.</span>
+</div>
+</div>
+<p style="margin:auto 0 0;font-size:14px;line-height:1.45;color:var(--kc-ink-faint)">Three numbers, no total. There is no single score for playing the piano.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+<div style="background:var(--kc-mint-wash);border:1px solid var(--kc-mint-edge);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,16px">SO YOUR TWENTY MINUTES BECOME</x-import>
+<div style="display:flex;flex-direction:column;gap:9px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Reading" value="{{ n35 }}" suffix="7 minutes" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Timing" value="{{ n20 }}" suffix="4 minutes" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Technique" value="{{ n15 }}" suffix="3 minutes" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Pieces" value="{{ n15 }}" suffix="3 minutes" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Harmony" value="{{ n10 }}" suffix="2 minutes" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Your own" value="{{ n5 }}" suffix="1 minute" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+</div>
+</div>
+<div style="flex:1;min-height:0;background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="180px,16px">STARTING KEY</x-import>
+<div style="font-size:26px;font-weight:600">G major</div>
+<p style="margin:0;font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">One sharp, and you already found <b>F♯</b> by ear. C major would waste a week.</p>
+<div style="margin-top:auto">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="play_arrow" hint-size="100%,48px">See today's session</x-import>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="font-family:var(--kc-font-mono);font-size:12px;letter-spacing:.12em;color:var(--kc-ink-dim)">C · THE BLOCKS NOBODY HAD DRAWN</span>
+<span style="flex:1;height:1px;background:var(--kc-border)"></span>
+<span style="font-size:14px;color:var(--kc-ink-faint)">Same chrome as sight reading. Only the page and the three numbers change.</span>
+</div>
+
+<div style="display:flex;gap:22px;flex-wrap:wrap;width:max-content">
+
+<div data-screen-label="C1 Technique block" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:56px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:18px;padding:0 30px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="60px,14px">04 / 06</x-import>
+<span style="font-size:17px;font-weight:600">Technique</span>
+<span style="font-size:14px;color:var(--kc-ink-dim)">G major · two octaves · hands separately · <span style="font-family:var(--kc-font-music);font-size:13px">𝅘𝅥</span>76</span>
+<div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+<span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">piano</span>
+<span style="font-family:var(--kc-font-mono);font-size:20px">02:41</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="90px,40px">Pause</x-import>
+</div>
+</div>
+<div style="height:2px;flex:none;background:var(--kc-raised)"><div style="width:62%;height:100%;background:var(--kc-mint)"></div></div>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:22px 30px 0;gap:14px">
+<div style="display:flex;align-items:baseline;gap:18px">
+<p style="margin:0;font-size:17px;color:var(--kc-ink-muted)">Right hand, up and back. Listen for one note louder than the rest — that's the fourth finger.</p>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">RUN 3 OF 4</x-import>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SheetPanel" padding="{{ n18 }}" style="flex:none;height:252px" hint-size="100%,252px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Staff" systems="{{ scaleSystem }}" layout="{{ scaleLayout }}" notes="{{ scaleNotes }}" regions="{{ scaleRegion }}" width="{{ n1050 }}" height="{{ n170 }}" hint-size="100%,170px"></x-import>
+</x-import>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 340px;gap:14px;padding-bottom:22px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">HOW EVEN EACH FINGER WAS</x-import>
+<div style="display:flex;align-items:flex-end;gap:10px;flex:1;min-height:0">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:64%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">1</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:71%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">2</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:68%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">3</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:96%;background:var(--kc-clay);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-clay)">4</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:59%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">5</span></div>
+<div style="flex:none;width:1px;height:100%;background:var(--kc-border)"></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:66%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">1</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:73%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">2</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:70%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">3</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:91%;background:var(--kc-clay);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-clay)">4</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%"><div style="width:100%;height:62%;background:var(--kc-mint);border-radius:4px 4px 0 0"></div><span style="font-family:var(--kc-font-mono);font-size:11px;color:var(--kc-ink-dim)">5</span></div>
+</div>
+<span style="font-size:14px;color:var(--kc-ink-muted)">The fourth finger lands about 8 dB heavier than its neighbours, in both octaves.</span>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:12px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="140px,16px">THIS BLOCK</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.LogTable" rows="{{ techniqueRows }}" emphasize="{{ n1 }}" hint-size="100%,120px"></x-import>
+<p style="margin:auto 0 0;font-size:14px;line-height:1.45;color:var(--kc-ink-dim)">Run 2 was the even one. Play run 4 at the same tempo rather than faster.</p>
+</div>
+</div>
+</div>
+<div style="border-top:1px solid var(--kc-border);background:var(--kc-panel);padding:18px 30px 22px;display:flex;align-items:center;gap:28px;flex:none">
+<div style="display:flex;gap:26px">
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">NOTES EVEN</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">13 / 16</div></div>
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">KEY TO KEY</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">±34 ms</div></div>
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">TEMPO HELD</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">76 bpm</div></div>
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">CLEAN RUNS</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">1 / 3</div></div>
+</div>
+<div style="margin-left:auto;display:flex;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="140px,40px">Left hand instead</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="120px,40px">One more run</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" size="control" hint-size="170px,40px">Next — harmony</x-import>
+</div>
+</div>
+</div>
+
+<div data-screen-label="C2 Harmony block" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:56px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:18px;padding:0 30px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="60px,14px">05 / 06</x-import>
+<span style="font-size:17px;font-weight:600">Harmony</span>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Twelve bars in G · left hand comps · <span style="font-family:var(--kc-font-music);font-size:13px">𝅘𝅥</span>84</span>
+<div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="mint" hint-size="auto,32px">BACKING ON</x-import>
+<span style="font-family:var(--kc-font-mono);font-size:20px">01:58</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="90px,40px">Pause</x-import>
+</div>
+</div>
+<div style="height:2px;flex:none;background:var(--kc-raised)"><div style="width:81%;height:100%;background:var(--kc-mint)"></div></div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 320px">
+<div style="min-height:0;padding:22px 26px 22px 30px;display:flex;flex-direction:column;gap:14px">
+<p style="margin:0;font-size:17px;color:var(--kc-ink-muted)">Change on the first beat of each bar. Root and fifth is enough — the shape matters more than the voicing.</p>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SheetPanel" padding="{{ n22 }}" style="flex:1;min-height:0" hint-size="100%,100%">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.ChordChart" bars="{{ bluesBars }}" perRow="{{ n4 }}" cellHeight="{{ n96 }}" hint-size="100%,100%"></x-import>
+</x-import>
+<div style="flex:none;display:flex;align-items:center;gap:22px">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">CHANGES IN TIME</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SegmentBar" total="{{ n12 }}" filled="{{ n5 }}" current="{{ n5 }}" height="{{ n8 }}" radius="{{ n3 }}" hint-size="100%,8px"></x-import>
+<span style="font-size:14px;color:var(--kc-ink-muted)">Four of five clean. The change into bar 5 came 90 ms late.</span>
+</div>
+<div style="display:flex;gap:26px">
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">LATE CHANGE</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px;color:var(--kc-clay)">90 ms</div></div>
+<div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="90px,12px">CHORUSES</x-import><div style="font-family:var(--kc-font-mono);font-size:20px;margin-top:4px">2</div></div>
+</div>
+</div>
+</div>
+<div style="border-left:1px solid var(--kc-border);background:var(--kc-panel);padding:26px 24px;display:flex;flex-direction:column;gap:22px;min-height:0">
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="180px,16px">THE BAR YOU'RE IN</x-import>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:var(--kc-font-mono);font-size:32px;color:var(--kc-mint)">C</span><span style="font-size:15px;color:var(--kc-ink-muted)">bar 5 of 12</span></div>
+<div style="font-size:15px;color:var(--kc-ink-muted);line-height:1.45">Left hand: <b>C</b> and <b>G</b>. Fourth degree of G — the shape from bar 1, moved up.</div>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">BACKING TRACK</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Waveform" bars="{{ backingBars }}" height="{{ n40 }}" tone="mint" hint-size="100%,40px"></x-import>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-family:var(--kc-font-mono);font-size:15px;color:var(--kc-ink-muted)">00:42 / 01:16</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="pill" hint-size="110px,32px">Drums only</x-import>
+</div>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:11px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">THE FORM</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.LogTable" rows="{{ formRows }}" emphasize="{{ n1 }}" hint-size="100%,110px"></x-import>
+</div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" size="control" hint-size="100%,40px">Next — your own</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="control" hint-size="100%,40px">Take it slower</x-import>
+</div>
+</div>
+</div>
+</div>
+
+<div data-screen-label="C3 Session done" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="240px,14px">SESSION DONE · 14 SEPTEMBER</x-import>
+<span style="margin-left:auto;font-size:14px;color:var(--kc-ink-dim)">Maya · guided · six of six blocks</span>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 336px">
+<div style="padding:32px 34px;display:flex;flex-direction:column;gap:22px;min-height:0">
+<div>
+<h1 style="margin:0;font-size:38px;font-weight:600;letter-spacing:-0.03em;line-height:1.05;max-width:620px">Twenty-two minutes. The scale is even except the fourth finger.</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">You ran two minutes past the timer on the blues. That's recorded as it happened.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="TIME PLAYED" value="22:04" unit="of 20 planned" hint-size="100%,108px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="READING LEVEL" value="4" unit="held" hint-size="100%,108px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="FASTEST CLEAN" value="84" unit="bpm" delta="+8" tone="amber" hint-size="100%,108px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="AHEAD OF BEAT" value="22" unit="ms" tone="clay" hint-size="100%,108px"></x-import>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:11px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,16px">BLOCK BY BLOCK</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.LogTable" rows="{{ blockRows }}" emphasize="{{ n2 }}" hint-size="100%,220px"></x-import>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">WORTH SAYING OUT LOUD</x-import>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:11px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-amber)">star</span><span style="font-size:15px;line-height:1.45;color:var(--kc-ink-muted)"><b>84 bpm clean</b> on the F♯ passage — 8 faster than your last best.</span></div>
+<div style="display:flex;gap:11px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">check</span><span style="font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">You held the pulse through bar 6 without stopping to fix bar 4.</span></div>
+<div style="display:flex;gap:11px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-clay)">error</span><span style="font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">The change into bar 5 of the blues was late twice. Count bar 4 out loud.</span></div>
+</div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="160px,12px">YOUR RECORDING</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Waveform" bars="{{ sessionBars }}" height="{{ n40 }}" hint-size="100%,40px"></x-import>
+<div style="display:flex;align-items:center;gap:12px"><span style="font-family:var(--kc-font-mono);font-size:15px;color:var(--kc-ink-dim)">Blues, 2nd chorus · 00:38</span><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="pill" icon="play_arrow" hint-size="90px,32px">Play</x-import></div>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="check" hint-size="190px,48px">Save the session</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="190px,40px">Keep playing the blues</x-import>
+<span style="margin-left:auto;font-size:14px;color:var(--kc-ink-faint)">Saved to your record either way.</span>
+</div>
+</div>
+<div style="border-left:1px solid var(--kc-border);background:var(--kc-panel);padding:32px 28px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">THIS WEEK</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.WeekStrip" days="{{ doneWeek }}" target="{{ n20 }}" height="{{ n44 }}" hint-size="100%,60px"></x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-dim)">Four of five days. Friday or Saturday makes the week.</p>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:11px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,16px">WHAT TOMORROW LEANS ON</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.QueueRow" index="{{ n1 }}" title="Timing" detail="The late change, at 76 bpm" duration="5:00" hint-size="100%,72px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.QueueRow" index="{{ n2 }}" title="Technique" detail="Fourth finger, hands separately" duration="4:00" hint-size="100%,72px"></x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-dim)">Reading drops to 5 minutes — you held level 4 twice this week.</p>
+</div>
+<div style="margin-top:auto;border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">MS. RIVERA SEES</x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-muted)">Minutes, levels and the blues recording, on Monday morning. Nothing is sent until you save.</p>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="font-family:var(--kc-font-mono);font-size:12px;letter-spacing:.12em;color:var(--kc-ink-dim)">D · THE HOUSEHOLD AND THE TEACHER</span>
+<span style="flex:1;height:1px;background:var(--kc-border)"></span>
+<span style="font-size:14px;color:var(--kc-ink-faint)">Two people who look at the record but never play on this screen.</span>
+</div>
+
+<div style="display:flex;gap:22px;flex-wrap:wrap;width:max-content">
+
+<div data-screen-label="D1 Household" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="140px,14px">HOUSEHOLD</x-import>
+<div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" icon="check" hint-size="auto,32px">CODE ENTERED</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="control" hint-size="110px,40px">Lock again</x-import>
+</div>
+</div>
+<div style="flex:1;min-height:0;padding:32px 34px;display:flex;flex-direction:column;gap:22px">
+<div>
+<h1 style="margin:0;font-size:38px;font-weight:600;letter-spacing:-0.03em;line-height:1.05">Two players, one keyboard</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">Separate records, separate targets, separate keys. Nothing here is a comparison — Andy's twelve minutes and Maya's twenty are not the same measurement.</p>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="width:44px;height:44px;border-radius:50%;background:var(--kc-mint);color:var(--kc-mint-ink);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600">M</span>
+<div style="flex:1">
+<div style="font-size:22px;font-weight:600">Maya</div>
+<div style="font-size:14px;color:var(--kc-ink-dim)">Guided · 5 days × 20 minutes · G major</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="mint" hint-size="auto,32px">PLAYED TODAY</x-import>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.WeekStrip" days="{{ mayaWeek }}" target="{{ n20 }}" height="{{ n44 }}" hint-size="100%,60px"></x-import>
+<div style="display:flex;gap:14px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="THIS WEEK" value="1 h 22 m" unit="of 1 h 40 m" style="flex:1" hint-size="100%,100px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="WEEKS AT TARGET" value="6" unit="in a row" tone="mint" style="flex:1" hint-size="100%,100px"></x-import>
+</div>
+<div style="display:flex;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="130px,40px">Open her record</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="control" hint-size="110px,40px">Settings</x-import>
+</div>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="width:44px;height:44px;border-radius:50%;background:var(--kc-raised);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600">A</span>
+<div style="flex:1">
+<div style="font-size:22px;font-weight:600">Andy</div>
+<div style="font-size:14px;color:var(--kc-ink-dim)">Own plan · 3 days × 30 minutes · C major</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">LAST PLAYED SUN</x-import>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.WeekStrip" days="{{ andyWeek }}" target="{{ n30 }}" height="{{ n44 }}" hint-size="100%,60px"></x-import>
+<div style="display:flex;gap:14px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="THIS WEEK" value="0 h 34 m" unit="of 1 h 30 m" style="flex:1" hint-size="100%,100px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="WEEKS AT TARGET" value="2" unit="in a row" style="flex:1" hint-size="100%,100px"></x-import>
+</div>
+<div style="display:flex;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="130px,40px">Open his record</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="control" hint-size="110px,40px">Settings</x-import>
+</div>
+</div>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 340px;gap:14px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:11px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,16px">WHO PLAYED, WHEN</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.LogTable" rows="{{ householdRows }}" emphasize="{{ n2 }}" hint-size="100%,180px"></x-import>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">BEHIND THE CODE</x-import>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:14px"><span style="flex:1;font-size:15px">Mode and weekly target</span><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Behind the code" hint-size="46px,26px"></x-import></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="flex:1;font-size:15px">Teacher link</span><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Behind the code" hint-size="46px,26px"></x-import></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="flex:1;font-size:15px">Deleting a recording</span><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Behind the code" hint-size="46px,26px"></x-import></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="flex:1;font-size:15px;color:var(--kc-ink-dim)">Starting a session</span><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" label="Behind the code" hint-size="46px,26px"></x-import></div>
+</div>
+<p style="margin:auto 0 0;font-size:14px;line-height:1.45;color:var(--kc-ink-faint)">Practising is never behind a code. That is the one row that cannot be switched on.</p>
+</div>
+</div>
+</div>
+</div>
+
+<div data-screen-label="D2 Teacher link" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,14px">HOUSEHOLD · TEACHER LINK</x-import>
+<span style="margin-left:auto;font-size:14px;color:var(--kc-ink-dim)">Maya's profile</span>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 336px">
+<div style="padding:32px 34px;display:flex;flex-direction:column;gap:22px;min-height:0">
+<div>
+<h1 style="margin:0;font-size:38px;font-weight:600;letter-spacing:-0.03em;line-height:1.05;max-width:620px">Ms. Rivera can see the record and set next week's work.</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">One teacher per profile. She reads what you choose below, and she can assign — she can't change the mode, the target or the code.</p>
+</div>
+<div style="background:var(--kc-mint-wash);border:1px solid var(--kc-mint-edge);border-radius:11px;padding:20px 22px;display:flex;align-items:center;gap:22px">
+<span style="width:44px;height:44px;border-radius:50%;background:var(--kc-raised);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600">R</span>
+<div style="flex:1">
+<div style="font-size:19px;font-weight:600">Ms. Rivera</div>
+<div style="font-size:14px;color:var(--kc-ink-muted)">Linked since 4 June · lessons Mondays 16:30 · last read Monday 08:12</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="130px,40px">Remove the link</x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">WHAT SHE RECEIVES</x-import>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:14px 22px;display:flex;align-items:center;gap:22px"><div style="flex:1"><div style="font-size:17px;font-weight:600">Minutes, blocks and levels</div><div style="font-size:14px;color:var(--kc-ink-dim)">The session log, as she'd write it in a notebook.</div></div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Share the log" hint-size="46px,26px"></x-import></div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:14px 22px;display:flex;align-items:center;gap:22px"><div style="flex:1"><div style="font-size:17px;font-weight:600">Accuracy and timing figures</div><div style="font-size:14px;color:var(--kc-ink-dim)">Notes right, drift in milliseconds, tempo held.</div></div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Share the figures" hint-size="46px,26px"></x-import></div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:14px 22px;display:flex;align-items:center;gap:22px"><div style="flex:1"><div style="font-size:17px;font-weight:600">Your recordings</div><div style="font-size:14px;color:var(--kc-ink-dim)">Only the clips you keep. Two saved this week.</div></div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" checked="{{ yes }}" label="Share recordings" hint-size="46px,26px"></x-import></div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:14px 22px;display:flex;align-items:center;gap:22px"><div style="flex:1"><div style="font-size:17px;font-weight:600;color:var(--kc-ink-muted)">Skill check results</div><div style="font-size:14px;color:var(--kc-ink-dim)">Off. She sets the reading level at the lesson.</div></div><x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Toggle" label="Share skill checks" hint-size="46px,26px"></x-import></div>
+</div>
+</div>
+<div style="margin-top:auto;display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="check" hint-size="170px,48px">Save what's shared</x-import>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Changes apply to Monday's read, not retroactively.</span>
+</div>
+</div>
+<div style="border-left:1px solid var(--kc-border);background:var(--kc-panel);padding:32px 28px;display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">HER NOTE THIS WEEK</x-import>
+<p style="margin:0;font-size:15px;line-height:1.5;color:var(--kc-ink)">Bars 5–8 of the Clementi, hands separately, at <span style="font-family:var(--kc-font-music);font-size:14px">𝅘𝅥</span>72. Don't push the tempo until the left hand is even.</p>
+<span style="font-family:var(--kc-font-mono);font-size:11px;letter-spacing:.12em;color:var(--kc-ink-faint)">MONDAY 08:14</span>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,16px">TO INVITE A NEW TEACHER</x-import>
+<div style="background:var(--kc-base);border:1px solid var(--kc-border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:6px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="120px,12px">ONE-TIME CODE</x-import>
+<span style="font-family:var(--kc-font-mono);font-size:32px;letter-spacing:.08em">4K7M</span>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-dim)">Expires in 20 minutes. Read it out at the lesson — nothing is emailed.</p>
+</div>
+<div style="margin-top:auto;border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">WHAT SHE NEVER SEES</x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-muted)">Andy's profile, the household code, or anything from before the link was made in June.</p>
+</div>
+</div>
+</div>
+</div>
+
+<div data-screen-label="D3 Teacher view" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:72px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:22px;padding:0 34px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">KeyCadence</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="180px,14px">TEACHER · MS. RIVERA</x-import>
+<div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+<span style="font-size:14px;color:var(--kc-ink-dim)">4 students</span>
+<span style="font-size:15px;font-weight:600">Maya H.</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="control" hint-size="120px,40px">Next student</x-import>
+</div>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 340px">
+<div style="padding:32px 34px;display:flex;flex-direction:column;gap:22px;min-height:0">
+<div>
+<h1 style="margin:0;font-size:38px;font-weight:600;letter-spacing:-0.03em;line-height:1.05;max-width:620px">Four weeks: reading held, timing drifting early.</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">Read before Monday's lesson. These are minutes and measurements, not a grade — what she practised is at the bottom.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="DAYS PRACTICED" value="19" unit="of 28" hint-size="100%,108px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="TIME PLAYED" value="6 h 48 m" unit="four weeks" hint-size="100%,108px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="READING LEVEL" value="4" unit="held three weeks" hint-size="100%,108px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.StatTile" label="AHEAD OF BEAT" value="22" unit="ms average" tone="clay" hint-size="100%,108px"></x-import>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:11px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">HER LAST SIX SESSIONS</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.LogTable" rows="{{ teacherRows }}" emphasize="{{ n1 }}" hint-size="100%,200px"></x-import>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,16px">WHERE THE TIME WENT</x-import>
+<div style="display:flex;flex-direction:column;gap:11px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Reading" value="{{ n34 }}" suffix="2 h 19 m" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Pieces" value="{{ n22 }}" suffix="1 h 30 m" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Technique" value="{{ n17 }}" suffix="1 h 09 m" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Timing" value="{{ n14 }}" suffix="0 h 57 m" tone="clay" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Harmony" value="{{ n9 }}" suffix="0 h 37 m" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.MeterRow" label="Her own" value="{{ n4 }}" suffix="0 h 16 m" labelWidth="{{ n86 }}" hint-size="100%,18px"></x-import>
+</div>
+<p style="margin:auto 0 0;font-size:14px;line-height:1.45;color:var(--kc-ink-dim)">Timing is the smallest block and the one drifting. Raise it at the lesson.</p>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" icon="check" hint-size="180px,48px">Send the assignment</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="160px,40px">Export four weeks</x-import>
+<span style="margin-left:auto;font-size:14px;color:var(--kc-ink-faint)">She sees it as a note on Today, not a notification.</span>
+</div>
+</div>
+<div style="border-left:1px solid var(--kc-border);background:var(--kc-panel);padding:32px 28px;display:flex;flex-direction:column;gap:22px;min-height:0">
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="220px,16px">NEXT WEEK'S WORK</x-import>
+<div style="background:var(--kc-mint-wash);border:1px solid var(--kc-mint-edge);border-radius:11px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.FormatBadge" format="full-notation" assigned="{{ yes }}" size="{{ n40 }}" hint-size="40px,40px"></x-import>
+<div style="flex:1;min-width:0">
+<div style="font-size:15px;font-weight:600">Clementi, Op. 36 No. 1</div>
+<div style="font-size:14px;color:var(--kc-ink-dim)">Bars 5–8 · hands separately · 72 bpm</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="pill" hint-size="80px,32px">Change</x-import>
+</div>
+<div style="background:var(--kc-mint-wash);border:1px solid var(--kc-mint-edge);border-radius:11px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.FormatBadge" format="scale-exercise" assigned="{{ yes }}" size="{{ n40 }}" hint-size="40px,40px"></x-import>
+<div style="flex:1;min-width:0">
+<div style="font-size:15px;font-weight:600">G major scale</div>
+<div style="font-size:14px;color:var(--kc-ink-dim)">Two octaves · even fourth finger</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="quiet" size="pill" hint-size="80px,32px">Change</x-import>
+</div>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="180px,16px">YOUR NOTE TO HER</x-import>
+<div style="flex:1;min-height:96px;background:var(--kc-base);border:1.5px solid var(--kc-mint);border-radius:10px;padding:16px 18px;font-size:15px;line-height:1.5;color:var(--kc-ink)">Bars 5–8 hands separately at <span style="font-family:var(--kc-font-music);font-size:14px">𝅘𝅥</span>72. Don't push the tempo until the left hand is even.<span style="color:var(--kc-mint)">|</span></div>
+<span style="font-size:14px;color:var(--kc-ink-faint)">One or two sentences. She reads it on the stand.</span>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">WHAT YOU CAN'T SET</x-import>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-muted)">Her mode, her weekly target and her hard stop belong to the household.</p>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;gap:14px">
+<span style="font-family:var(--kc-font-mono);font-size:12px;letter-spacing:.12em;color:var(--kc-ink-dim)">E · WHEN THERE'S NO KEYBOARD TO LISTEN TO</span>
+<span style="flex:1;height:1px;background:var(--kc-border)"></span>
+<span style="font-size:14px;color:var(--kc-ink-faint)">The session never stops. It says plainly what it can no longer measure.</span>
+</div>
+
+<div style="display:flex;gap:22px;flex-wrap:wrap;width:max-content">
+
+<div data-screen-label="E1 Input lost" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:56px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:18px;padding:0 30px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="60px,14px">03 / 06</x-import>
+<span style="font-size:17px;font-weight:600">Sight reading</span>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Paused at bar 7</span>
+<div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="clay" icon="error" hint-size="auto,32px">NO INPUT</x-import>
+<span style="font-family:var(--kc-font-mono);font-size:20px;color:var(--kc-ink-dim)">04:12</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="90px,40px">Resume</x-import>
+</div>
+</div>
+<div style="height:2px;flex:none;background:var(--kc-raised)"><div style="width:41%;height:100%;background:var(--kc-raised)"></div></div>
+<div style="flex:1;min-height:0;padding:34px 38px;display:flex;flex-direction:column;gap:26px">
+<div>
+<h1 style="margin:0;font-size:38px;font-weight:600;letter-spacing:-0.03em;line-height:1.05;max-width:620px">The keyboard stopped answering at bar 7.</h1>
+<p style="margin:10px 0 0;font-size:17px;line-height:1.5;color:var(--kc-ink-muted);max-width:620px">Everything up to bar 6 is recorded. Keep playing either way — pick what should listen for the rest of the block.</p>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:14px;min-height:0">
+<div style="display:flex;align-items:center;gap:11px"><span style="font-family:var(--kc-font-icon);font-size:26px;color:var(--kc-clay)">piano</span><span style="font-size:19px;font-weight:600">The keyboard</span></div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="clay" hint-size="auto,32px">NOT RESPONDING</x-import>
+<div style="font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">Last note heard 40 seconds ago. Usually the USB cable at the keyboard end, or the FP-30X went to sleep.</div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="100%,40px">Look again</x-import>
+<span style="font-size:14px;color:var(--kc-ink-faint)">Press a key and it reconnects on its own.</span>
+</div>
+</div>
+<div style="background:var(--kc-mint-wash);border:1.5px solid var(--kc-mint);border-radius:11px;padding:24px 26px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;min-height:0">
+<div style="display:flex;align-items:center;gap:11px"><span style="font-family:var(--kc-font-icon);font-size:26px;color:var(--kc-mint)">mic</span><span style="font-size:19px;font-weight:600">The microphone</span></div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" tone="mint" icon="hearing" hint-size="auto,32px">HEARING THE ROOM</x-import>
+<div style="display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="120px,12px">LEVEL</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Waveform" bars="{{ micBars }}" height="{{ n40 }}" tone="mint" hint-size="100%,40px"></x-import>
+</div>
+<div style="font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">Pitch and pulse, one hand at a time. Reading carries on; the block keeps its level and its minutes.</div>
+<div style="margin-top:auto">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" size="control" hint-size="100%,40px">Listen with the mic</x-import>
+</div>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:24px 26px;display:flex;flex-direction:column;gap:14px;min-height:0">
+<div style="display:flex;align-items:center;gap:11px"><span style="font-family:var(--kc-font-icon);font-size:26px;color:var(--kc-ink-dim)">timer</span><span style="font-size:19px;font-weight:600">Just the timer</span></div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">MINUTES ONLY</x-import>
+<div style="font-size:15px;line-height:1.45;color:var(--kc-ink-muted)">Nothing listens. You say when the block is done, and the record keeps the time and the page you read.</div>
+<div style="margin-top:auto">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="100%,40px">Carry on with the timer</x-import>
+</div>
+</div>
+</div>
+<div style="background:var(--kc-panel);border:1px solid var(--kc-border);border-radius:11px;padding:20px 22px;display:flex;align-items:center;gap:22px;flex:none">
+<div style="flex:1">
+<div style="font-size:17px;font-weight:600">Bars 1–6 are already in the record</div>
+<div style="font-size:14px;color:var(--kc-ink-dim)">14 of 16 notes right, 22 ms early. The rest of the block is marked as measured by whatever you pick.</div>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">BARS 1–6 KEPT</x-import>
+</div>
+</div>
+</div>
+
+<div data-screen-label="E2 Timer-only block" style="flex:none;width:1194px;height:834px;background:var(--kc-base);border:1px solid var(--kc-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 32px rgba(16,19,38,.28)">
+<div style="height:56px;flex:none;border-bottom:1px solid var(--kc-border);display:flex;align-items:center;gap:18px;padding:0 30px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" size="meta" hint-size="60px,14px">03 / 06</x-import>
+<span style="font-size:17px;font-weight:600">Sight reading</span>
+<span style="font-size:14px;color:var(--kc-ink-dim)">Level 4 · alternating hands · G major · <span style="font-family:var(--kc-font-music);font-size:13px">𝅘𝅥</span>76</span>
+<div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+<span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-dim)">timer</span>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Pill" hint-size="auto,32px">TIMER ONLY</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" variant="secondary" size="control" hint-size="90px,40px">Pause</x-import>
+</div>
+</div>
+<div style="height:2px;flex:none;background:var(--kc-raised)"><div style="width:41%;height:100%;background:var(--kc-mint)"></div></div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 320px">
+<div style="min-height:0;padding:22px 26px 22px 30px;display:flex;flex-direction:column;gap:14px">
+<p style="margin:0;font-size:17px;color:var(--kc-ink-muted)">Nothing is listening, so the page doesn't move on its own — play it through twice at your own pace.</p>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SheetPanel" padding="{{ n22 }}" style="flex:1;min-height:0" hint-size="100%,100%">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Staff" systems="{{ quietSystem }}" layout="{{ quietLayout }}" notes="{{ quietNotes }}" width="{{ n820 }}" height="{{ n280 }}" hint-size="100%,280px"></x-import>
+</x-import>
+<div style="flex:none;display:flex;align-items:center;gap:22px">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">TIMES THROUGH</x-import>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SegmentBar" total="{{ n2 }}" filled="{{ n1 }}" current="{{ n1 }}" height="{{ n8 }}" radius="{{ n3 }}" hint-size="100%,8px"></x-import>
+<span style="font-size:14px;color:var(--kc-ink-muted)">You marked the first run done at 02:18.</span>
+</div>
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.Button" size="control" icon="check" hint-size="200px,40px">I played it through</x-import>
+</div>
+</div>
+<div style="border-left:1px solid var(--kc-border);background:var(--kc-panel);padding:26px 24px;display:flex;flex-direction:column;gap:14px;min-height:0">
+<div style="display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="140px,16px">TIME IN THIS BLOCK</x-import>
+<span style="font-family:var(--kc-font-mono);font-size:32px">04:12</span>
+<span style="font-size:14px;color:var(--kc-ink-dim)">of 7 minutes planned</span>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:14px;display:flex;flex-direction:column;gap:11px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="200px,16px">WHAT GETS RECORDED</x-import>
+<div style="display:flex;flex-direction:column;gap:11px;font-size:15px;color:var(--kc-ink-muted)">
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">check</span><span>Minutes, and the page you read</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-mint)">check</span><span>The level you chose, held or dropped</span></div>
+<div style="display:flex;gap:10px"><span style="font-family:var(--kc-font-icon);font-size:20px;color:var(--kc-ink-faint)">remove</span><span style="color:var(--kc-ink-dim)">Notes right, drift, evenness</span></div>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.45;color:var(--kc-ink-faint)">Four of the six blocks work this way. Ear and harmony need something listening.</p>
+</div>
+<div style="border-top:1px solid var(--kc-border);padding-top:22px;display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="KeyCadenceDesignSystem_017ec9.SectionLabel" hint-size="160px,16px">METRONOME</x-import>
+<div style="display:flex;align-items:center;gap:14px">
+<span style="font-family:var(--kc-font-mono);font-size:32px">76</span>
+<span style="font-size:15px;color:var(--kc-ink-dim)">bpm</span>
+<div style="margin-left:auto;display:flex;gap:8px">
+<span style="width:10px;height:10px;border-radius:50%;background:var(--kc-mint)"></span>
+<span style="width:10px;height:10px;border-radius:50%;background:var(--kc-raised)"></span>
+<span style="width:10px;height:10px;border-radius:50%;background:var(--kc-raised)"></span>
+<span style="width:10px;height:10px;border-radius:50%;background:var(--kc-raised)"></span>
+</div>
+</div>
+</div>
+<span style="margin-top:auto;font-size:14px;color:var(--kc-ink-faint)">Plug the keyboard in from the header — switching mid-block keeps the minutes you've already played.</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1194,&quot;height&quot;:834}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      n0: 0, n1: 1, n2: 2, n3: 3, n4: 4, n5: 5, n6: 6, n8: 8, n9: 9, n10: 10,
+      n12: 12, n14: 14, n15: 15, n17: 17, n18: 18, n20: 20, n22: 22, n30: 30,
+      n34: 34, n35: 35, n40: 40, n42: 42, n44: 44, n52: 52, n58: 58, n61: 61,
+      n78: 78, n86: 86, n96: 96, n170: 170, n180: 180, n280: 280, n820: 820,
+      n1050: 1050, yes: true,
+      scaleSystem: [
+        { clef: "treble", top: 46, keySignature: [{ accidental: "sharp", left: 96 }], timeSignature: "common", timeLeft: 132 },
+      ],
+      scaleLayout: { bars: 2, beatsPerBar: 4, left: 190, right: 40 },
+      scaleNotes: [
+        { bar: 0, beat: 0, step: 2, value: "eighth", beam: "a", state: "played" },
+        { bar: 0, beat: 0.5, step: 3, value: "eighth", beam: "a", state: "played" },
+        { bar: 0, beat: 1, step: 4, value: "eighth", beam: "b", state: "played" },
+        { bar: 0, beat: 1.5, step: 5, value: "eighth", beam: "b", state: "played" },
+        { bar: 0, beat: 2, step: 6, value: "eighth", beam: "c", state: "played" },
+        { bar: 0, beat: 2.5, step: 7, value: "eighth", beam: "c", state: "played" },
+        { bar: 0, beat: 3, step: 8, value: "eighth", beam: "d", state: "missed" },
+        { bar: 0, beat: 3.5, step: 9, value: "eighth", beam: "d", state: "played" },
+        { bar: 1, beat: 0, step: 9, value: "eighth", beam: "e", state: "current" },
+        { bar: 1, beat: 0.5, step: 8, value: "eighth", beam: "e", state: "upcoming" },
+        { bar: 1, beat: 1, step: 7, value: "eighth", beam: "f", state: "upcoming" },
+        { bar: 1, beat: 1.5, step: 6, value: "eighth", beam: "f", state: "upcoming" },
+        { bar: 1, beat: 2, step: 5, value: "eighth", beam: "g", state: "upcoming" },
+        { bar: 1, beat: 2.5, step: 4, value: "eighth", beam: "g", state: "upcoming" },
+        { bar: 1, beat: 3, step: 3, value: "eighth", beam: "h", state: "upcoming" },
+        { bar: 1, beat: 3.5, step: 2, value: "eighth", beam: "h", state: "upcoming" },
+      ],
+      scaleRegion: [{ bar: 1, beat: 0, width: 54 }],
+      techniqueRows: [
+        { cells: ["RUN 1", "76 BPM", "11 / 16 EVEN"] },
+        { cells: ["RUN 2", "76 BPM", "15 / 16 EVEN"], marked: true },
+        { cells: ["RUN 3", "76 BPM", "13 / 16 EVEN"] },
+        { cells: ["RUN 4", "—", "NOT PLAYED"] },
+      ],
+      bluesBars: [
+        { chord: "G7" }, { chord: "G7" }, { chord: "G7" }, { chord: "G7" },
+        { chord: "C7", current: true }, { chord: "C7" }, { chord: "G7" }, { chord: "G7" },
+        { chord: "D7" }, { chord: "C7" }, { chord: "G7" }, { chord: "D7" },
+      ],
+      backingBars: [24, 52, 38, 66, 44, 30, 58, 72, 40, 26, 50, 64, 34, 48, 28, 60, 42, 36, 54, 22],
+      formRows: [
+        { cells: ["BARS 1–4", "G7", "CLEAN"], marked: true },
+        { cells: ["BARS 5–6", "C7", "90 MS LATE"] },
+        { cells: ["BARS 7–8", "G7", "—"] },
+        { cells: ["BARS 9–12", "D7 C7 G7 D7", "—"] },
+      ],
+      blockRows: [
+        { cells: ["01", "3:00", "WARM UP", "DONE"] },
+        { cells: ["02", "4:00", "TIMING", "22 MS EARLY"] },
+        { cells: ["03", "7:00", "READING", "LEVEL 4 HELD"] },
+        { cells: ["04", "3:00", "TECHNIQUE", "4TH FINGER"] },
+        { cells: ["05", "4:04", "HARMONY", "84 BPM CLEAN"], marked: true },
+        { cells: ["06", "1:00", "YOUR OWN", "BLUES"] },
+      ],
+      sessionBars: [12, 38, 64, 46, 72, 30, 55, 80, 42, 26, 68, 50, 34, 60, 44, 76, 38, 28, 52, 20, 58, 36, 48, 24],
+      doneWeek: [
+        { letter: "M", state: "played", minutes: 21 },
+        { letter: "T", state: "played", minutes: 19 },
+        { letter: "W", state: "rest" },
+        { letter: "T", state: "played", minutes: 20 },
+        { letter: "F", state: "played", minutes: 22 },
+        { letter: "S", state: "future" },
+        { letter: "S", state: "rest" },
+      ],
+      mayaWeek: [
+        { letter: "M", state: "played", minutes: 21 },
+        { letter: "T", state: "played", minutes: 19 },
+        { letter: "W", state: "rest" },
+        { letter: "T", state: "played", minutes: 20 },
+        { letter: "F", state: "played", minutes: 22 },
+        { letter: "S", state: "future" },
+        { letter: "S", state: "rest" },
+      ],
+      andyWeek: [
+        { letter: "M", state: "future" },
+        { letter: "T", state: "played", minutes: 12 },
+        { letter: "W", state: "rest" },
+        { letter: "T", state: "future" },
+        { letter: "F", state: "played", minutes: 22 },
+        { letter: "S", state: "future" },
+        { letter: "S", state: "rest" },
+      ],
+      householdRows: [
+        { cells: ["FRI 14", "MAYA", "22:04", "6 / 6 BLOCKS"] },
+        { cells: ["FRI 14", "ANDY", "22:10", "OWN PLAN"] },
+        { cells: ["THU 13", "MAYA", "20:00", "6 / 6 BLOCKS"] },
+        { cells: ["TUE 11", "ANDY", "12:40", "READING ONLY"] },
+        { cells: ["TUE 11", "MAYA", "19:12", "5 / 6 BLOCKS"] },
+        { cells: ["MON 10", "MAYA", "21:30", "6 / 6 BLOCKS"] },
+      ],
+      teacherRows: [
+        { cells: ["FRI 14", "22:04", "LEVEL 4", "84 BPM CLEAN"], marked: true },
+        { cells: ["THU 13", "20:00", "LEVEL 4", "22 MS EARLY"] },
+        { cells: ["TUE 11", "19:12", "LEVEL 4", "STOPPED ONCE"] },
+        { cells: ["MON 10", "21:30", "LEVEL 4", "CLEAN SCALE"] },
+        { cells: ["SAT 08", "18:45", "LEVEL 3", "76 BPM"] },
+        { cells: ["FRI 07", "20:20", "LEVEL 3", "CLEAN SCALE"] },
+      ],
+      micBars: [16, 34, 52, 28, 44, 62, 38, 24, 48, 70, 42, 30, 56, 36, 22, 50, 64, 40, 26, 46],
+      quietSystem: [
+        { clef: "treble", top: 44, keySignature: [{ accidental: "sharp", left: 96 }], timeSignature: "common", timeLeft: 132 },
+        { clef: "bass", top: 180, keySignature: [{ accidental: "sharp", left: 96 }], timeSignature: "common", timeLeft: 132 },
+      ],
+      quietLayout: { bars: 3, beatsPerBar: 4, left: 190, right: 40 },
+      quietNotes: [
+        { bar: 0, beat: 0, step: 5, value: "quarter" },
+        { bar: 0, beat: 1, step: 6, value: "eighth", beam: "a" },
+        { bar: 0, beat: 1.5, step: 5, value: "eighth", beam: "a" },
+        { bar: 0, beat: 2, step: 4, value: "half" },
+        { bar: 1, beat: 0, step: 3, value: "quarter" },
+        { bar: 1, beat: 1, step: 4, value: "quarter" },
+        { bar: 1, beat: 2, step: 5, value: "half" },
+        { bar: 2, beat: 0, step: 6, value: "whole" },
+        { bar: 0, beat: 0, step: 4, value: "half", system: 1 },
+        { bar: 0, beat: 2, step: 5, value: "half", system: 1 },
+        { bar: 1, beat: 0, step: 3, value: "whole", system: 1 },
+        { bar: 2, beat: 0, step: 4, value: "whole", system: 1 },
+      ],
+      previewDays: [
+        { letter: "M", state: "future" },
+        { letter: "T", state: "future" },
+        { letter: "W", state: "rest" },
+        { letter: "T", state: "future" },
+        { letter: "F", state: "future" },
+        { letter: "S", state: "future" },
+        { letter: "S", state: "rest" },
+      ],
+      phraseBars: [18, 44, 62, 40, 26, 58, 78, 52, 34, 20, 46, 70, 38, 24, 56, 42, 28, 48, 32, 18],
+      earRows: [
+        { cells: ["1", "2 NOTES", "FIRST TRY"], marked: true },
+        { cells: ["2", "3 NOTES", "FIRST TRY"], marked: true },
+        { cells: ["3", "3 NOTES", "DIRECTION"] },
+        { cells: ["4", "3 NOTES", "PLAYING"] },
+        { cells: ["5", "4 NOTES", "—"] },
+        { cells: ["6", "5 NOTES", "—"] },
+      ],
+      oneSystem: [
+        {
+          clef: "treble",
+          top: 46,
+          keySignature: [{ accidental: "sharp", left: 96 }],
+          timeSignature: "common",
+          timeLeft: 132,
+        },
+      ],
+      twoBarsLayout: { bars: 2, beatsPerBar: 4, left: 190, right: 40 },
+      readingNotes: [
+        { bar: 0, beat: 0, step: 5, value: "quarter", state: "played" },
+        { bar: 0, beat: 1, step: 4, value: "quarter", state: "played" },
+        { bar: 0, beat: 2, step: 3, value: "eighth", beam: "a", state: "played" },
+        { bar: 0, beat: 2.5, step: 2, value: "eighth", beam: "a", state: "missed" },
+        { bar: 0, beat: 3, step: 4, value: "quarter", state: "played" },
+        { bar: 1, beat: 0, step: 2, value: "quarter", state: "current" },
+        { bar: 1, beat: 1, step: 3, value: "eighth", beam: "b", state: "upcoming" },
+        { bar: 1, beat: 1.5, step: 4, value: "eighth", beam: "b", state: "upcoming" },
+        { bar: 1, beat: 2, step: 5, value: "half", state: "upcoming" },
+      ],
+      currentBar: [{ bar: 1, beat: 0, width: 54 }],
+    };
+  }
+}
+</script>
+</body>
+</html>

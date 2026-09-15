@@ -1,0 +1,17 @@
+:root {
+  /* Radius is keyed to what a thing IS, not to its size. */
+  --kc-radius-cell:    7px;
+  --kc-radius-tile:    9px;
+  --kc-radius-control:10px;
+  --kc-radius-panel:  11px;
+  --kc-radius-screen: 12px;
+  --kc-radius-pill:  999px;
+  /* Circles are reserved for a person or a transport control. */
+
+  --kc-border-width:        1px;
+  --kc-border-width-current: 1.5px;  /* the only weight change in the system */
+
+  /* No shadow on anything inside a screen. The single shadow in the system
+     lifts a whole screen off a documentation canvas. */
+  --kc-shadow-screen: 0 10px 32px rgba(16, 19, 38, 0.28);
+}

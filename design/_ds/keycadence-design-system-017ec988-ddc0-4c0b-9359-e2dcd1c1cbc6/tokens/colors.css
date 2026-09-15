@@ -1,0 +1,53 @@
+:root {
+  /* ---- Surfaces. Four steps, darkest first. No gradients anywhere. ---- */
+  --kc-base:            #101326;  /* the screen itself */
+  --kc-panel:           #1a1e35;  /* a card or panel on the base */
+  --kc-panel-alt:       #151935;  /* a panel on a documentation ground */
+  --kc-raised:          #242a4a;  /* a control resting on a panel */
+  --kc-canvas:          #0c0f20;  /* outside the app: this document's ground */
+  --kc-paper:           #f2f1ee;  /* the reading page — the only light surface */
+  --kc-paper-ink:       #101326;  /* staff lines, clefs, noteheads on the page */
+  --kc-paper-ink-dim:   #9296a6;  /* a note not yet played — solid, never alpha */
+
+  /* ---- Ink. Four weights of the same neutral. ---- */
+  --kc-ink:             #eef0fb;  /* titles, figures */
+  --kc-ink-muted:       #c6cbe6;  /* body, notation glyphs, icons */
+  --kc-ink-dim:         #979ec2;  /* secondary copy, captions */
+  --kc-ink-faint:       #7b83ad;  /* mono meta, codepoints */
+
+  /* ---- Accents. Three, each with exactly one meaning. ---- */
+  --kc-mint:            #5ad1c0;  /* current or cleared. never decoration */
+  --kc-mint-wash:       #10302c;  /* mint at surface weight */
+  --kc-mint-edge:       #2a7a6e;  /* mint border on the wash */
+  --kc-mint-ink:        #042220;  /* text on a mint fill */
+  --kc-amber:           #f0b866;  /* a personal best. rare by design */
+  --kc-clay:            #e2705a;  /* needs attention. never "wrong" */
+
+  /* ---- Borders. The weight carries the state. ---- */
+  --kc-border:          #2a3054;  /* resting */
+  --kc-border-active:   #3d4570;  /* interactive — you can press it */
+  --kc-border-dashed:   #3f4a82;  /* planned absence: rest day, empty slot */
+
+  /* ---- Week strip. Its own set because the states are its own. ---- */
+  --kc-cell-future:     #1e2442;
+  --kc-cell-future-bd:  #333c72;
+  --kc-cell-dash-mark:  #5d68a0;
+  --kc-cell-letter:     #8a92bd;
+
+  /* ---- Notation. ---- */
+  --kc-glyph:           #c6cbe6;
+  --kc-glyph-dim:       #5d6590;  /* staff lines, inactive chord dots */
+
+  /* ---- Semantic aliases. Prefer these in components. ---- */
+  --kc-text-title:      var(--kc-ink);
+  --kc-text-body:       var(--kc-ink-muted);
+  --kc-text-secondary:  var(--kc-ink-dim);
+  --kc-text-meta:       var(--kc-ink-faint);
+  --kc-surface-screen:  var(--kc-base);
+  --kc-surface-card:    var(--kc-panel);
+  --kc-surface-control: var(--kc-raised);
+  --kc-surface-page:    var(--kc-paper);
+  --kc-state-current:   var(--kc-mint);
+  --kc-state-best:      var(--kc-amber);
+  --kc-state-attention: var(--kc-clay);
+}

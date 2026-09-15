@@ -1,0 +1,473 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/core/**",
+              "components/data/**",
+              "components/music/**",
+              "components/practice/**",
+              "components/sheet/**",
+              "ui_kits/app/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Instrument Sans|JetBrains Mono|Noto Music|Material Symbols Rounded))/i]",
+        "message": "Font not provided by the design system. Available: Instrument Sans, JetBrains Mono, Noto Music, Material Symbols Rounded."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|size|icon|disabled|children|style|key|ref|className|style|children)$/]",
+        "message": "<Button> doesn't accept that prop. Declared props: variant, size, icon, disabled, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|secondary|quiet)$/]",
+        "message": "<Button> variant must be one of 'primary' | 'secondary' | 'quiet'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:primary|control|pill)$/]",
+        "message": "<Button> size must be one of 'primary' | 'control' | 'pill'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ChordChartBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:chord|current|key|ref|className|style|children)$/]",
+        "message": "<ChordChartBar> doesn't accept that prop. Declared props: chord, current."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FormatBadge'] > JSXAttribute > JSXIdentifier[name!=/^(?:format|assigned|size|style|key|ref|className|style|children)$/]",
+        "message": "<FormatBadge> doesn't accept that prop. Declared props: format, assigned, size, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|shape|size|label|style|key|ref|className|style|children)$/]",
+        "message": "<IconButton> doesn't accept that prop. Declared props: icon, shape, size, label, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='shape'] > Literal[value!=/^(?:circle|square)$/]",
+        "message": "<IconButton> shape must be one of 'circle' | 'square'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='LeadSheetBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:chord|lyric|dim|key|ref|className|style|children)$/]",
+        "message": "<LeadSheetBar> doesn't accept that prop. Declared props: chord, lyric, dim."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='LogRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:cells|marked|key|ref|className|style|children)$/]",
+        "message": "<LogRow> doesn't accept that prop. Declared props: cells, marked."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='MeterRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|value|max|tone|suffix|labelWidth|style|key|ref|className|style|children)$/]",
+        "message": "<MeterRow> doesn't accept that prop. Declared props: label, value, max, tone, suffix, labelWidth, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='MeterRow'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:mint|amber|clay)$/]",
+        "message": "<MeterRow> tone must be one of 'mint' | 'amber' | 'clay'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NotationGlyph'] > JSXAttribute > JSXIdentifier[name!=/^(?:name|context|color|size|style|key|ref|className|style|children)$/]",
+        "message": "<NotationGlyph> doesn't accept that prop. Declared props: name, context, color, size, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NotationGlyph'] > JSXAttribute[name.name='context'] > Literal[value!=/^(?:staff|badge|cell|inline)$/]",
+        "message": "<NotationGlyph> context must be one of 'staff' | 'badge' | 'cell' | 'inline'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Panel'] > JSXAttribute > JSXIdentifier[name!=/^(?:padding|state|children|style|key|ref|className|style|children)$/]",
+        "message": "<Panel> doesn't accept that prop. Declared props: padding, state, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Panel'] > JSXAttribute[name.name='padding'] > Literal[value!=/^(?:card|panel|roomy)$/]",
+        "message": "<Panel> padding must be one of 'card' | 'panel' | 'roomy'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Panel'] > JSXAttribute[name.name='state'] > Literal[value!=/^(?:resting|current|cleared|empty)$/]",
+        "message": "<Panel> state must be one of 'resting' | 'current' | 'cleared' | 'empty'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PieceRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|format|assigned|pill|actionLabel|onOpen|style|key|ref|className|style|children)$/]",
+        "message": "<PieceRow> doesn't accept that prop. Declared props: title, meta, format, assigned, pill, actionLabel, onOpen, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Pill'] > JSXAttribute > JSXIdentifier[name!=/^(?:tone|icon|children|style|key|ref|className|style|children)$/]",
+        "message": "<Pill> doesn't accept that prop. Declared props: tone, icon, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Pill'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:neutral|mint|amber|clay)$/]",
+        "message": "<Pill> tone must be one of 'neutral' | 'mint' | 'amber' | 'clay'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='QueueRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:index|title|detail|duration|state|settings|draggable|style|key|ref|className|style|children)$/]",
+        "message": "<QueueRow> doesn't accept that prop. Declared props: index, title, detail, duration, state, settings, draggable, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='QueueRow'] > JSXAttribute[name.name='state'] > Literal[value!=/^(?:pending|current|done)$/]",
+        "message": "<QueueRow> state must be one of 'pending' | 'current' | 'done'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionLabel'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|children|style|key|ref|className|style|children)$/]",
+        "message": "<SectionLabel> doesn't accept that prop. Declared props: size, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionLabel'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:label|meta)$/]",
+        "message": "<SectionLabel> size must be one of 'label' | 'meta'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SegmentBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:total|filled|current|height|radius|gap|style|key|ref|className|style|children)$/]",
+        "message": "<SegmentBar> doesn't accept that prop. Declared props: total, filled, current, height, radius, gap, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SheetPanel'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|padding|style|key|ref|className|style|children)$/]",
+        "message": "<SheetPanel> doesn't accept that prop. Declared props: children, padding, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StaffSystem'] > JSXAttribute > JSXIdentifier[name!=/^(?:clef|top|keySignature|timeSignature|timeLeft|key|ref|className|style|children)$/]",
+        "message": "<StaffSystem> doesn't accept that prop. Declared props: clef, top, keySignature, timeSignature, timeLeft."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StaffSystem'] > JSXAttribute[name.name='clef'] > Literal[value!=/^(?:treble|bass|alto)$/]",
+        "message": "<StaffSystem> clef must be one of 'treble' | 'bass' | 'alto'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatTile'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|value|unit|delta|tone|style|key|ref|className|style|children)$/]",
+        "message": "<StatTile> doesn't accept that prop. Declared props: label, value, unit, delta, tone, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatTile'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:default|mint|amber|clay)$/]",
+        "message": "<StatTile> tone must be one of 'default' | 'mint' | 'amber' | 'clay'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Toggle'] > JSXAttribute > JSXIdentifier[name!=/^(?:checked|onChange|label|style|key|ref|className|style|children)$/]",
+        "message": "<Toggle> doesn't accept that prop. Declared props: checked, onChange, label, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Waveform'] > JSXAttribute > JSXIdentifier[name!=/^(?:bars|height|tone|style|key|ref|className|style|children)$/]",
+        "message": "<Waveform> doesn't accept that prop. Declared props: bars, height, tone, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Waveform'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:resting|mint)$/]",
+        "message": "<Waveform> tone must be one of 'resting' | 'mint'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='WeekDay'] > JSXAttribute > JSXIdentifier[name!=/^(?:letter|state|minutes|key|ref|className|style|children)$/]",
+        "message": "<WeekDay> doesn't accept that prop. Declared props: letter, state, minutes."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='WeekDay'] > JSXAttribute[name.name='state'] > Literal[value!=/^(?:played|today|playing|rest|future)$/]",
+        "message": "<WeekDay> state must be one of 'played' | 'today' | 'playing' | 'rest' | 'future'."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "Button": {
+        "replaces": []
+      },
+      "ChordChartBar": {
+        "replaces": []
+      },
+      "FormatBadge": {
+        "replaces": []
+      },
+      "IconButton": {
+        "replaces": []
+      },
+      "LeadSheetBar": {
+        "replaces": []
+      },
+      "LogRow": {
+        "replaces": []
+      },
+      "MeterRow": {
+        "replaces": []
+      },
+      "NotationGlyph": {
+        "replaces": []
+      },
+      "Panel": {
+        "replaces": []
+      },
+      "PieceRow": {
+        "replaces": []
+      },
+      "Pill": {
+        "replaces": []
+      },
+      "QueueRow": {
+        "replaces": []
+      },
+      "SectionLabel": {
+        "replaces": []
+      },
+      "SegmentBar": {
+        "replaces": []
+      },
+      "SheetPanel": {
+        "replaces": []
+      },
+      "StaffSystem": {
+        "replaces": []
+      },
+      "StatTile": {
+        "replaces": []
+      },
+      "Toggle": {
+        "replaces": []
+      },
+      "Waveform": {
+        "replaces": []
+      },
+      "WeekDay": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--kc-amber",
+      "--kc-base",
+      "--kc-border",
+      "--kc-border-active",
+      "--kc-border-dashed",
+      "--kc-border-width",
+      "--kc-border-width-current",
+      "--kc-canvas",
+      "--kc-cell-dash-mark",
+      "--kc-cell-future",
+      "--kc-cell-future-bd",
+      "--kc-cell-letter",
+      "--kc-clay",
+      "--kc-font-dynamics",
+      "--kc-font-icon",
+      "--kc-font-mono",
+      "--kc-font-music",
+      "--kc-font-sans",
+      "--kc-glyph",
+      "--kc-glyph-dim",
+      "--kc-h-control",
+      "--kc-h-header",
+      "--kc-h-icon",
+      "--kc-h-pill",
+      "--kc-h-primary",
+      "--kc-h-toggle",
+      "--kc-h-touch",
+      "--kc-ink",
+      "--kc-ink-dim",
+      "--kc-ink-faint",
+      "--kc-ink-muted",
+      "--kc-leading-body",
+      "--kc-leading-display",
+      "--kc-leading-lede",
+      "--kc-leading-tight",
+      "--kc-leading-title",
+      "--kc-measure",
+      "--kc-mint",
+      "--kc-mint-edge",
+      "--kc-mint-ink",
+      "--kc-mint-wash",
+      "--kc-mono-caption",
+      "--kc-mono-figure",
+      "--kc-mono-inline",
+      "--kc-mono-label",
+      "--kc-mono-meta",
+      "--kc-mono-metric",
+      "--kc-mono-micro",
+      "--kc-music-badge",
+      "--kc-music-badge-bass",
+      "--kc-music-cell",
+      "--kc-music-pair",
+      "--kc-music-specimen",
+      "--kc-pad-card",
+      "--kc-pad-panel",
+      "--kc-pad-roomy",
+      "--kc-pad-screen",
+      "--kc-panel",
+      "--kc-panel-alt",
+      "--kc-paper",
+      "--kc-paper-ink",
+      "--kc-paper-ink-dim",
+      "--kc-radius-cell",
+      "--kc-radius-control",
+      "--kc-radius-panel",
+      "--kc-radius-pill",
+      "--kc-radius-screen",
+      "--kc-radius-tile",
+      "--kc-raised",
+      "--kc-shadow-screen",
+      "--kc-space-1",
+      "--kc-space-2",
+      "--kc-space-3",
+      "--kc-space-4",
+      "--kc-space-5",
+      "--kc-space-6",
+      "--kc-state-attention",
+      "--kc-state-best",
+      "--kc-state-current",
+      "--kc-surface-card",
+      "--kc-surface-control",
+      "--kc-surface-page",
+      "--kc-surface-screen",
+      "--kc-text-base",
+      "--kc-text-body",
+      "--kc-text-display",
+      "--kc-text-meta",
+      "--kc-text-row",
+      "--kc-text-screen",
+      "--kc-text-secondary",
+      "--kc-text-section",
+      "--kc-text-small",
+      "--kc-text-title",
+      "--kc-text-xsmall",
+      "--kc-tile",
+      "--kc-track-display",
+      "--kc-track-label",
+      "--kc-track-meta",
+      "--kc-track-section",
+      "--kc-track-title",
+      "--kc-weight-bold",
+      "--kc-weight-regular",
+      "--kc-weight-semibold"
+    ],
+    "tokenKinds": {
+      "--kc-base": "color",
+      "--kc-panel": "color",
+      "--kc-panel-alt": "color",
+      "--kc-raised": "color",
+      "--kc-canvas": "color",
+      "--kc-paper": "color",
+      "--kc-paper-ink": "color",
+      "--kc-paper-ink-dim": "color",
+      "--kc-ink": "color",
+      "--kc-ink-muted": "color",
+      "--kc-ink-dim": "color",
+      "--kc-ink-faint": "color",
+      "--kc-mint": "color",
+      "--kc-mint-wash": "color",
+      "--kc-mint-edge": "color",
+      "--kc-mint-ink": "color",
+      "--kc-amber": "color",
+      "--kc-clay": "color",
+      "--kc-border": "color",
+      "--kc-border-active": "color",
+      "--kc-border-dashed": "color",
+      "--kc-cell-future": "color",
+      "--kc-cell-future-bd": "color",
+      "--kc-cell-dash-mark": "color",
+      "--kc-cell-letter": "font",
+      "--kc-glyph": "color",
+      "--kc-glyph-dim": "color",
+      "--kc-text-title": "font",
+      "--kc-text-body": "font",
+      "--kc-text-secondary": "font",
+      "--kc-text-meta": "font",
+      "--kc-surface-screen": "color",
+      "--kc-surface-card": "color",
+      "--kc-surface-control": "color",
+      "--kc-surface-page": "color",
+      "--kc-state-current": "color",
+      "--kc-state-best": "color",
+      "--kc-state-attention": "color",
+      "--kc-font-sans": "font",
+      "--kc-font-mono": "font",
+      "--kc-font-music": "font",
+      "--kc-font-icon": "font",
+      "--kc-font-dynamics": "font",
+      "--kc-text-display": "font",
+      "--kc-text-section": "font",
+      "--kc-text-screen": "font",
+      "--kc-text-row": "font",
+      "--kc-text-base": "font",
+      "--kc-text-small": "font",
+      "--kc-text-xsmall": "font",
+      "--kc-weight-regular": "font",
+      "--kc-weight-semibold": "font",
+      "--kc-weight-bold": "font",
+      "--kc-track-display": "spacing",
+      "--kc-track-section": "spacing",
+      "--kc-track-title": "spacing",
+      "--kc-track-label": "spacing",
+      "--kc-track-meta": "spacing",
+      "--kc-leading-display": "font",
+      "--kc-leading-title": "font",
+      "--kc-leading-tight": "font",
+      "--kc-leading-body": "font",
+      "--kc-leading-lede": "font",
+      "--kc-mono-figure": "spacing",
+      "--kc-mono-metric": "spacing",
+      "--kc-mono-inline": "spacing",
+      "--kc-mono-label": "spacing",
+      "--kc-mono-caption": "spacing",
+      "--kc-mono-meta": "spacing",
+      "--kc-mono-micro": "spacing",
+      "--kc-music-specimen": "spacing",
+      "--kc-music-badge": "spacing",
+      "--kc-music-badge-bass": "spacing",
+      "--kc-music-pair": "spacing",
+      "--kc-music-cell": "spacing",
+      "--kc-measure": "spacing",
+      "--kc-space-1": "spacing",
+      "--kc-space-2": "spacing",
+      "--kc-space-3": "spacing",
+      "--kc-space-4": "spacing",
+      "--kc-space-5": "spacing",
+      "--kc-space-6": "spacing",
+      "--kc-pad-card": "spacing",
+      "--kc-pad-panel": "spacing",
+      "--kc-pad-roomy": "spacing",
+      "--kc-pad-screen": "spacing",
+      "--kc-h-primary": "spacing",
+      "--kc-h-touch": "spacing",
+      "--kc-h-control": "spacing",
+      "--kc-h-icon": "spacing",
+      "--kc-h-pill": "spacing",
+      "--kc-h-toggle": "spacing",
+      "--kc-h-header": "spacing",
+      "--kc-tile": "spacing",
+      "--kc-radius-cell": "radius",
+      "--kc-radius-tile": "radius",
+      "--kc-radius-control": "radius",
+      "--kc-radius-panel": "radius",
+      "--kc-radius-screen": "radius",
+      "--kc-radius-pill": "radius",
+      "--kc-border-width": "spacing",
+      "--kc-border-width-current": "spacing",
+      "--kc-shadow-screen": "shadow"
+    },
+    "fontFamilies": [
+      "Instrument Sans",
+      "JetBrains Mono",
+      "Material Symbols Rounded",
+      "Noto Music"
+    ]
+  }
+}
