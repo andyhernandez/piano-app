@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, JetBrains_Mono, Noto_Music } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AppProviders } from "@/components/screens/app-providers";
 
 const sans = Instrument_Sans({ variable: "--font-instrument-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subsets: ["latin"], weight: ["400", "500", "600"] });
 const music = Noto_Music({ variable: "--font-noto-music", subsets: ["latin"], weight: "400" });
+// Chrome icons ship as a ligature font; next/font/google does not carry Material Symbols, so it is self-hosted.
+const icons = localFont({ src: "./fonts/material-symbols-rounded.woff2", variable: "--font-material-symbols", display: "block", weight: "300" });
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -27,12 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} ${music.variable} h-full antialiased`}>
-      <head>
-        {/* Chrome icons ship as a ligature font; next/font does not carry Material Symbols. */}
-        {/* eslint-disable-next-line @next/next/google-font-display, @next/next/no-page-custom-font */}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,300,0,0&display=block" />
-      </head>
+    <html lang="en" className={`${sans.variable} ${mono.variable} ${music.variable} ${icons.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <AppProviders>{children}</AppProviders>
       </body>
