@@ -120,7 +120,7 @@ public class MidiPlugin: CAPPlugin, CAPBridgedPlugin {
         for packet in packetList.unsafeSequence() {
             let stamp = packet.pointee.timeStamp
             let ageMs = (stamp == 0 || stamp > now) ? 0.0 : Double(now - stamp) * Double(timebase.numer) / Double(timebase.denom) / 1_000_000.0
-            let bytes = Array(packet.pointee.bytes())
+            let bytes = Array(packet.bytes())
             var i = 0
             while i < bytes.count {
                 let status = bytes[i]

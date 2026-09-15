@@ -11,10 +11,17 @@ DD="${DERIVED_DATA:-$(mktemp -d)/dd}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "→ Building for iPad $UDID (team $TEAM)"
-xcodebuild -project "$ROOT/ios/App/App.xcodeproj" -scheme App -configuration Debug \
+LOG="$DD/xcodebuild.log"
+mkdir -p "$DD"
+if ! xcodebuild -project "$ROOT/ios/App/App.xcodeproj" -scheme App -configuration Debug \
   -destination "id=$UDID" -derivedDataPath "$DD" \
   DEVELOPMENT_TEAM="$TEAM" -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
-  build | grep -E 'error|BUILD (SUCCEEDED|FAILED)' || true
+  build > "$LOG" 2>&1; then
+  grep -E 'error:|BUILD FAILED' "$LOG" || tail -20 "$LOG"
+  echo "Build failed; full log at $LOG"
+  exit 1
+fi
+echo "✓ Build succeeded"
 
 APP="$DD/Build/Products/Debug-iphoneos/App.app"
 [ -d "$APP" ] || { echo "Build failed: $APP missing"; exit 1; }
