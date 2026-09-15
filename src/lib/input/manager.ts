@@ -90,6 +90,9 @@ class InputManager {
 
   get isStarted() { return this.started; }
 
+  /** False when the live source (MIDI or mic) has dropped its device mid-session. Timer mode is always connected. */
+  get connected(): boolean { return this.source ? this.source.connected : true; }
+
   onNote(fn: (e: NoteEvent) => void) { return this.emitter.onNote(fn); }
   onOnset(fn: (e: OnsetEvent) => void) { return this.emitter.onOnset(fn); }
   onChange(fn: Listener) { this.changeListeners.add(fn); return () => { this.changeListeners.delete(fn); }; }

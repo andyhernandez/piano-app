@@ -1,6 +1,6 @@
 "use client";
 import { create } from "zustand";
-import type { AssessmentResult, BlockResult, BlockType, BlockWeights, Child, ChildSettings, InputMode, Parent, ScaleId, Session, SkillProfile } from "../types";
+import type { AssessmentResult, Assignment, BlockResult, BlockType, BlockWeights, Child, ChildSettings, InputMode, Parent, ScaleId, Session, SkillProfile } from "../types";
 import { BLOCK_ORDER } from "../types";
 import { repo } from "../db/repo";
 import { newId } from "../utils/id";
@@ -52,8 +52,9 @@ interface AppState {
 
   saveAssessment(childId: string, result: Omit<AssessmentResult, "id" | "childId" | "takenAt">): Promise<SkillProfile>;
 
-  planSession(child: Child): SessionPlan;
-  startSession(child: Child, inputMode: InputMode, teacherNote?: string): Promise<Session>;
+  /** Plan today's session. A linked teacher's assignment, when passed, pins the key and the block weights. */
+  planSession(child: Child, assignment?: Assignment | null): SessionPlan;
+  startSession(child: Child, inputMode: InputMode, teacherNote?: string, assignment?: Assignment | null): Promise<Session>;
   recordBlock(result: BlockResult): Promise<void>;
   finishSession(): Promise<{ session: Session; child: Child } | null>;
   abandonSession(): Promise<void>;
@@ -81,6 +82,7 @@ export function defaultSettings(): ChildSettings {
     hardStop: true,
     restDays: [2, 6],
     countIn: true,
+    pinnedSongIds: [],
   };
 }
 
@@ -212,14 +214,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     return profile;
   },
 
-  planSession(child) {
-    const weights = child.settings.weightsOverride ? normalize(child.settings.weightsOverride) : deriveWeights(child.skillProfile);
+  planSession(child, assignment) {
+    const override = assignment?.weightsOverride ?? child.settings.weightsOverride;
+    const weights = override ? normalize(override) : deriveWeights(child.skillProfile);
     const minutes = child.settings.sessionMinutes;
-    return { blockSeconds: blockDurations(weights, minutes), weights, scale: currentScale(child), minutes };
+    const scale = assignment?.scaleOverride ?? currentScale(child);
+    return { blockSeconds: blockDurations(weights, minutes), weights, scale, minutes };
   },
 
-  async startSession(child, inputMode, teacherNote) {
-    const plan = get().planSession(child);
+  async startSession(child, inputMode, teacherNote, assignment) {
+    const plan = get().planSession(child, assignment);
     const session: Session = {
       id: newId("ses"),
       childId: child.id,

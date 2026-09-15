@@ -16,7 +16,28 @@ export interface QueueItem {
   settings: string[];
 }
 
-/** Turn a session plan into the six queue rows the Today screen shows, in the design's language. */
+const VALID = new Set<string>(BLOCK_ORDER);
+
+/**
+ * Today's blocks in the order they run. In own-plan mode this honours the order the Today screen persisted in
+ * `settings.queueOrder` (a type may repeat or be missing) plus any `extraBlocks`; otherwise it is BLOCK_ORDER.
+ * The session runner calls this so the queue it walks matches the one the Today screen showed.
+ */
+export function orderedBlocks(child: Child): BlockType[] {
+  const s = child.settings;
+  if (s.mode !== "own") return [...BLOCK_ORDER];
+  const custom = (s.queueOrder ?? []).filter((b) => VALID.has(b));
+  if (s.queueOrder && custom.length) return custom;
+  const extras = (s.extraBlocks ?? []).filter((b) => VALID.has(b));
+  return [...BLOCK_ORDER, ...extras];
+}
+
+/** Seconds the ordered queue adds up to (a repeated block counts twice). */
+export function queueSeconds(child: Child, plan: SessionPlan): number {
+  return orderedBlocks(child).reduce((a, b) => a + plan.blockSeconds[b], 0);
+}
+
+/** Turn a session plan into the queue rows the Today screen shows, in the design's language. */
 export function buildQueue(child: Child, plan: SessionPlan, scaleId?: ScaleId): QueueItem[] {
   const scale: Scale = buildScale(scaleId ?? plan.scale);
   const keyName = scale.name.replace("#", "♯").replace("b", "♭");
@@ -31,5 +52,5 @@ export function buildQueue(child: Child, plan: SessionPlan, scaleId?: ScaleId): 
     repertoire: { title: "Pieces", detail: "Your piece, then a lead sheet", settings: [] },
     improv: { title: "Play something of your own", detail: `Backing loop in ${keyName.replace(/ (major|minor|harmonic minor)$/, "")}`, settings: [] },
   };
-  return BLOCK_ORDER.map((type, i) => ({ type, index: i + 1, ...rows[type], seconds: plan.blockSeconds[type], duration: fmtClock(plan.blockSeconds[type]) }));
+  return orderedBlocks(child).map((type, i) => ({ type, index: i + 1, ...rows[type], seconds: plan.blockSeconds[type], duration: fmtClock(plan.blockSeconds[type]) }));
 }

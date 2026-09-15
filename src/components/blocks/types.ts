@@ -30,6 +30,10 @@ export interface BlockProps {
   onSkip: () => void;
   /** Ask the runner to show/hide its own action buttons; blocks that draw their own bottom bar pass false. */
   setPrimaryLabel?: (label: string | null) => void;
+  /** Replace the header meta ("G major · two octaves · hands separately · 𝅘𝅥76"); null restores the runner's default. */
+  setMeta?: (meta: React.ReactNode | null) => void;
+  /** Tell the runner a recording is running so it shows the REC pill in the header. */
+  setRecording?: (on: boolean) => void;
 }
 
 export type BlockComponent = (props: BlockProps) => React.ReactNode;

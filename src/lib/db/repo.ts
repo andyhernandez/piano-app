@@ -59,6 +59,7 @@ export const repo = {
   async listTeachers() { return db().teachers.toArray(); },
   async putAssignment(a: Assignment) { await db().assignments.put(a); await enqueue("assignments", "put", a.id, a); },
   async assignmentFor(childId: string) { return db().assignments.where("childId").equals(childId).first(); },
+  async deleteAssignment(id: string) { await db().assignments.delete(id); await enqueue("assignments", "delete", id, null); },
 
   // ---- custom songs ----
   async putCustomSong(s: Song) { await db().customSongs.put(s); await enqueue("customSongs", "put", s.id, s); },

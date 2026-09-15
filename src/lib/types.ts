@@ -137,6 +137,15 @@ export interface ChildSettings {
   restDays: number[];
   /** Two bars of click before an exercise that measures timing. */
   countIn: boolean;
+  /**
+   * Own-plan queue order, persisted from the Today screen. The full ordered list of today's blocks; a type may
+   * appear twice (a second Pieces block) or be missing (skipped). Undefined = BLOCK_ORDER.
+   */
+  queueOrder?: BlockType[];
+  /** Blocks added beyond the standard six, in the order they were added. */
+  extraBlocks?: BlockType[];
+  /** Pieces the player put into today's Pieces block from the Library ("Add to today"). */
+  pinnedSongIds?: string[];
 }
 
 /** What a linked teacher receives from this profile. */

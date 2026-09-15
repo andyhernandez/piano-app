@@ -1,12 +1,6 @@
 "use client";
-import { Screen, Header } from "@/components/ds";
+import { OnboardingScreen } from "@/components/screens/onboarding/onboarding-screen";
 
-/** STUB: replaced by a screen implementation. */
 export default function OnboardingPage() {
-  return (
-    <Screen>
-      <Header />
-      <div style={{ padding: "36px 38px", color: "var(--kc-ink-dim)" }}>First run · coming next.</div>
-    </Screen>
-  );
+  return <OnboardingScreen />;
 }
