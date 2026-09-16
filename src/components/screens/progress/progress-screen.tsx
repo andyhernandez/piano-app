@@ -13,6 +13,7 @@ import { weekProgress, weeksAtTarget, timeByDiscipline, dayLabel, sessionHeadlin
 import { dateKey } from "@/lib/utils/date";
 import { TempoChart } from "./tempo-chart";
 import { progressHeadline, tempoCaption } from "./words";
+import { openSkillCheck } from "../skill-check/open";
 
 /** Discipline names as the Progress panel writes them (the kit's labels). */
 const DISCIPLINE_LABEL: Record<BlockType, string> = { reading: "Reading", rhythm: "Timing", scales: "Technique", repertoire: "Pieces", theory: "Harmony", improv: "Own playing" };
@@ -146,12 +147,12 @@ export function ProgressScreen() {
                   <MeterRow label="Pulse" value={profile.pulse} labelWidth={86} suffix={skillWord(profile.pulse)} />
                 </div>
                 <p style={{ margin: 0, fontSize: 14, color: "var(--kc-ink-dim)", lineHeight: 1.5 }}>Three figures from the four-minute check. They set how the session is weighted; they do not change on their own.</p>
-                <div><Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>Check again</Button></div>
+                <div><Button variant="secondary" size="control" onClick={() => openSkillCheck(router.push)}>Check again</Button></div>
               </>
             ) : (
               <>
                 <p style={EMPTY}>Nothing yet. The skill check takes about four minutes and sets how the session is weighted.</p>
-                <div><Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>Take the skill check</Button></div>
+                <div><Button variant="secondary" size="control" onClick={() => openSkillCheck(router.push)}>Take the skill check</Button></div>
               </>
             )}
           </Panel>

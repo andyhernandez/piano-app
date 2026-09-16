@@ -14,6 +14,7 @@ import { Stepper } from "./stepper";
 import { MicCalibrationPanel } from "./mic-calibration";
 import { nativeMidiAvailable, pairBluetoothKeyboard } from "@/lib/input/native-midi";
 import { SyncPanel } from "./sync-panel";
+import { openSkillCheck } from "../skill-check/open";
 
 type Pref = InputMode | "auto";
 const INPUT_LABELS: Record<Pref, string> = { auto: "Auto", midi: "MIDI keyboard", mic: "Microphone", timer: "Timer only" };
@@ -98,7 +99,7 @@ export function SettingsScreen() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>{child.skillProfile ? "Retake skill check" : "Take the skill check"}</Button>
+          <Button variant="secondary" size="control" onClick={() => openSkillCheck(router.push)}>{child.skillProfile ? "Retake skill check" : "Take the skill check"}</Button>
           <Button variant="quiet" size="control" onClick={() => router.push("/household")}>Household</Button>
         </div>
         {profileAge != null && <span style={{ fontSize: 13, color: "var(--kc-ink-faint)" }}>Last checked {profileAge === 0 ? "today" : `${profileAge} day${profileAge === 1 ? "" : "s"} ago`}.</span>}

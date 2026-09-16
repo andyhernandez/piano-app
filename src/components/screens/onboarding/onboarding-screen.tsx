@@ -11,6 +11,7 @@ import { StepWho, type NewPerson } from "./step-who";
 import { StepInput } from "./step-input";
 import { StepMode } from "./step-mode";
 import { StepTarget, restDaysFor, type Target } from "./step-target";
+import { openSkillCheck } from "../skill-check/open";
 
 /**
  * Setting up: four steps in one client page. Step 1 chooses or creates the person; the others fill in that
@@ -88,7 +89,7 @@ export function OnboardingScreen() {
         // Skipping the check leaves a null profile; the store derives the base weights from it.
         await updateChild(childId, { skillProfile: null });
       }
-      router.push(skillCheck ? "/skill-check" : "/");
+      if (skillCheck) openSkillCheck(router.push); else router.push("/");
     } finally {
       setSaving(false);
     }

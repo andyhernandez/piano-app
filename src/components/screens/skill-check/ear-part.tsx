@@ -60,12 +60,13 @@ function phraseBars(p: number[], pool: number[]): number[] {
 }
 
 /**
- * B1 · Ear. The app plays a phrase; the person plays it back on whatever is connected, or on the keys drawn below.
- * Any number of hearings; up to three tries. Credit falls with the tries, and a phrase that keeps the shape but
- * misses the notes still counts for something.
+ * B1 · Ear. The app plays a phrase the moment it appears; the person plays it back on whatever is connected, or on
+ * the keys drawn below. Hearing it again is free between tries, but not in the middle of one: once the first note
+ * of an answer is down, the rest of the answer has to follow before the phrase plays again. Up to three tries.
+ * Credit falls with the tries, and a phrase that keeps the shape but misses the notes still counts for something.
  */
 export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult> & { scale: ScaleId }) {
-  const { audio, unlock } = useAudio();
+  const { audio, ready, unlock } = useAudio();
   const scale = React.useMemo(() => buildScale(scaleId), [scaleId]);
   const pool = scale.midiOneOctave;
   const flats = prefersFlats(scaleId);
@@ -119,18 +120,28 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
     },
   });
 
+  // An answer in progress: notes are down, the try is not complete, the phrase is not settled.
+  const midAttempt = captured.length > 0 && captured.length < n && !done;
+
   const play = async () => {
-    if (paused || phase === "playing") return;
+    if (paused || phase === "playing" || midAttempt) return;
     await unlock();
     const total = audio.playSequence(phrase, GAP_SEC, 0.5, 0.8) || n * GAP_SEC;
     setPhase("playing");
     setHeard((h) => h + 1);
-    capturedRef.current = [];
-    setCaptured([]);
-    setAttemptDone(false);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setPhase("answer"), total * 1000 + 250);
   };
+  const playRef = React.useRef(play);
+  React.useEffect(() => { playRef.current = play; });
+
+  // Each phrase plays itself on arrival once audio is unlocked (the tap that opened the check does that on iOS).
+  const autoPlayed = React.useRef(-1);
+  React.useEffect(() => {
+    if (phase !== "idle" || paused || !ready || autoPlayed.current === index) return;
+    autoPlayed.current = index;
+    void playRef.current();
+  }, [phase, paused, ready, index]);
 
   const next = () => {
     if (phase === "playing") return;
@@ -168,8 +179,9 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
     if (done && rows[index].credit >= 0.7) return <>You played <b>{joinNotes(names(captured))}</b>. That&apos;s the phrase.</>;
     if (done) return <>It was <b>{joinNotes(names(phrase))}</b>. Moving on — that one is a fact, not a problem.</>;
     if (attemptDone) return <>You played <b>{joinNotes(names(captured))}</b>. Not the phrase yet — hear it again if you like, then once more.</>;
-    if (captured.length) return <>{joinNotes(names(captured))} …</>;
-    if (heard === 0) return <>Press play, then find it on the keys{mode === "midi" ? " — the keyboard is listening" : ""}.</>;
+    if (captured.length) return <>{joinNotes(names(captured))} … {n - captured.length === 1 ? "one more note" : `${numberWord(n - captured.length)} more notes`} to finish this try. The phrase plays again after that.</>;
+    if (heard === 0 && !ready) return <>Tap play to hear the phrase, then find it on the keys{mode === "midi" ? " — the keyboard is listening" : ""}.</>;
+    if (heard === 0) return <>Listen.</>;
     return <>Now play it back. {n === 2 ? "Two" : capitalize(numberWord(n))} notes.</>;
   })();
 
@@ -187,11 +199,11 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
 
   return (
     <div style={{ flex: 1, minHeight: 0, padding: "34px 38px", display: "flex", flexDirection: "column", gap: 24 }}>
-      <Headline size={34} title="Listen, then play it back." lede="Nothing is written down for this one. Play it as many times as you like — the check is whether you find it, not how fast." />
+      <Headline size={34} title="Listen, then play it back." lede="Nothing is written down for this one. Each phrase plays on its own; answer with the same number of notes. Hear it again between tries, not in the middle of one." />
       <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 300px", gap: 18 }}>
         <div style={PANEL}>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <IconButton icon={phase === "playing" ? "volume_up" : "play_arrow"} size={52} label="Play the phrase" onClick={() => void play()} style={phase === "playing" ? { border: "1px solid var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
+            <IconButton icon={phase === "playing" ? "volume_up" : heard ? "replay" : "play_arrow"} size={52} label={heard ? "Hear it again" : "Play the phrase"} disabled={paused || phase === "playing" || midAttempt} onClick={() => void play()} style={phase === "playing" ? { border: "1px solid var(--kc-mint)", color: "var(--kc-mint)" } : midAttempt ? { opacity: 0.4 } : undefined} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 17, fontWeight: 600 }}>Phrase {index + 1} of {phrases.length}</div>
               <div style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>{capitalize(numberWord(n))} notes, {shape(phrase, pool)}, in {key}{heard ? ` · played ${heard === 1 ? "once" : heard === 2 ? "twice" : `${heard} times`}` : ""}</div>
@@ -200,7 +212,7 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
           </div>
           <Waveform bars={phraseBars(phrase, pool)} height={40} tone={heard ? "mint" : "resting"} />
           <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center" }}>
-            <Keyboard from={60} to={83} height={132} tones={tones} disabled={paused || phase === "playing" || done} onNoteOn={(m) => tap.note(m, "on")} onNoteOff={(m) => tap.note(m, "off")} />
+            <Keyboard from={60} to={83} height={132} tones={tones} disabled={paused || phase === "playing" || done || heard === 0} onNoteOn={(m) => tap.note(m, "on")} onNoteOff={(m) => tap.note(m, "off")} />
           </div>
           <div style={{ fontSize: 15, color: "var(--kc-ink-muted)" }}>{feedback}</div>
         </div>
@@ -209,7 +221,7 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
           <LogTable rows={logRows} emphasize={1} />
           <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>{note}</p>
           <div style={{ marginTop: "auto" }}>
-            <Button style={{ width: "100%" }} disabled={paused || phase === "playing" || (!done && heard === 0)} onClick={next}>{last ? "Next — reading" : "Next phrase"}</Button>
+            <Button style={{ width: "100%" }} disabled={paused || phase === "playing" || (!done && heard === 0)} onClick={next}>{done ? (last ? "Next — reading" : "Next phrase") : last ? "Skip — reading" : "Skip this phrase"}</Button>
           </div>
         </div>
       </div>

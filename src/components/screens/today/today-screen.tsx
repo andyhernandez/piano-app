@@ -14,6 +14,7 @@ import { dateKey } from "@/lib/utils/date";
 import { AppHeader } from "./app-header";
 import { QueueEditor, rowStates } from "./queue-editor";
 import { TodayRail } from "./today-rail";
+import { openSkillCheck } from "../skill-check/open";
 import { useProfileData } from "./today-data";
 import { words, capitalize } from "./words";
 
@@ -145,7 +146,7 @@ export function TodayScreen() {
             <Button icon="play_arrow" onClick={() => void begin()} disabled={starting || (!next && !inProgress)}>{inProgress ? "Continue" : finishedToday ? "Practise again" : "Begin practice"}</Button>
             {offerCheck && (
               <>
-                <Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>Take the skill check</Button>
+                <Button variant="secondary" size="control" onClick={() => openSkillCheck(router.push)}>Take the skill check</Button>
                 <button type="button" onClick={() => void notNow()} style={{ background: "transparent", border: "none", padding: 0, fontSize: 13, color: "var(--kc-ink-faint)", cursor: "pointer", fontFamily: "inherit", flex: "none" }}>Not now</button>
               </>
             )}
