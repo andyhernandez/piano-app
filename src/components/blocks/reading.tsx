@@ -21,6 +21,12 @@ import { MetronomeDots, RecordControl, useBlockRecorder } from "./shared/control
 
 const BARS_PER_LINE = 4;
 const STAFF_W = 1000;
+// Notation size while the page is moving: staff-space 14px, a treble line 136px tall, a grand-staff line 200px.
+const LINE_GAP = 14;
+const LINE_TOPS = { treble: 36, bass: 132 };
+const LINE_H = { single: 136, grand: 200 };
+const LINES_SHOWN = { single: 4, grand: 3 };
+const SCROLL_EASE = "transform 480ms cubic-bezier(0.22, 0.61, 0.36, 1)";
 const PROMOTE_AT = 2;
 const TICK_MS = 50;
 const MAX_LEVEL = LEVELS.length;
@@ -248,13 +254,15 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
   };
 
   // ---- the page ----
-  const lines = React.useMemo(() => exerciseToLines(ex, scale, { barsPerLine: BARS_PER_LINE, states: measured ? live.states : undefined, lhChord: levelSpec(level).lhChords }), [ex, scale, live.states, measured, level]);
+  const lines = React.useMemo(() => exerciseToLines(ex, scale, { barsPerLine: BARS_PER_LINE, states: measured ? live.states : undefined, lhChord: levelSpec(level).lhChords, tops: LINE_TOPS }), [ex, scale, live.states, measured, level]);
   const currentNote = live.current !== null ? ex.notes[live.current] : null;
   const currentLine = currentNote ? Math.floor(currentNote.bar / BARS_PER_LINE) : 0;
   const grand = ex.hands === "together" || ex.hands === "alternating";
-  const lineGap = 18;
-  const lineH = grand ? 264 : 176;
-  const visible = measured ? lines.slice(currentLine, currentLine + (grand ? 2 : 3)) : lines;
+  const lineH = grand ? LINE_H.grand : LINE_H.single;
+  const shown = grand ? LINES_SHOWN.grand : LINES_SHOWN.single;
+  // The page glides so the line being played sits second from the top: the line just finished stays visible
+  // above it, the next ones below. It scrolls one line at a time instead of swapping the whole page.
+  const firstShown = Math.max(0, Math.min(currentLine - 1, lines.length - shown));
   const regionFor = (firstBar: number): StaffRegion[] => (currentNote && currentNote.bar >= firstBar && currentNote.bar < firstBar + BARS_PER_LINE ? [{ bar: currentNote.bar - firstBar, beat: currentNote.beat, width: 48 }] : []);
 
   const last = runs[runs.length - 1];
@@ -284,7 +292,7 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
           <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)" }}>Nothing is listening, so the page doesn&apos;t move on its own — play it through twice at your own pace.</p>
           <SheetPanel padding={22} style={{ flex: 1, minHeight: 0 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxHeight: "100%", overflow: "auto" }}>
-              {lines.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={820} height={grand ? 300 : 200} />)}
+              {lines.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={820} height={lineH} lineGap={LINE_GAP} />)}
             </div>
           </SheetPanel>
           <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 22 }}>
@@ -343,8 +351,12 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
             : <Button variant="quiet" size="control" icon="stop" onClick={stopRun}>Stop</Button>}
         </div>
         <SheetPanel padding={18} style={{ flex: 1, minHeight: 0 }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxHeight: "100%", overflow: "hidden" }}>
-            {visible.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} regions={regionFor(l.firstBar)} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={STAFF_W} height={lineH} lineGap={lineGap} />)}
+          <div style={{ display: "flex", justifyContent: "center", height: "100%", overflow: "hidden" }}>
+            <div style={{ width: STAFF_W, height: shown * lineH, maxHeight: "100%", overflow: "hidden" }}>
+              <div style={{ display: "flex", flexDirection: "column", transform: `translateY(${-firstShown * lineH}px)`, transition: SCROLL_EASE, willChange: "transform" }}>
+                {lines.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} regions={regionFor(l.firstBar)} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={STAFF_W} height={lineH} lineGap={LINE_GAP} />)}
+              </div>
+            </div>
           </div>
         </SheetPanel>
         <div style={{ height: 8, flex: "none" }} />

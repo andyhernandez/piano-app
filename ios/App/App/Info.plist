@@ -65,6 +65,8 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>UIStatusBarHidden</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>KeyCadence listens to the piano to follow pitch and timing while you practise. Nothing is recorded unless you tap Record.</string>

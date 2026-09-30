@@ -37,6 +37,30 @@ export function scoreTiming(expected: number[], actual: number[], windowMs = 120
 
 function avgAbs(a: number[]) { return a.reduce((s, v) => s + Math.abs(v), 0) / a.length; }
 function clamp(n: number, lo = 0, hi = 100) { return Math.max(lo, Math.min(hi, n)); }
+function median(a: number[]) { const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+
+/**
+ * Per-note hit window for a rhythm: ±150 ms for beats and eighths, tightening only when the onsets are so close
+ * (sixteenths) that a wider window would let taps match the wrong note. Never below the classic 120 ms.
+ */
+export function timingWindowMs(expectedMs: number[], maxMs = 150, minMs = 120): number {
+  let gap = Infinity;
+  for (let i = 1; i < expectedMs.length; i++) gap = Math.min(gap, expectedMs[i] - expectedMs[i - 1]);
+  return Number.isFinite(gap) ? Math.max(minMs, Math.min(maxMs, gap * 0.45)) : maxMs;
+}
+
+/**
+ * Remove the systematic offset from a set of taps before grading them note by note. Speaker latency, touch
+ * latency and a kid who taps "with" the click all shift every tap by the same amount; what we want to grade is
+ * whether the taps kept the rhythm. The offset (median deviation of the matched taps, capped at ±maxShiftMs) is
+ * returned so the UI can still say "ahead of" or "behind" the beat.
+ */
+export function alignTaps(expectedMs: number[], actualMs: number[], maxShiftMs = 150): { actual: number[]; offsetMs: number } {
+  const { deviations } = scoreTiming(expectedMs, actualMs, maxShiftMs);
+  if (deviations.length < 2) return { actual: actualMs, offsetMs: 0 };
+  const offsetMs = Math.max(-maxShiftMs, Math.min(maxShiftMs, median(deviations)));
+  return { actual: actualMs.map((t) => t - offsetMs), offsetMs };
+}
 
 /**
  * Scale Gym scoring (§4A): compare played note-ons against the expected run.
@@ -120,8 +144,8 @@ export function scoreReading(ex: Exercise, played: NoteEvent[], startMs: number,
 }
 
 /** Rhythm Lab scoring wrapper. */
-export function scoreRhythm(expectedMs: number[], actualMs: number[], inputMode: InputMode): MidiScore {
-  const r = scoreTiming(expectedMs, actualMs);
+export function scoreRhythm(expectedMs: number[], actualMs: number[], inputMode: InputMode, windowMs = 120): MidiScore {
+  const r = scoreTiming(expectedMs, actualMs, windowMs);
   const badge: BadgeId | null = r.hits === expectedMs.length && r.extras === 0 && expectedMs.length >= 4 ? "steady-pulse" : null;
   return { score: r.score, components: { hits: r.hits, misses: r.misses, extras: r.extras, avgDeviationMs: r.deviations.length ? Math.round(avgAbs(r.deviations)) : 0 }, badge, inputMode };
 }

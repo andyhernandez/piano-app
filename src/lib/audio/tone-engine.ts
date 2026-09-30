@@ -70,6 +70,16 @@ export class ToneAudioEngine implements AudioEngine {
 
   now() { return Tone.now(); }
 
+  outputLatencyMs() {
+    try {
+      const ctx = Tone.getContext().rawContext as Partial<AudioContext>;
+      const ms = ((ctx.baseLatency ?? 0) + (ctx.outputLatency ?? 0)) * 1000;
+      return Number.isFinite(ms) ? Math.max(0, Math.min(500, ms)) : 0;
+    } catch {
+      return 0;
+    }
+  }
+
   playNote(midi: number, duration = 0.6, velocity = 0.8, when?: number) {
     if (!this.ready) return;
     this.piano.triggerAttackRelease(midiToName(midi), duration, when ?? Tone.now(), velocity);

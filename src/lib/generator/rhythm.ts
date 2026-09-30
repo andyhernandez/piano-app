@@ -26,15 +26,17 @@ export interface RhythmLevelSpec {
   bars: number;
   cells: { value: RDur; weight: number }[];
   rests: boolean;
+  /** Chance that an eligible note becomes a rest (default 0.15). */
+  restChance?: number;
   syncopation: boolean;
 }
 
 /** Clap-Tap level ladder: quarter notes → syncopation and dotted rhythms (§4B). */
 export const RHYTHM_LEVELS: RhythmLevelSpec[] = [
-  { level: 1, title: "Steady Quarters", bpm: 70, bars: 2, cells: [{ value: 1, weight: 1 }], rests: false, syncopation: false },
+  { level: 1, title: "Quarters & Rests", bpm: 70, bars: 2, cells: [{ value: 1, weight: 1 }], rests: true, restChance: 0.3, syncopation: false },
   { level: 2, title: "Halves & Quarters", bpm: 72, bars: 2, cells: [{ value: 1, weight: 3 }, { value: 2, weight: 2 }], rests: false, syncopation: false },
   { level: 3, title: "Whole Notes", bpm: 72, bars: 2, cells: [{ value: 1, weight: 3 }, { value: 2, weight: 2 }, { value: 4, weight: 1 }], rests: false, syncopation: false },
-  { level: 4, title: "Quarter Rests", bpm: 76, bars: 2, cells: [{ value: 1, weight: 3 }, { value: 2, weight: 1 }], rests: true, syncopation: false },
+  { level: 4, title: "Halves & Rests", bpm: 76, bars: 2, cells: [{ value: 1, weight: 3 }, { value: 2, weight: 1 }], rests: true, syncopation: false },
   { level: 5, title: "Eighth Pairs", bpm: 76, bars: 2, cells: [{ value: 1, weight: 3 }, { value: 0.5, weight: 3 }, { value: 2, weight: 1 }], rests: false, syncopation: false },
   { level: 6, title: "Eighths & Rests", bpm: 80, bars: 4, cells: [{ value: 1, weight: 3 }, { value: 0.5, weight: 3 }, { value: 2, weight: 1 }], rests: true, syncopation: false },
   { level: 7, title: "Dotted Quarters", bpm: 80, bars: 4, cells: [{ value: 1, weight: 3 }, { value: 0.5, weight: 2 }, { value: 1.5, weight: 2 }], rests: true, syncopation: false },
@@ -62,7 +64,7 @@ export function generateRhythm(level: number, seed?: string, beatsPerBar = 4): R
       // Sixteenths must resolve within the beat.
       candidates = candidates.filter((c) => c.value >= 0.5 || Math.floor(beat) === Math.floor(beat + c.value - 1e-9));
       const dur = weightedPick(rng, candidates.length ? candidates : [{ value: 1 as RDur, weight: 1 }]);
-      const rest = spec.rests && beat > 0 && dur <= 1 && rng() < 0.15;
+      const rest = spec.rests && beat > 0 && dur <= 1 && rng() < (spec.restChance ?? 0.15);
       notes.push({ beats: dur, rest, onset: bar * beatsPerBar + beat });
       beat += dur;
     }
@@ -80,6 +82,18 @@ export function expectedOnsetsMs(p: RhythmPattern): number[] {
 }
 
 /** Short "Rhythm Echo" phrase: 1 bar, level-dependent cells. */
+/** True when two patterns have the same note durations and rests (ignores seed and tempo). */
+export function sameNotes(a: RhythmPattern, b: RhythmPattern): boolean {
+  return a.notes.length === b.notes.length && a.notes.every((n, i) => n.beats === b.notes[i].beats && n.rest === b.notes[i].rest);
+}
+
+/** Generate a pattern that differs from `current` when the level allows any variety. */
+export function generateDifferent(gen: () => RhythmPattern, current: RhythmPattern | undefined, tries = 12): RhythmPattern {
+  let p = gen();
+  for (let i = 1; current && sameNotes(p, current) && i < tries; i++) p = gen();
+  return p;
+}
+
 export function generateEcho(level: number, seed?: string): RhythmPattern {
   const p = generateRhythm(level, seed);
   const oneBar = p.notes.filter((n) => n.onset < p.beatsPerBar);

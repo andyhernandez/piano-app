@@ -3,6 +3,7 @@ import * as React from "react";
 import { Button, Headline, IconButton, LogTable, Pill, SectionLabel, SheetPanel, Staff, Tempo, rhythmToStaff, type NoteState } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
+import { eventTimeMs } from "@/lib/input/source";
 import { scorePulseDrift, scoreTiming } from "@/lib/engine/scoring";
 import { expectedOnsetsMs, generateRhythm, type RhythmPattern } from "@/lib/generator/rhythm";
 import { PANEL, SIDE, type PartProps, type PulseResult } from "./shared";
@@ -180,7 +181,7 @@ export function PulsePart({ paused, onDone }: PartProps<PulseResult>) {
             </SheetPanel>
           )}
           <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center" }}>
-            <button type="button" aria-label="Tap pad" onPointerDown={(e) => { e.preventDefault(); tap.tap(); }} disabled={paused} style={{ width: "100%", height: 132, borderRadius: 10, background: padFlash % 2 && phase === "running" ? "var(--kc-mint-wash)" : "var(--kc-raised)", border: "1px solid var(--kc-border)", color: "var(--kc-ink-muted)", fontFamily: "var(--kc-font-mono)", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", touchAction: "none", userSelect: "none" }}>
+            <button type="button" aria-label="Tap pad" onPointerDown={(e) => { e.preventDefault(); tap.tap(eventTimeMs(e)); }} disabled={paused} style={{ width: "100%", height: 132, borderRadius: 10, background: padFlash % 2 && phase === "running" ? "var(--kc-mint-wash)" : "var(--kc-raised)", border: "1px solid var(--kc-border)", color: "var(--kc-ink-muted)", fontFamily: "var(--kc-font-mono)", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", touchAction: "none", userSelect: "none" }}>
               Tap · or press space
             </button>
           </div>

@@ -7,8 +7,9 @@ import { BottomBar, Button, LogTable, Metric, Pill, SectionLabel, SheetPanel, St
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { useAppStore } from "@/lib/store/app-store";
-import { scoreRhythm, scoreTiming } from "@/lib/engine/scoring";
-import { expectedOnsetsMs, generateEcho, generateRhythm, RHYTHM_LEVELS, type RhythmPattern } from "@/lib/generator/rhythm";
+import { alignTaps, scoreRhythm, scoreTiming, timingWindowMs } from "@/lib/engine/scoring";
+import { eventTimeMs } from "@/lib/input/source";
+import { expectedOnsetsMs, generateDifferent, generateEcho, generateRhythm, RHYTHM_LEVELS, type RhythmPattern } from "@/lib/generator/rhythm";
 import { startBeatClock, audioTimeToPerfMs, meanSd } from "./shared/beat-clock";
 import { MetronomeDots, RecordControl, TempoControls, useBlockRecorder } from "./shared/controls";
 
@@ -30,6 +31,9 @@ interface Round { seed: string; game: Game; level: number; bpm: number; score: M
 const clampLevel = (l: number) => Math.max(1, Math.min(MAX_LEVEL, Math.round(l)));
 
 /** Greedy nearest matching, for the page: which written notes got a tap within the window. */
+/** Only mention rushing/dragging when the whole round sat this far off the click. */
+const OFFSET_NOTE_MS = 60;
+
 function matchOnsets(expected: number[], actual: number[], windowMs = 120): boolean[] {
   const used = new Set<number>();
   return expected.map((e) => {
@@ -105,13 +109,18 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
     stopEverything();
     setPhaseBoth("idle");
     const expected = expectedOnsetsMs(p);
-    const actual = tapsRef.current.map((t) => t - startMsRef.current).filter((t) => t >= -250);
-    const score = scoreRhythm(expected, actual, inputMode);
-    const timing = scoreTiming(expected, actual);
-    const { mean, sd } = meanSd(timing.deviations);
-    const aheadMs = timing.deviations.length ? -Math.round(mean) : 0;
+    // Taps are stamped when the finger lands; the click reached the ear outputLatency later than scheduled.
+    const latency = audio.outputLatencyMs();
+    const raw = tapsRef.current.map((t) => t - startMsRef.current - latency).filter((t) => t >= -250);
+    // Grade the shape of the rhythm, not the constant offset a kid (or the iPad's speaker) adds to every tap.
+    const { actual, offsetMs } = alignTaps(expected, raw);
+    const windowMs = timingWindowMs(expected);
+    const score = scoreRhythm(expected, actual, inputMode, windowMs);
+    const timing = scoreTiming(expected, actual, windowMs);
+    const { sd } = meanSd(timing.deviations);
+    const aheadMs = timing.deviations.length ? -Math.round(offsetMs) : 0;
     const steadiness = timing.deviations.length ? Math.round(100 * (1 - Math.min(1, sd / 120))) : 0;
-    const hits = matchOnsets(expected, actual);
+    const hits = matchOnsets(expected, actual, windowMs);
     const states = new Map<number, NoteState>();
     let k = 0;
     p.notes.forEach((n, i) => { if (!n.rest) states.set(i, hits[k++] ? "played" : "missed"); });
@@ -130,7 +139,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
     } else {
       cleanStreakRef.current = 0;
     }
-  }, [stopEverything, setPhaseBoth, inputMode, game, level, bpm, updateSettings, child.id]);
+  }, [stopEverything, setPhaseBoth, inputMode, game, level, bpm, updateSettings, child.id, audio]);
   const finishRef = React.useRef(finishRound);
   React.useEffect(() => { finishRef.current = finishRound; });
 
@@ -187,14 +196,15 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
     });
   };
 
-  const newPattern = (g: Game = game, l = level) => ({ ...(g === "echo" ? generateEcho(l) : generateRhythm(l)), bpm });
+  const newPattern = (g: Game = game, l = level, tempo = bpm) =>
+    ({ ...generateDifferent(() => (g === "echo" ? generateEcho(l) : generateRhythm(l)), patternRef.current), bpm: tempo });
   const playNew = () => void startRound(newPattern());
   const stopRound = () => { stopEverything(); setPhaseBoth("idle"); };
   const switchGame = (g: Game) => {
     if (g === game) return;
     stopRound();
     setGame(g);
-    setPattern({ ...(g === "echo" ? generateEcho(level) : generateRhythm(level)), bpm });
+    setPattern(newPattern(g));
   };
   const changeLevel = (delta: number) => {
     const next = clampLevel(level + delta);
@@ -203,7 +213,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
     cleanStreakRef.current = 0;
     setLevel(next);
     setBpm(RHYTHM_LEVELS[next - 1].bpm);
-    setPattern({ ...(game === "echo" ? generateEcho(next) : generateRhythm(next)), bpm: RHYTHM_LEVELS[next - 1].bpm });
+    setPattern(newPattern(game, next, RHYTHM_LEVELS[next - 1].bpm));
     void updateSettings(child.id, { rhythmLevel: next });
   };
 
@@ -213,7 +223,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "Space" || e.repeat) return;
       e.preventDefault();
-      tap.tap();
+      tap.tap(eventTimeMs(e));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -265,7 +275,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
     : rounds.length === 0 ? (game === "echo" ? "Hear a bar, tap it back, then see it written. Press Play." : "The click plays the rhythm once, counts you in, then you tap it back. Press Play.")
     : promoted ? `Two clean rounds. Level ${level} from here — ${spec.title.toLowerCase()}.`
     : last?.clean ? "Clean. One more like that moves the level up."
-    : Math.abs(last?.aheadMs ?? 0) >= 25 ? `Taps ran ${Math.abs(last.aheadMs)} ms ${last.aheadMs > 0 ? "ahead of" : "behind"} the click. Count the bar out loud.`
+    : Math.abs(last?.aheadMs ?? 0) >= OFFSET_NOTE_MS ? `Taps ran ${Math.abs(last.aheadMs)} ms ${last.aheadMs > 0 ? "ahead of" : "behind"} the click. Count the bar out loud.`
     : `${last.hits} of ${last.total}. Same tempo again.`;
 
   const rows = rounds.slice(-4).map((r, i, arr) => ({ cells: [`ROUND ${rounds.length - arr.length + i + 1}`, `${r.hits} / ${r.total}`, r.clean ? "CLEAN" : `${r.aheadMs >= 0 ? "+" : "−"}${Math.abs(r.aheadMs)} MS`], marked: r.clean }));
@@ -307,7 +317,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
           <button
             type="button"
             disabled={paused}
-            onPointerDown={(e) => { e.preventDefault(); setPadDown(true); tap.tap(); }}
+            onPointerDown={(e) => { e.preventDefault(); setPadDown(true); tap.tap(eventTimeMs(e)); }}
             onPointerUp={() => setPadDown(false)}
             onPointerCancel={() => setPadDown(false)}
             onPointerLeave={() => setPadDown(false)}
@@ -346,7 +356,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
       >
         <div style={{ display: "flex", gap: 26 }}>
           <Metric label="HITS" value={last ? `${last.hits} / ${last.total}` : "—"} tone={last && last.hits === last.total ? "mint" : undefined} />
-          <Metric label="AHEAD OF BEAT" value={last ? `${last.aheadMs >= 0 ? "+" : "−"}${Math.abs(last.aheadMs)} ms` : "—"} tone={last && Math.abs(last.aheadMs) >= 25 ? "clay" : undefined} />
+          <Metric label="AHEAD OF BEAT" value={last ? `${last.aheadMs >= 0 ? "+" : "−"}${Math.abs(last.aheadMs)} ms` : "—"} tone={last && Math.abs(last.aheadMs) >= OFFSET_NOTE_MS ? "clay" : undefined} />
           <Metric label="STEADINESS" value={last ? `${last.steadiness}%` : "—"} />
           <Metric label="CLEAN ROUNDS" value={`${cleanCount} / ${Math.max(rounds.length, 1)}`} tone={cleanCount ? "mint" : undefined} />
         </div>

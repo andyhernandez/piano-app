@@ -146,6 +146,8 @@ export interface ChildSettings {
   extraBlocks?: BlockType[];
   /** Pieces the player put into today's Pieces block from the Library ("Add to today"). */
   pinnedSongIds?: string[];
+  /** YouTube video ids the parent pasted for play-along songs in "Your own", by jam-song id. */
+  jamVideos?: Record<string, string>;
 }
 
 /** What a linked teacher receives from this profile. */

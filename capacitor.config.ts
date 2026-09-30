@@ -12,7 +12,8 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: "never",
     preferredContentMode: "mobile",
-    // The app is landscape-first; the status bar sits over the 72px header like the PWA.
+    // The app is landscape-first and hides the iOS status bar (Info.plist UIStatusBarHidden) so the clock and
+    // battery never sit on top of the 72px header's buttons.
     scrollEnabled: false,
     allowsLinkPreview: false,
   },

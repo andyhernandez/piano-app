@@ -13,12 +13,17 @@ import { isInScale } from "@/lib/music/scales";
 import { pcToMidi, prettyPc } from "@/lib/music/notes";
 import { CheckItem } from "@/components/ds";
 import { newId } from "@/lib/utils/id";
+import { useAppStore } from "@/lib/store/app-store";
+import { SongPlayer } from "./shared/song-player";
 
 /*
  * Your own. A backing groove in the session key, the keys outside the key dimmed, a clock that just runs, and an
  * optional take kept in the library when the player says so. Nothing is scored and nothing is praised.
  */
 
+type Backing = "groove" | "song";
+const BACKINGS: Backing[] = ["groove", "song"];
+const BACKING_LABELS: Record<Backing, string> = { groove: "Groove", song: "A song in this key" };
 const GROOVES: GrooveId[] = ["pop", "waltz", "blues", "lofi"];
 const GROOVE_LABELS: Record<GrooveId, string> = { pop: "Pop", waltz: "Waltz", blues: "Blues", lofi: "Lo-fi" };
 const TEMPOS = [72, 84, 96, 112];
@@ -41,6 +46,16 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
   const kbFrom = tonic - 12;
   const kbTo = tonic + 12;
 
+  // ---- the backing: the built-in groove, or a real song to play along with ----
+  const updateSettings = useAppStore((s) => s.updateSettings);
+  const [backing, setBacking] = React.useState<Backing>("groove");
+  const jamVideos = React.useMemo(() => child.settings.jamVideos ?? {}, [child.settings.jamVideos]);
+  const saveVideo = React.useCallback((songId: string, videoId: string | null) => {
+    const next = { ...(child.settings.jamVideos ?? {}) };
+    if (videoId) next[songId] = videoId; else delete next[songId];
+    void updateSettings(child.id, { jamVideos: next });
+  }, [child.id, child.settings.jamVideos, updateSettings]);
+
   // ---- the groove ----
   const [groove, setGroove] = React.useState<GrooveId>("pop");
   const [bpm, setBpm] = React.useState(84);
@@ -62,6 +77,8 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
   }, [grooveOn, bpm, groove]);
   const beat = grooveOn ? tick % beatsPerBar : -1;
   const toggleGroove = () => { void unlock(); setTick(0); setPlaying((p) => !p); };
+  const stopGroove = React.useCallback(() => setPlaying(false), []);
+  const chooseBacking = (b: Backing) => { if (b === "song") stopGroove(); setBacking(b); };
 
   // ---- the clock ----
   const { seconds } = useStopwatch(!paused);
@@ -151,11 +168,15 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "22px 30px 0", gap: 14 }}>
         <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)" }}>
-          Play whatever you like in {scale.name}. The groove keeps time; the dimmed keys are the ones outside the key.
+          Play whatever you like in {scale.name}. The groove keeps time, or pick a song in this key and play along; the dimmed keys are the ones outside the key.
         </p>
         <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 14 }}>
           <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
-            <SectionLabel>Backing</SectionLabel>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <SectionLabel>Backing</SectionLabel>
+              <Choice options={BACKINGS} value={backing} onChange={chooseBacking} labels={BACKING_LABELS} />
+            </div>
+            {backing === "song" ? <SongPlayer scale={scale} videos={jamVideos} onSaveVideo={saveVideo} onPlay={stopGroove} /> : <>
             <Choice options={GROOVES} value={groove} onChange={setGroove} labels={GROOVE_LABELS} />
             <div style={{ display: "flex", gap: 8 }}>
               {TEMPOS.map((t) => <ChoiceTile key={t} value={t} unit="bpm" selected={bpm === t} height={56} onClick={() => setBpm(t)} />)}
@@ -170,6 +191,7 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
               </div>
               <span style={{ marginLeft: "auto", fontSize: 14, color: "var(--kc-ink-dim)" }}>{GROOVE_LABELS[groove]} · <Tempo bpm={bpm} /></span>
             </div>
+            </>}
           </div>
           <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
             <SectionLabel>Recording</SectionLabel>
