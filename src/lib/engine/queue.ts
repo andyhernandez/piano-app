@@ -2,7 +2,7 @@ import type { BlockType, Child, Scale, ScaleId } from "../types";
 import { BLOCK_ORDER } from "../types";
 import { buildScale } from "../music/scales";
 import type { SessionPlan } from "../store/app-store";
-import { LEVELS } from "../generator/sightreading";
+import { LEVELS, READING_PROMOTE_AT } from "../generator/sightreading";
 import { RHYTHM_LEVELS } from "../generator/rhythm";
 import { fmtClock } from "./record";
 
@@ -47,7 +47,7 @@ export function buildQueue(child: Child, plan: SessionPlan, scaleId?: ScaleId): 
   const rows: Record<BlockType, Omit<QueueItem, "index" | "duration" | "seconds" | "type">> = {
     scales: { title: `Warm-up — ${keyName}, two octaves`, detail: "Hands separately, then together", settings: ["72BPM"] },
     rhythm: { title: `Timing — ${rhythm.title.toLowerCase()}`, detail: `Level ${s.rhythmLevel} · tap or play`, settings: [`${rhythm.bpm}BPM`, `L${s.rhythmLevel}`] },
-    reading: { title: `Sight reading — level ${s.readingLevel}`, detail: `${reading.hands === "together" ? "Hands together" : reading.hands === "alternating" ? "Alternating hands" : reading.hands === "LH" ? "Left hand" : "Right hand"} · ${3 - s.noStopStreak} clean run${3 - s.noStopStreak === 1 ? "" : "s"} from promotion`, settings: [`${reading.tempo}BPM`, `${reading.bars} BARS`] },
+    reading: { title: `Sight reading — level ${s.readingLevel}`, detail: `${reading.hands === "together" ? "Hands together" : reading.hands === "alternating" ? "Alternating hands" : reading.hands === "LH" ? "Left hand" : "Right hand"} · ${Math.max(1, READING_PROMOTE_AT - s.noStopStreak)} clean run${READING_PROMOTE_AT - s.noStopStreak === 1 ? "" : "s"} from promotion`, settings: [`${reading.tempo}BPM`, `${reading.bars} BARS`] },
     theory: { title: "Harmony — hear it, then find it", detail: `I, IV, V and vi in ${keyName.replace(/ (major|minor|harmonic minor)$/, "")}`, settings: [`L${s.theoryLevel}`] },
     repertoire: { title: "Pieces", detail: "Your piece, then a lead sheet", settings: [] },
     improv: { title: "Play something of your own", detail: `Backing loop in ${keyName.replace(/ (major|minor|harmonic minor)$/, "")}`, settings: [] },

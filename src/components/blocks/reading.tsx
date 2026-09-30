@@ -7,7 +7,7 @@ import { BottomBar, Button, CheckItem, Metric, Pill, SectionLabel, SegmentBar, S
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { useAppStore } from "@/lib/store/app-store";
-import { generateExercise, levelSpec, noteTimeline, LEVELS, type Exercise } from "@/lib/generator/sightreading";
+import { generateExercise, levelSpec, noteTimeline, LEVELS, READING_PROMOTE_AT, type Exercise } from "@/lib/generator/sightreading";
 import { scoreReading } from "@/lib/engine/scoring";
 import { fmtClock } from "@/lib/engine/record";
 import { startBeatClock, audioTimeToPerfMs, meanSd } from "./shared/beat-clock";
@@ -27,7 +27,7 @@ const LINE_TOPS = { treble: 36, bass: 132 };
 const LINE_H = { single: 136, grand: 200 };
 const LINES_SHOWN = { single: 4, grand: 3 };
 const SCROLL_EASE = "transform 480ms cubic-bezier(0.22, 0.61, 0.36, 1)";
-const PROMOTE_AT = 2;
+const PROMOTE_AT = READING_PROMOTE_AT;
 const TICK_MS = 50;
 const MAX_LEVEL = LEVELS.length;
 

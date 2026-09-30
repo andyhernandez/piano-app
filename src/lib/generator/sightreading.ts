@@ -54,6 +54,9 @@ export interface LevelSpec {
 }
 
 /** Level ladder (§11). */
+/** Consecutive no-stop runs that move the reading level up. */
+export const READING_PROMOTE_AT = 2;
+
 export const LEVELS: LevelSpec[] = [
   { level: 1, title: "First Steps", description: "Five-finger position, right hand, quarters and halves, stepwise.", hands: "RH", bars: 4, rangeDegrees: [1, 5], motion: { step: 1, skip: 0, repeat: 0.25, leap: 0 }, maxLeapSemitones: 2, rhythms: [{ value: 1, weight: 3 }, { value: 2, weight: 2 }], rests: false, ties: false, accidentals: false, dotted: false, syncopation: false, lhChords: false, tempo: 72 },
   { level: 2, title: "Skips", description: "Add skips of a third and whole notes.", hands: "RH", bars: 4, rangeDegrees: [1, 5], motion: { step: 1, skip: 0.5, repeat: 0.25, leap: 0 }, maxLeapSemitones: 4, rhythms: [{ value: 1, weight: 3 }, { value: 2, weight: 2 }, { value: 4, weight: 1 }], rests: false, ties: false, accidentals: false, dotted: false, syncopation: false, lhChords: false, tempo: 72 },
