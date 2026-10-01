@@ -29,6 +29,8 @@ export class ToneAudioEngine implements AudioEngine {
   private bellSynth!: Tone.MetalSynth;
   private fx!: Tone.PolySynth;
   private metroLoop: Tone.Loop | null = null;
+  /** Beat callbacks waiting on the wall clock; cleared when the metronome stops. */
+  private beatTimers = new Set<ReturnType<typeof setTimeout>>();
   private metroOpts: MetronomeOptions | null = null;
   private metroBeat = 0;
   private groove: { parts: Tone.Part[]; kick: Tone.MembraneSynth; snare: Tone.NoiseSynth; hat: Tone.MetalSynth; bass: Tone.MonoSynth } | null = null;
@@ -143,7 +145,14 @@ export class ToneAudioEngine implements AudioEngine {
       const beat = this.metroBeat;
       const accent = opts.beatsPerBar > 0 && beat % opts.beatsPerBar === 0;
       this.click(accent, time);
-      Tone.getDraw().schedule(() => opts.onBeat?.(beat % Math.max(1, opts.beatsPerBar), time), time);
+      // Fire the beat on the wall clock when the click sounds. Tone.Draw rides requestAnimationFrame, which
+      // stalls in a background or headless tab and left screens waiting on a beat that never came.
+      const delay = Math.max(0, (time - Tone.now()) * 1000);
+      const id = setTimeout(() => {
+        this.beatTimers.delete(id);
+        if (this.metronomeRunning && this.metroOpts === opts) opts.onBeat?.(beat % Math.max(1, opts.beatsPerBar), time);
+      }, delay);
+      this.beatTimers.add(id);
       this.metroBeat++;
     }, "4n").start(0);
     Tone.getTransport().start();
@@ -151,6 +160,8 @@ export class ToneAudioEngine implements AudioEngine {
   }
 
   stopMetronome() {
+    for (const id of this.beatTimers) clearTimeout(id);
+    this.beatTimers.clear();
     if (this.metroLoop) {
       this.metroLoop.stop();
       this.metroLoop.dispose();

@@ -221,7 +221,7 @@ export function Staff({ systems = [{ clef: "treble" }], notes = [], rests = [], 
       ))}
       {regions.map((r, i) => {
         const sys = laid[r.system ?? 0];
-        return <div key={"r" + i} style={{ position: "absolute", left: xOf(r), width: r.width ?? (layout ? barWidth * (r.bars ?? 1) : 40), top: r.top ?? sys.top - 14, height: r.height ?? 4 * lineGap + 28, background: "rgba(90,209,192,.28)", border: "1px solid #2f9f77", borderRadius: 3 }} />;
+        return <div key={"r" + i} style={{ position: "absolute", left: xOf(r), width: r.width ?? (layout ? barWidth * (r.bars ?? 1) : 40), top: r.top ?? sys.top - 14, height: r.height ?? 4 * lineGap + 28, background: "var(--kc-indigo-wash)", border: "2px solid var(--kc-lilac)", borderRadius: 3 }} />;
       })}
       {allBarlines.map((b, i) => {
         const sys = laid[b.system ?? 0];
@@ -250,7 +250,7 @@ export function Staff({ systems = [{ clef: "treble" }], notes = [], rests = [], 
       {placed.map((n, i) => (
         <React.Fragment key={"n" + i}>
           {n.accidental && <div style={{ position: "absolute", left: n.x - (ACCIDENTALS[n.accidental] || ACCIDENTALS.sharp).width * em - lineGap * 0.18, top: n.centerY + ((ACCIDENTALS[n.accidental] || ACCIDENTALS.sharp).baseline - BASELINE_IN_BOX) * em, fontFamily: "var(--kc-font-music)", fontSize: em, lineHeight: 1, color: n.color }}>{(ACCIDENTALS[n.accidental] || ACCIDENTALS.sharp).glyph}</div>}
-          <div style={{ position: "absolute", left: n.x, top: n.centerY - headH / 2, width: headW, height: headH, borderRadius: "50%", background: HOLLOW[n.value] ? "var(--kc-paper)" : n.color, border: HOLLOW[n.value] ? Math.max(2, lineGap * 0.14) + "px solid " + n.color : "none", boxSizing: "border-box", transform: "rotate(-18deg)" }} />
+          <div style={{ position: "absolute", left: n.x, top: n.centerY - headH / 2, width: headW, height: headH, borderRadius: "50%", background: n.state === "missed" ? "var(--kc-lilac)" : HOLLOW[n.value] ? "var(--kc-paper)" : n.color, border: HOLLOW[n.value] || n.state === "missed" ? Math.max(2, lineGap * 0.14) + "px solid " + n.color : "none", boxSizing: "border-box", transform: "rotate(-18deg)" }} />
           {n.dotted && <div style={{ position: "absolute", left: n.x + headW + lineGap * 0.22, top: n.centerY - (n.stepOf % 2 === 0 ? stepUnit : 0) - lineGap * 0.14, width: lineGap * 0.28, height: lineGap * 0.28, borderRadius: "50%", background: n.color }} />}
         </React.Fragment>
       ))}
