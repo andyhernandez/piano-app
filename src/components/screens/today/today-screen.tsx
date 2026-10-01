@@ -1,40 +1,22 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Screen, InputStatus, SectionLabel, QueueRow, SegmentBar, Button, Tempo, MainWithRail, keyLabel } from "@/components/ds";
+import { Screen, InputStatus, Button, MainWithRail, Headline, TickSays, StopPath, ActionNote, keyLabel, type Stop } from "@/components/ds";
 import { useAppStore, useActiveChild } from "@/lib/store/app-store";
 import { useInput } from "@/lib/hooks/use-input";
 import { useAudio } from "@/lib/hooks/use-audio";
-import { buildQueue, orderedBlocks, queueSeconds } from "@/lib/engine/queue";
-import { DISCIPLINE } from "@/lib/engine/record";
+import { buildQueue, orderedBlocks, queueSeconds, STOP_SHORT } from "@/lib/engine/queue";
+import { weekProgress } from "@/lib/engine/record";
 import { BLOCK_ORDER } from "@/lib/types";
-import type { QueueItem } from "@/lib/engine/queue";
 import { repo } from "@/lib/db/repo";
 import { dateKey } from "@/lib/utils/date";
+import { blockHeadline } from "../session/words";
 import { AppHeader } from "./app-header";
 import { QueueEditor, rowStates } from "./queue-editor";
 import { TodayRail } from "./today-rail";
 import { useProfileData } from "./today-data";
+import { weightingReason } from "./today-copy";
 import { words, capitalize } from "./words";
-
-function guidedCopy(next: QueueItem | undefined, keyName: string, inProgress: boolean): { title: React.ReactNode; lede: React.ReactNode } {
-  if (!next) return { title: "Everything for today is done.", lede: "Come back tomorrow, or open the queue and add a block." };
-  const verb = inProgress ? "Pick up at" : "Start with";
-  switch (next.type) {
-    case "scales":
-      return { title: `${verb} the ${keyName} scale.`, lede: <>Two octaves, hands separately first, with the click at <Tempo bpm={72} />.</> };
-    case "rhythm":
-      return { title: `${verb} timing.`, lede: `${next.detail}. Tap along or play; the click is steady, you follow it.` };
-    case "reading":
-      return { title: `${verb} sight reading.`, lede: `${next.detail}. Keep going through mistakes; stopping counts more than a wrong note.` };
-    case "theory":
-      return { title: `${verb} harmony.`, lede: `${next.detail}. Hear the chord, then find it on the keys.` };
-    case "repertoire":
-      return { title: `${verb} your pieces.`, lede: `${next.detail}.` };
-    default:
-      return { title: `${verb} something of your own.`, lede: `${next.detail}. Nothing is measured here.` };
-  }
-}
 
 export function TodayScreen() {
   const router = useRouter();
@@ -50,7 +32,7 @@ export function TodayScreen() {
   const { mode: inputMode, label: inputLabel } = useInput();
   const { unlock } = useAudio();
   const [today] = React.useState(() => dateKey());
-  const [dateLabel] = React.useState(() => new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }).toUpperCase());
+  const [weekday] = React.useState(() => new Date().toLocaleDateString("en-US", { weekday: "long" }));
   const [skippedCheck, setSkippedCheck] = React.useState<boolean | null>(null);
   const [starting, setStarting] = React.useState(false);
   const data = useProfileData(child?.id ?? null, activeSession ? 1 : 0);
@@ -87,15 +69,35 @@ export function TodayScreen() {
   const totalSeconds = queueSeconds(child, plan);
   const leftSeconds = queue.reduce((a, q, i) => a + (states[i] === "done" ? 0 : q.seconds), 0);
   const keyName = keyLabel(plan.scale.key, plan.scale.mode);
-  const top = BLOCK_ORDER.reduce((a, b) => (plan.weights[b] > plan.weights[a] ? b : a), BLOCK_ORDER[0]);
-  const flat = BLOCK_ORDER.every((b) => Math.abs(plan.weights[b] - plan.weights[top]) < 0.03);
   const inProgress = !!activeSession;
   const finishedToday = !inProgress && data.sessions.some((s) => s.date === today && s.endedAt !== null);
   const minutesToday = data.sessions.filter((s) => s.date === today).reduce((a, s) => a + Math.round(s.durationSec / 60), 0);
-  const copy = finishedToday
-    ? { title: "Done for today.", lede: `${capitalize(words(minutesToday))} minute${minutesToday === 1 ? "" : "s"} in the record. Another session adds to it; nothing is lost by stopping here.` }
-    : guidedCopy(next, keyName, inProgress);
   const offerCheck = !child.skillProfile && skippedCheck === false;
+  const week = weekProgress(child, data.sessions, today);
+  const dayNumber = Math.min(week.target, week.played + (finishedToday || inProgress ? 0 : 1));
+  const everHadEar = data.sessions.some((s) => s.blocks.some((b) => b.type === "ear" && b.completed));
+  const minutesLeft = Math.max(1, Math.ceil(leftSeconds / 60));
+  const stopsLeft = queue.length - doneCount;
+
+  const stops: Stop[] = queue.map((q, i) => {
+    const done = states[i] === "done";
+    const result = activeSession?.blocks.find((b) => b.type === q.type && (b.slot === undefined || b.slot === i));
+    const state: Stop["state"] = done ? "done" : i === nextIndex ? (inProgress ? "current" : "first") : q.type === "improv" ? "own" : q.type === "ear" && !everHadEar ? "new" : "upcoming";
+    const minutes = Math.max(1, Math.round(q.seconds / 60));
+    const detail = done && result ? blockHeadline(result).text.toLowerCase().replace(/^\w/, (c) => c.toUpperCase()) : state === "new" ? `New · ${minutes} min` : `${minutes} min`;
+    return { icon: q.icon, name: STOP_SHORT[q.type], detail, state };
+  });
+
+  const title = finishedToday
+    ? `Done for today, ${child.name}.`
+    : inProgress
+      ? `Hi ${child.name} — ${words(stopsLeft)} stop${stopsLeft === 1 ? "" : "s"} left, ${words(minutesLeft)} minute${minutesLeft === 1 ? "" : "s"}.`
+      : `Hi ${child.name} — ${words(queue.length)} stops, ${words(Math.round(totalSeconds / 60))} minutes.`;
+  const tickLine = finishedToday
+    ? `${capitalize(words(minutesToday))} minute${minutesToday === 1 ? "" : "s"} in the record today. Another session adds to it — nothing is lost by stopping here.`
+    : inProgress
+      ? `You're part way through. Pick up at ${next ? STOP_SHORT[next.type].toLowerCase() : "the next stop"} — everything before it is already in the record.`
+      : weightingReason(child, plan, data.teacher?.name ?? null, !!data.assignment?.note);
 
   const begin = async () => {
     if (inProgress) { router.push("/session"); return; }
@@ -113,48 +115,39 @@ export function TodayScreen() {
     setSkippedCheck(true);
   };
   const toggleMode = () => void updateSettings(child.id, { mode: guided ? "own" : "guided" });
+  const primaryLabel = inProgress ? "Continue" : finishedToday ? "Play again" : guided ? "Start playing" : "Start";
 
   return (
     <Screen>
       <AppHeader active="today" right={<InputStatus mode={inputMode} device={inputLabel} />} />
-      <MainWithRail rail={<TodayRail child={child} plan={plan} sessions={data.sessions} assignment={data.assignment} teacher={data.teacher} today={today} activeToday={inProgress} />}>
-        <div style={{ padding: "36px 38px", display: "flex", flexDirection: "column", gap: 22, minHeight: 0, flex: 1 }}>
-          <div>
-            <SectionLabel>{dateLabel}</SectionLabel>
-            <h1 style={{ margin: "8px 0 0", fontSize: 42, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
-              {guided ? copy.title : <>{capitalize(words(Math.round(totalSeconds / 60)))} minutes, in {keyName}</>}
-            </h1>
-            <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 520 }}>
-              {guided ? copy.lede : `${flat ? "Evenly weighted" : `Weighted toward ${DISCIPLINE[top].title.toLowerCase()}`}. Edit anything below — the shape is yours.`}
-            </p>
-          </div>
+      <MainWithRail rail={<TodayRail child={child} plan={plan} sessions={data.sessions} assignment={data.assignment} teacher={data.teacher} today={today} activeToday={inProgress} variant={guided ? "guided" : "own"} />}>
+        <div style={{ padding: "30px 32px", display: "flex", flexDirection: "column", gap: guided ? 20 : 16, minHeight: 0, flex: 1 }}>
           {guided ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {next && <QueueRow index={next.index} title={next.title} detail={next.detail} duration={next.duration} state="current" draggable={false} settings={[]} />}
-              <SegmentBar total={queue.length} filled={doneCount} radius={3} gap={6} />
-              <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>
-                {inProgress
-                  ? `${capitalize(words(doneCount))} of ${words(queue.length)} done · about ${words(Math.ceil(leftSeconds / 60))} minutes left`
-                  : `${capitalize(words(queue.length))} blocks · about ${words(Math.round(totalSeconds / 60))} minutes`}
-              </span>
-            </div>
+            <>
+              <Headline kicker={`${weekday} · day ${dayNumber} of ${week.target}`} title={title} size={50} />
+              <TickSays>{tickLine}</TickSays>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 20, fontWeight: 600, lineHeight: 1.15 }}>Today&apos;s path</div>
+                <StopPath stops={stops} />
+              </div>
+            </>
           ) : (
-            <QueueEditor child={child} plan={plan} session={activeSession} />
+            <>
+              <Headline kicker={`${weekday} · own plan`} title={`${capitalize(words(Math.round(totalSeconds / 60)))} minutes in ${keyName}`} size={44} />
+              <QueueEditor child={child} plan={plan} session={activeSession} newTypes={everHadEar ? [] : ["ear"]} />
+            </>
           )}
-          <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 16 }}>
-            <Button icon="play_arrow" onClick={() => void begin()} disabled={starting || (!next && !inProgress)}>{inProgress ? "Continue" : finishedToday ? "Practise again" : "Begin practice"}</Button>
-            {offerCheck && (
+          <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 14, flex: "none" }}>
+            <Button icon="play_arrow" onClick={() => void begin()} disabled={starting || (!next && !inProgress)}>{primaryLabel}</Button>
+            {offerCheck && !inProgress ? (
               <>
                 <Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>Take the skill check</Button>
-                <button type="button" onClick={() => void notNow()} style={{ background: "transparent", border: "none", padding: 0, fontSize: 13, color: "var(--kc-ink-faint)", cursor: "pointer", fontFamily: "inherit", flex: "none" }}>Not now</button>
+                <Button variant="quiet" size="control" onClick={() => void notNow()}>Not now</Button>
               </>
+            ) : (
+              <Button variant="secondary" size="control" disabled={inProgress} onClick={toggleMode}>{guided ? "Change the plan" : "Back to guided"}</Button>
             )}
-            <span style={{ fontSize: 14, color: "var(--kc-ink-dim)", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {child.settings.hardStop ? `Stops at ${child.settings.sessionMinutes} minutes unless you keep going.` : "The timer keeps counting; nothing interrupts."}
-            </span>
-            <button type="button" onClick={toggleMode} disabled={inProgress} style={{ flex: "none", background: "transparent", border: "none", padding: 0, fontSize: 13, color: "var(--kc-ink-faint)", cursor: inProgress ? "default" : "pointer", fontFamily: "inherit", opacity: inProgress ? 0.5 : 1 }}>
-              {guided ? "Switch to own plan" : "Switch to guided"}
-            </button>
+            <ActionNote>{child.settings.hardStop ? `Stops at ${child.settings.sessionMinutes} minutes unless you keep going.` : "Stop whenever you like — the timer just helps."}</ActionNote>
           </div>
         </div>
       </MainWithRail>

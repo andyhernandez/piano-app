@@ -38,9 +38,9 @@ export function Tick({ mood = "happy", size = "full", bpm = 72, style }: { mood?
           <span style={{ position: "absolute", top: 66, left: 40, width: 24, height: 10, border: "4px solid #ffffff", borderTop: "none", borderRadius: "0 0 20px 20px", boxSizing: "border-box" }} />
         </>
       )}
-      {/* The pendulum: a white rod with a weight, pivoting from the top of the face. */}
-      <span className="kc-pendulum" style={{ position: "absolute", top: 88, left: 50, width: 4, height: 30, marginLeft: -2, borderRadius: 2, background: "#ffffff", ["--kc-swing" as string]: swing } as React.CSSProperties}>
-        <span style={{ position: "absolute", bottom: -4, left: -5, width: 14, height: 14, borderRadius: "50%", background: "#ffffff", border: "3px solid var(--kc-indigo)", boxSizing: "border-box" }} />
+      {/* The pendulum: a lilac rod with a small weight, pivoting below the mouth, swinging once per beat. */}
+      <span className="kc-pendulum" style={{ position: "absolute", top: 94, left: 52, width: 3, height: 22, marginLeft: -1.5, borderRadius: 2, background: "var(--kc-lilac)", opacity: 0.9, ["--kc-swing" as string]: swing } as React.CSSProperties}>
+        <span style={{ position: "absolute", bottom: -3, left: -3.5, width: 10, height: 10, borderRadius: "50%", background: "var(--kc-lilac)" }} />
       </span>
     </div>
   );

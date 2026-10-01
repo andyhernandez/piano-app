@@ -1,24 +1,25 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { BlockType, Child, Recording, Session } from "@/lib/types";
+import type { BlockResult, BlockType, Child, Recording, Session } from "@/lib/types";
 import { repo } from "@/lib/db/repo";
-import { orderedBlocks } from "@/lib/engine/queue";
-import { DISCIPLINE, fastestClean, fmtClock, weekCells, weekProgress } from "@/lib/engine/record";
+import { orderedBlocks, STOP_ICON, STOP_SHORT } from "@/lib/engine/queue";
+import { fastestClean, fmtClock, weekCells, weekProgress } from "@/lib/engine/record";
 import { parseDateKey, weekDays } from "@/lib/utils/date";
-import { Button, Icon, LogTable, Panel, QueueRow, Screen, SectionLabel, StatTile, Waveform, WeekStrip, keyLabel } from "@/components/ds";
-import { blockHeadline, capitalize, handsText, numberWord, ORDINAL, readingSpec, resultOf } from "./words";
+import { Button, Icon, IconButton, Logo, Panel, Pill, Rail, RailSection, Screen, Small, StopPath, Tick, Waveform, WeekKeys, Headline, keyLabel, type Stop } from "@/components/ds";
+import { blockHeadline, capitalize, numberWord, ORDINAL } from "./words";
 
 export interface DoneResult { session: Session; child: Child }
 
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function num(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
-/** C3 — Session done. The facts of the session, what changed, the week, and a single way out. */
+interface Sticker { tone: "sun" | "mint"; icon: string; title: string; sub: string }
+
+/** D8 — Session done. Tick cheers, the path is lit, the stickers are only the ones really earned today. */
 export function SessionDone({ result }: { result: DoneResult }) {
   const router = useRouter();
   const { session, child } = result;
@@ -40,175 +41,197 @@ export function SessionDone({ result }: { result: DoneResult }) {
   const doneCount = results.filter((b) => b.completed).length;
   const plannedSec = session.plannedMinutes * 60;
   const overrunMin = Math.round((session.durationSec - plannedSec) / 60);
-  const minutes = Math.round(session.durationSec / 60);
+  const minutes = Math.max(1, Math.round(session.durationSec / 60));
+  const keyName = keyLabel(session.scale.key, session.scale.mode);
 
-  const scales = resultOf(session, "scales");
-  const reading = resultOf(session, "reading");
-  const rhythm = resultOf(session, "rhythm");
+  const of = (t: BlockType) => results.find((b) => b.type === t);
+  const scales = of("scales");
+  const reading = of("reading");
+  const rhythm = of("rhythm");
   const cleanBpm = scales?.midiScore?.badge === "clean-scale" ? num(scales.details?.tempoBest) ?? num(scales.details?.bpm) : null;
   const previous = sessions ? sessions.filter((s) => s.id !== session.id) : [];
   const prevBest = fastestClean(previous);
-  const newBest = cleanBpm != null && (prevBest == null || cleanBpm > prevBest);
+  const newBest = sessions !== null && cleanBpm != null && (prevBest == null || cleanBpm > prevBest);
   const readingLevel = num(reading?.details?.level) ?? child.settings.readingLevel;
   const readingHeld = reading?.midiScore?.badge === "no-stop-reading";
   const readingUp = !!reading?.details?.promoted;
   const aheadMs = num(rhythm?.details?.aheadMs) ?? (rhythm?.midiScore ? num(rhythm.midiScore.components.avgDeviationMs) : null);
   const finger = num(scales?.details?.unevenFinger);
+  const steady = rhythm?.midiScore?.badge === "steady-pulse";
+  const overrunBlock = results.filter((b) => b.durationSec > b.plannedSec + 90).sort((a, b) => (b.durationSec - b.plannedSec) - (a.durationSec - a.plannedSec))[0];
 
-  // Headline: the minutes, then the one fact worth leading with.
-  let fact = `${capitalize(numberWord(doneCount))} of ${numberWord(order.length)} blocks played.`;
-  if (cleanBpm != null) fact = `The scale was clean at ${cleanBpm} bpm.`;
-  else if (finger != null) fact = `The scale is even except the ${ORDINAL[finger - 1]} finger.`;
-  else if (readingUp) fact = `Reading moves up to level ${readingLevel}.`;
-  else if (readingHeld) fact = `Reading level ${readingLevel} held.`;
-  else if (aheadMs != null && aheadMs !== 0) fact = `Taps ran ${Math.abs(aheadMs)} ms ${aheadMs > 0 ? "ahead of" : "behind"} the click.`;
-  const title = `${capitalize(numberWord(minutes))} minute${minutes === 1 ? "" : "s"}. ${fact}`;
-  const lede = overrunMin > 0
-    ? `You ran ${numberWord(overrunMin)} minute${overrunMin === 1 ? "" : "s"} past the timer. That's recorded as it happened.`
-    : overrunMin < 0
-      ? `You stopped ${numberWord(-overrunMin)} minute${overrunMin === -1 ? "" : "s"} short of the timer. That's recorded as it happened.`
-      : "Right on the timer. That's recorded as it happened.";
+  const title = doneCount >= order.length
+    ? `All ${numberWord(order.length)} stops — ${numberWord(minutes)} minute${minutes === 1 ? "" : "s"}.`
+    : `${capitalize(numberWord(doneCount))} of ${numberWord(order.length)} stops — ${numberWord(minutes)} minute${minutes === 1 ? "" : "s"}.`;
+  const lede = overrunBlock
+    ? `You kept going ${numberWord(Math.round((overrunBlock.durationSec - overrunBlock.plannedSec) / 60))} minute${Math.round((overrunBlock.durationSec - overrunBlock.plannedSec) / 60) === 1 ? "" : "s"} past the timer on ${STOP_SHORT[overrunBlock.type].toLowerCase()}. That's in the record too.`
+    : overrunMin > 0
+      ? `You ran ${numberWord(overrunMin)} minute${overrunMin === 1 ? "" : "s"} past the timer. That's in the record too.`
+      : overrunMin < 0
+        ? `You stopped ${numberWord(-overrunMin)} minute${overrunMin === -1 ? "" : "s"} short of the timer. That's recorded as it happened.`
+        : "Right on the timer. That's recorded as it happened.";
 
-  const rows = order.map((t, i) => {
-    const r = results.find((b) => b.type === t);
-    const h = r ? blockHeadline(r) : { text: "NOT PLAYED", marked: false };
-    return { cells: [String(i + 1).padStart(2, "0"), r ? fmtClock(r.durationSec) : "—", DISCIPLINE[t].label, h.text], marked: h.marked };
+  const stops: Stop[] = order.map((t, i) => {
+    const r = results.find((b) => b.type === t && (b.slot === undefined || b.slot === i));
+    const best = t === "scales" && newBest;
+    return { icon: best ? "star" : STOP_ICON[t], name: STOP_SHORT[t], detail: stopResult(t, r, cleanBpm, newBest), state: !r ? "upcoming" : r.skipped ? "upcoming" : best ? "best" : "done" };
   });
 
-  const notes: { icon: string; tone: string; text: React.ReactNode }[] = [];
-  if (cleanBpm != null) notes.push({ icon: "star", tone: "var(--kc-amber)", text: <><b>{cleanBpm} bpm clean</b> on {keyLabel(session.scale.key, session.scale.mode)}{newBest && prevBest != null ? ` — ${cleanBpm - prevBest} faster than your last best.` : newBest ? " — your first clean run on record." : "."}</> });
-  if (readingUp) notes.push({ icon: "check", tone: "var(--kc-mint)", text: <>Level {readingLevel - 1} was clean twice. Reading moves to level {readingLevel}.</> });
-  else if (readingHeld) notes.push({ icon: "check", tone: "var(--kc-mint)", text: <>You kept moving through level {readingLevel} without stopping to fix a note.</> });
-  if (aheadMs != null && Math.abs(aheadMs) >= 25) notes.push({ icon: "error", tone: "var(--kc-clay)", text: <>Taps ran {Math.abs(aheadMs)} ms {aheadMs > 0 ? "ahead of" : "behind"} the click. Count the bar out loud before you start.</> });
-  if (finger != null) notes.push({ icon: "error", tone: "var(--kc-clay)", text: <>The {ORDINAL[finger - 1]} finger lands later than its neighbours, in both octaves.</> });
-  if (!notes.length) notes.push({ icon: "check", tone: "var(--kc-mint)", text: <>Nothing stood out today. The minutes are in the record.</> });
+  const stickers: Sticker[] = [];
+  if (newBest && cleanBpm != null) stickers.push({ tone: "sun", icon: "star", title: `New best: ${cleanBpm} bpm`, sub: prevBest != null ? `${keyName} scale, ${cleanBpm - prevBest} faster than before` : `${keyName} scale, your first clean run on record` });
+  else if (cleanBpm != null) stickers.push({ tone: "mint", icon: "check_circle", title: "Clean scale", sub: `Every note even at ${cleanBpm} bpm` });
+  if (steady) stickers.push({ tone: "mint", icon: "favorite", title: "Steady pulse", sub: aheadMs != null && aheadMs !== 0 ? `Every tap landed, ${Math.abs(aheadMs)} ms ${aheadMs > 0 ? "ahead" : "behind"}` : "Every tap landed on the click" });
+  if (readingUp) stickers.push({ tone: "sun", icon: "arrow_upward", title: `Reading level ${readingLevel}`, sub: `Level ${readingLevel - 1} was clean twice` });
+  else if (readingHeld) stickers.push({ tone: "mint", icon: "favorite", title: "Steady to the end", sub: "Didn't stop to fix a note" });
+  const ear = of("ear");
+  const phrases = num(ear?.details?.phrases);
+  const byEar = num(ear?.details?.byEarFirstTry);
+  if (phrases && byEar === phrases) stickers.push({ tone: "mint", icon: "hearing", title: `${capitalize(numberWord(phrases))} of ${numberWord(phrases)} by ear`, sub: "Every phrase on the first try" });
+
+  // Try next time.
+  let tryNext: string | null = null;
+  if (aheadMs != null && Math.abs(aheadMs) >= 25) tryNext = `Count the bar out loud before you start — taps ran ${Math.abs(aheadMs)} ms ${aheadMs > 0 ? "ahead of" : "behind"} the click.`;
+  else if (finger != null) tryNext = `The ${ORDINAL[finger - 1]} finger lands later than its neighbours, in both octaves. Hands separately, slowly, tomorrow.`;
+  else if (cleanBpm != null) tryNext = `The scale was clean at ${cleanBpm} bpm. Same tempo again tomorrow — not faster — then four clicks up.`;
+  else if (reading && !readingHeld) tryNext = `Keep going through mistakes on the reading page. One clean run at level ${readingLevel} is the next step.`;
 
   // The week.
   const week = sessions ? sessions.filter((s) => weekDays(session.date).includes(s.date)) : [session];
-  const days = weekCells(child, week, session.date);
+  const cells = weekCells(child, week, session.date);
+  const days = cells.map((d) => ({ letter: d.letter, minutes: d.state === "played" || d.state === "playing" ? d.minutes : undefined, today: d.state === "today" || d.state === "playing", rest: d.state === "rest" }));
   const wp = weekProgress(child, week, session.date);
   const todayIdx = weekDays(session.date).indexOf(session.date);
   const left = DAY_NAMES.filter((_, i) => i > todayIdx && !child.settings.restDays.includes(i));
   const need = wp.target - wp.played;
   const weekCopy = need <= 0
-    ? `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days. That makes the week.`
+    ? "The whole week's lit. Every key played."
     : need === 1 && left.length
-      ? `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days. ${left.length === 1 ? left[0] : `${left.slice(0, -1).join(", ")} or ${left[left.length - 1]}`} makes the week.`
+      ? `One more key — ${left.length === 1 ? left[0] : `${left.slice(0, -1).join(", ")} or ${left[left.length - 1]}`} — and the whole week's lit.`
       : left.length >= need
-        ? `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days. ${capitalize(numberWord(need))} more make the week.`
+        ? `${capitalize(numberWord(need))} more keys light up the octave.`
         : `${capitalize(numberWord(wp.played))} of ${numberWord(wp.target)} days this week.`;
 
-  // What tomorrow leans on: the two weakest measured blocks.
-  const lean = order
-    .map((t) => ({ t, r: results.find((b) => b.type === t) }))
-    .filter(({ r }) => r && !r.skipped && (r.midiScore || !r.completed))
-    .sort((a, b) => (a.r?.midiScore?.score ?? 0) - (b.r?.midiScore?.score ?? 0))
-    .slice(0, 2)
-    .map(({ t, r }, i) => ({ index: i + 1, title: DISCIPLINE[t].title, detail: leanDetail(t, r?.details, readingLevel), duration: fmtClock(session.weights[t] * plannedSec) }));
+  const date = parseDateKey(session.date);
+  const dateText = `${date.toLocaleDateString("en-US", { weekday: "long" })} ${date.getDate()} ${date.toLocaleDateString("en-US", { month: "long" })}`;
+  const shared = [child.teacherShare?.log !== false && "your minutes", child.teacherShare?.figures !== false && "the levels", child.teacherShare?.recordings !== false && recording && "this clip"].filter(Boolean) as string[];
 
   return (
     <Screen style={{ height: "100dvh", minHeight: 0, overflow: "hidden" }}>
-      <div style={{ height: 72, flex: "none", borderBottom: "1px solid var(--kc-border)", display: "flex", alignItems: "center", gap: 22, padding: "0 34px" }}>
-        <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.01em" }}>KeyCadence</span>
-        <SectionLabel>SESSION DONE · {parseDateKey(session.date).getDate()} {MONTHS[parseDateKey(session.date).getMonth()]}</SectionLabel>
-        <span style={{ marginLeft: "auto", fontSize: 14, color: "var(--kc-ink-dim)" }}>{child.name} · {session.mode ?? "guided"} · {numberWord(doneCount)} of {numberWord(order.length)} blocks</span>
+      <div style={{ height: 78, flex: "none", borderBottom: "2px solid var(--kc-hairline)", background: "var(--kc-panel)", display: "flex", alignItems: "center", gap: 22, padding: "0 30px" }}>
+        <Logo href={null} />
+        <Pill tone="mint" icon="check_circle">{capitalize(numberWord(doneCount))} of {numberWord(order.length)} stops</Pill>
+        <span style={{ marginLeft: "auto", fontSize: 15, fontWeight: 700, color: "var(--kc-ink-faint)" }}>{dateText}</span>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 336px" }}>
-        <div style={{ padding: "32px 34px", display: "flex", flexDirection: "column", gap: 22, minHeight: 0 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 38, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.05, maxWidth: 620 }}>{title}</h1>
-            <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 620 }}>{lede}</p>
+      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px" }}>
+        <div style={{ padding: "30px 32px", display: "flex", flexDirection: "column", gap: 20, minHeight: 0 }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
+            <Tick mood="cheer" />
+            <div style={{ flex: 1 }}>
+              <Headline title={title} lede={lede} size={48} />
+            </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
-            <StatTile label="TIME PLAYED" value={minutes} unit={`of ${session.plannedMinutes} min`} />
-            <StatTile label="READING LEVEL" value={readingLevel} unit={readingUp ? "up one" : readingHeld ? "held" : reading ? "played" : "—"} />
-            <StatTile label="FASTEST CLEAN" value={cleanBpm ?? prevBest ?? "—"} unit={cleanBpm != null || prevBest != null ? "bpm" : undefined} delta={newBest && prevBest != null ? `+${cleanBpm! - prevBest}` : undefined} tone={newBest ? "amber" : "default"} />
-            <StatTile label="AHEAD OF BEAT" value={aheadMs != null ? Math.abs(aheadMs) : "—"} unit={aheadMs != null ? (aheadMs < 0 ? "ms behind" : "ms") : undefined} tone={aheadMs != null && Math.abs(aheadMs) >= 25 ? "clay" : "default"} />
-          </div>
-          <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <Panel style={{ gap: 11, minHeight: 0, overflow: "hidden" }}>
-              <SectionLabel>BLOCK BY BLOCK</SectionLabel>
-              <LogTable rows={rows} emphasize={2} />
-            </Panel>
-            <Panel style={{ minHeight: 0, overflow: "hidden" }}>
-              <SectionLabel>WORTH SAYING OUT LOUD</SectionLabel>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {notes.map((n, i) => (
-                  <div key={i} style={{ display: "flex", gap: 11 }}>
-                    <Icon name={n.icon} size={20} color={n.tone} />
-                    <span style={{ fontSize: 15, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>{n.text}</span>
+          <StopPath stops={stops} done />
+          {stickers.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 20, fontWeight: 600, lineHeight: 1.15 }}>Stickers from today</div>
+              <div style={{ display: "flex", gap: 16 }}>
+                {stickers.slice(0, 3).map((s, i) => (
+                  <div key={s.title} style={{ flex: 1, display: "flex", alignItems: "center", gap: 14, background: s.tone === "sun" ? "var(--kc-sun)" : "var(--kc-mint)", borderRadius: 22, padding: "16px 18px", transform: `rotate(${i % 2 ? 1.5 : -2}deg)`, boxShadow: s.tone === "sun" ? "var(--kc-shadow-press-sun)" : "0 4px 0 0 #04a37a" }}>
+                    <span style={{ width: 52, height: 52, flex: "none", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Icon name={s.icon} size={30} color={s.tone === "sun" ? "#b37a00" : "var(--kc-mint-ink)"} />
+                    </span>
+                    <div>
+                      <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 22, fontWeight: 600, lineHeight: 1.15 }}>{s.title}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: s.tone === "sun" ? "#5c3e00" : "#03402f" }}>{s.sub}</div>
+                    </div>
                   </div>
                 ))}
               </div>
-              {recording && <RecordingRow recording={recording} />}
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: "auto" }}>
+            <Button icon="check" onClick={() => router.push("/")}>Save and finish</Button>
+            <span style={{ marginLeft: "auto", fontSize: 14, fontWeight: 700, color: "var(--kc-ink-faint)", maxWidth: 260, textAlign: "right" }}>Already in your record. Tomorrow&apos;s path leans on today.</span>
+          </div>
+        </div>
+        <Rail>
+          <RailSection label="This week" right={`${wp.played} of ${wp.target} days`}>
+            <WeekKeys days={days} target={child.settings.sessionMinutes} />
+            <Small>{weekCopy}</Small>
+          </RailSection>
+          {tryNext && (
+            <Panel tone="indigo">
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600, color: "var(--kc-indigo-shadow)" }}>
+                <Icon name="lightbulb" size={22} />
+                Try next time
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.4 }}>{tryNext}</div>
             </Panel>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Button icon="check" onClick={() => router.push("/")}>Done</Button>
-            <span style={{ marginLeft: "auto", fontSize: 14, color: "var(--kc-ink-faint)" }}>Saved to your record.</span>
-          </div>
-        </div>
-        <div style={{ borderLeft: "1px solid var(--kc-border)", background: "var(--kc-panel)", padding: "32px 28px", display: "flex", flexDirection: "column", gap: 26, minHeight: 0, overflow: "auto" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <SectionLabel>THIS WEEK</SectionLabel>
-            <WeekStrip days={days} target={child.settings.sessionMinutes} height={44} />
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>{weekCopy}</p>
-          </div>
-          {lean.length > 0 && (
-            <div style={{ borderTop: "1px solid var(--kc-border)", paddingTop: 22, display: "flex", flexDirection: "column", gap: 11 }}>
-              <SectionLabel>WHAT TOMORROW LEANS ON</SectionLabel>
-              {lean.map((q) => <QueueRow key={q.index} index={q.index} title={q.title} detail={q.detail} duration={q.duration} draggable={false} menu={<span />} style={{ minHeight: 72, padding: "12px 16px" }} />)}
-              {readingUp && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>Reading starts at level {readingLevel} tomorrow.</p>}
-            </div>
           )}
+          {recording && <RecordingRow recording={recording} />}
           {teacher && (
-            <div style={{ marginTop: "auto", borderTop: "1px solid var(--kc-border)", paddingTop: 22, display: "flex", flexDirection: "column", gap: 10 }}>
-              <SectionLabel>{teacher.toUpperCase()} SEES</SectionLabel>
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>
-                {[child.teacherShare?.log !== false && "minutes", child.teacherShare?.figures !== false && "levels", child.teacherShare?.recordings !== false && recording && "the recording"].filter(Boolean).map((s, i, a) => (i === 0 ? capitalize(String(s)) : i === a.length - 1 ? ` and ${s}` : `, ${s}`)).join("")}, on Monday morning. Nothing is sent that you turned off.
-              </p>
-            </div>
+            <Small color="var(--kc-ink-faint)" style={{ marginTop: "auto" }}>
+              {teacher} sees {shared.length ? shared.map((s, i, a) => (i === 0 ? s : i === a.length - 1 ? ` and ${s}` : `, ${s}`)).join("") : "nothing"} on Monday — only what you turned on.
+            </Small>
           )}
-        </div>
+        </Rail>
       </div>
     </Screen>
   );
 }
 
-function leanDetail(t: BlockType, d: Record<string, unknown> | undefined, readingLevel: number): string {
-  const bpm = num(d?.bpm);
+/** The short result under a lit stop: "Even!", "22 ms early", "5 of 5 by ear", "Level 4", "Just for fun". */
+function stopResult(t: BlockType, r: BlockResult | undefined, cleanBpm: number | null, newBest: boolean): string {
+  if (!r) return "Not played";
+  if (r.skipped) return "Skipped";
+  const d = r.details ?? {};
   switch (t) {
     case "scales": {
-      const f = num(d?.unevenFinger);
-      return f != null ? `${capitalize(ORDINAL[f - 1])} finger, hands separately` : bpm ? `Evenness at ${bpm} bpm` : "Hands separately, then together";
+      if (newBest && cleanBpm != null) return `${cleanBpm} bpm!`;
+      if (r.midiScore?.badge === "clean-scale") return "Even!";
+      const bpm = num(d.tempoBest) ?? num(d.bpm);
+      return bpm ? `${bpm} bpm` : "Played";
     }
     case "rhythm": {
-      const ahead = num(d?.aheadMs);
-      return ahead != null && ahead !== 0 ? `${ahead > 0 ? "Ahead of" : "Behind"} the click${bpm ? `, at ${bpm} bpm` : ""}` : bpm ? `The click at ${bpm} bpm` : "Tap or play";
+      const ahead = num(d.aheadMs);
+      if (ahead != null && ahead !== 0) return `${Math.abs(ahead)} ms ${ahead > 0 ? "early" : "late"}`;
+      return r.midiScore?.badge === "steady-pulse" ? "Steady!" : "Played";
     }
-    case "reading":
-      return `Level ${readingLevel}, ${handsText(readingSpec(readingLevel).hands)}`;
-    case "theory":
-      return "Hear it, then find it";
-    case "repertoire":
-      return "Your piece, then a lead sheet";
+    case "ear": {
+      const phrases = num(d.phrases);
+      const byEar = num(d.byEarFirstTry);
+      return phrases ? `${byEar ?? 0} of ${phrases} by ear` : "Played";
+    }
+    case "reading": {
+      const level = num(d.level);
+      return level != null ? `Level ${level}${d.promoted ? " up!" : ""}` : "Played";
+    }
+    case "theory": {
+      const asked = num(d.asked);
+      const right = num(d.right);
+      return asked ? `${right ?? 0} of ${asked}` : "Played";
+    }
+    case "improv":
+      return "Just for fun";
     default:
-      return "Backing loop";
+      return blockHeadline(r).text.toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
   }
 }
 
-/** The session's recording: its own amplitude, and Play. */
+/** The session's recording: a round play button, its own amplitude, and the length. */
 function RecordingRow({ recording }: { recording: Recording }) {
   const [bars, setBars] = React.useState<number[] | null>(null);
   const [duration, setDuration] = React.useState<number | null>(null);
   const [playing, setPlaying] = React.useState(false);
+  const [position, setPosition] = React.useState(0);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   React.useEffect(() => {
     let live = true;
     const url = URL.createObjectURL(recording.blob);
     const el = new Audio(url);
-    el.onended = () => setPlaying(false);
+    el.onended = () => { setPlaying(false); setPosition(0); };
+    el.ontimeupdate = () => { if (el.duration) setPosition(el.currentTime / el.duration); };
     audioRef.current = el;
     void (async () => {
       try {
@@ -233,16 +256,16 @@ function RecordingRow({ recording }: { recording: Recording }) {
   const toggle = () => {
     const el = audioRef.current;
     if (!el) return;
-    if (playing) { el.pause(); el.currentTime = 0; setPlaying(false); } else { void el.play(); setPlaying(true); }
+    if (playing) { el.pause(); el.currentTime = 0; setPlaying(false); setPosition(0); } else { void el.play(); setPlaying(true); }
   };
 
   return (
-    <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-      <SectionLabel size="meta">YOUR RECORDING</SectionLabel>
-      <Waveform bars={bars ?? Array.from({ length: 24 }, () => 8)} height={40} />
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 15, color: "var(--kc-ink-dim)" }}>{recording.title ?? DISCIPLINE[recording.blockType].title}{duration != null ? ` · ${fmtClock(duration)}` : ""}</span>
-        <Button variant="quiet" size="pill" icon={playing ? "stop" : "play_arrow"} onClick={toggle}>{playing ? "Stop" : "Play"}</Button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 18, fontWeight: 600, lineHeight: 1.15 }}>{recording.title ?? "Your recording"}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--kc-base)", border: "2px solid var(--kc-hairline)", borderRadius: 18, padding: "12px 14px" }}>
+        <IconButton icon={playing ? "stop" : "play_arrow"} variant="primary" label={playing ? "Stop" : "Play"} onClick={toggle} />
+        <Waveform bars={bars ?? Array.from({ length: 24 }, () => 20)} height={36} split={playing ? position : 1} />
+        <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-ink-faint)" }}>{duration != null ? fmtClock(duration).replace(/^0/, "") : ""}</span>
       </div>
     </div>
   );

@@ -4,13 +4,13 @@ import { useRouter } from "next/navigation";
 import { useAppStore, type SessionPlan } from "@/lib/store/app-store";
 import type { BlockResult, BlockType, Child, InputMode, Session } from "@/lib/types";
 import { buildScale } from "@/lib/music/scales";
-import { orderedBlocks, buildQueue } from "@/lib/engine/queue";
+import { orderedBlocks, buildQueue, STOP_SHORT } from "@/lib/engine/queue";
 import { DISCIPLINE, fmtClock } from "@/lib/engine/record";
 import { useStopwatch } from "@/lib/hooks/use-timer";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { getInput } from "@/lib/input/manager";
 import { BLOCK_COMPONENTS } from "@/components/blocks";
-import { BlockHeader, Button, Clock, Headline, Icon, LogTable, Panel, Pill, ProgressStrip, Screen, SectionLabel, Tempo, keyLabel } from "@/components/ds";
+import { BlockHeader, Button, Headline, Icon, InputStatus, Instruction, Panel, Pill, Screen, Small, StopPath, Tempo, keyLabel, type Stop } from "@/components/ds";
 import { SessionDone, type DoneResult } from "./session-done";
 import { InputLost } from "./input-lost";
 import { blockHeadline, handsText, readingSpec, rhythmSpec } from "./words";
@@ -33,11 +33,16 @@ export function SessionRunner() {
   return <Runner key={session.id} session={session} plan={plan} child={child} onFinishing={() => setFinishing(true)} onDone={setDone} />;
 }
 
-const CLOCK_IN_BLOCK: Partial<Record<BlockType, boolean>> = { reading: true };
-
 function firstUnfinished(order: BlockType[], session: Session): number {
   const i = order.findIndex((t, slot) => !session.blocks.some((b) => (b.slot !== undefined ? b.slot === slot : b.type === t) && (b.completed || b.skipped)));
   return i < 0 ? order.length - 1 : i;
+}
+
+/** "1:12 left" for the header timer chip; counts past zero as "+0:40". */
+function timerText(seconds: number, elapsed: number): string {
+  const left = seconds - elapsed;
+  if (left >= 0) return `${fmtClock(left).replace(/^0/, "")} left`;
+  return `+${fmtClock(-left).replace(/^0/, "")}`;
 }
 
 function Runner({ session, plan, child, onFinishing, onDone }: { session: Session; plan: SessionPlan; child: Child; onFinishing: () => void; onDone: (r: DoneResult) => void }) {
@@ -137,48 +142,53 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
   const Block = BLOCK_COMPONENTS[type];
   const nextTitle = index + 1 < total ? DISCIPLINE[order[index + 1]].title.toLowerCase() : null;
   const defaultMeta = metaFor(type, child, scale, queue.find((q) => q.type === type)?.detail);
-  const meta = lost || paused ? "Paused" : metaOverride ?? defaultMeta;
-  const showClock = !(liveMode === "timer" && CLOCK_IN_BLOCK[type]);
+  const meta = lost ? "Paused — nothing is listening" : paused ? "Paused" : metaOverride ?? defaultMeta;
 
-  const right = lost ? (
+  const right = (
     <>
-      <Pill tone="clay" icon="error">NO INPUT</Pill>
-      <Clock seconds={elapsed} dim />
-      <Button variant="secondary" size="control" onClick={() => { ignoreLostRef.current = true; setLost(false); }}>Resume</Button>
-    </>
-  ) : (
-    <>
-      <Icon name={liveMode === "midi" ? "piano" : liveMode === "mic" ? "mic" : "timer"} size={20} color={liveMode === "midi" ? "var(--kc-mint)" : "var(--kc-ink-dim)"} />
-      {liveMode === "timer" && <Pill>TIMER ONLY</Pill>}
-      {recording && <Pill tone="clay">{"●"} REC</Pill>}
-      {showClock && <Clock seconds={elapsed} dim={paused} />}
-      <Button variant="secondary" size="control" onClick={() => setPaused((p) => !p)}>{paused ? "Resume" : "Pause"}</Button>
+      {recording && <Pill tone="indigo" icon="fiber_manual_record">Rec</Pill>}
+      <InputStatus mode={liveMode} lost={lost} />
     </>
   );
 
-  const soFar = order.slice(0, index).map((t, i) => {
-    const r = session.blocks.find((b) => b.type === t);
-    return { cells: [String(i + 1).padStart(2, "0"), r ? fmtClock(r.durationSec) : "—", DISCIPLINE[t].label, r ? blockHeadline(r).text : "—"], marked: r ? blockHeadline(r).marked : false };
+  const soFar: Stop[] = order.map((t, i) => {
+    const r = session.blocks.find((b) => b.type === t && (b.slot === undefined || b.slot === i));
+    const done = i < index && !!r;
+    return { icon: queue[i]?.icon ?? "piano", name: STOP_SHORT[t], detail: done ? blockHeadline(r).text.toLowerCase().replace(/^\w/, (c) => c.toUpperCase()) : i === index ? "Now" : `${Math.max(1, Math.round(plan.blockSeconds[t] / 60))} min`, state: done ? "done" : i === index ? "current" : t === "improv" ? "own" : "upcoming" };
   });
 
   return (
     <Screen style={{ height: "100dvh", minHeight: 0, overflow: "hidden" }}>
-      <BlockHeader index={index + 1} total={total} title={DISCIPLINE[type].title} meta={meta} right={right} />
-      <ProgressStrip value={seconds ? Math.min(1, elapsed / seconds) : 0} dim={lost} />
-      {sessionOver && !advisoryDismissed && !lost && (
-        <div style={{ flex: "none", padding: "14px 30px 0" }}>
-          <Panel padding="card" style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
-            <Icon name="timer" size={20} color="var(--kc-amber)" />
+      <BlockHeader
+        index={index + 1}
+        total={total}
+        title={DISCIPLINE[type].title}
+        meta={meta}
+        right={right}
+        timer={lost || paused ? "paused" : timerText(seconds, elapsed)}
+        onClose={() => setPaused(true)}
+        onPause={() => setPaused((p) => !p)}
+        paused={paused}
+      />
+      {sessionOver && !advisoryDismissed && !lost && !paused && (
+        <div style={{ flex: "none", padding: "14px 32px 0" }}>
+          <Panel tone="sun" style={{ flexDirection: "row", alignItems: "center", gap: 18, padding: "14px 20px" }}>
+            <Icon name="timer" size={28} color="var(--kc-sun-ink)" />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>Time&apos;s up for today — finish or keep going.</div>
-              <div style={{ fontSize: 14, color: "var(--kc-ink-dim)", marginTop: 2 }}>{fmtClock(recordedSec + elapsed)} played of {plan.minutes} minutes planned. Whatever you choose is recorded as it happened.</div>
+              <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 18, fontWeight: 600 }}>Time&apos;s up for today — finish, or keep going.</div>
+              <Small>{fmtClock(recordedSec + elapsed)} played of {plan.minutes} minutes planned. Whatever you choose is recorded as it happened.</Small>
             </div>
-            <Button variant="secondary" size="control" onClick={() => setAdvisoryDismissed(true)}>Keep going</Button>
-            <Button size="control" onClick={() => void finishNow()}>Finish</Button>
+            <Button variant="secondary" size="pill" onClick={() => setAdvisoryDismissed(true)}>Keep going</Button>
+            <Button size="pill" onClick={() => void finishNow()}>Finish</Button>
           </Panel>
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, position: "relative", display: "flex", flexDirection: "column" }}>
+        {type === "ear" && (
+          <div style={{ flex: "none", padding: "22px 32px 0" }}>
+            <Instruction>{instructionFor(type, child, nextTitle)}</Instruction>
+          </div>
+        )}
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <Block
             key={`${session.id}-${type}-${index}`}
@@ -201,19 +211,17 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
           />
         </div>
         {paused && !lost && (
-          <div style={{ position: "absolute", inset: 0, background: "var(--kc-base)", padding: "34px 38px", display: "flex", flexDirection: "column", gap: 26, overflow: "auto" }}>
-            <Headline size={38} title="Paused." lede="The clock is stopped and nothing is listening. Pick up where you left off, or stop for today — everything played so far is already in the record." />
-            <div style={{ display: "flex", gap: 10 }}>
-              <Button size="control" onClick={() => setPaused(false)}>Resume</Button>
-              <Button variant="secondary" size="control" onClick={() => { setPaused(false); skip(); }}>Skip this block</Button>
+          <div style={{ position: "absolute", inset: 0, background: "var(--kc-base)", padding: "30px 32px", display: "flex", flexDirection: "column", gap: 24, overflow: "auto" }}>
+            <Headline size={44} title="Paused." lede="The clock is stopped and nothing is listening. Pick up where you left off, or stop for today — everything played so far is already in the record." />
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 20, fontWeight: 600, lineHeight: 1.15 }}>Today&apos;s path</div>
+              <StopPath stops={soFar} />
+            </div>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: "auto" }}>
+              <Button icon="play_arrow" onClick={() => setPaused(false)}>Carry on</Button>
+              <Button variant="secondary" size="control" onClick={() => { setPaused(false); skip(); }}>Skip this stop</Button>
               <Button variant="quiet" size="control" onClick={() => void stopForToday()}>Stop for today</Button>
             </div>
-            {soFar.length > 0 && (
-              <Panel style={{ maxWidth: 560 }}>
-                <SectionLabel>SO FAR TODAY</SectionLabel>
-                <LogTable rows={soFar} emphasize={2} />
-              </Panel>
-            )}
           </div>
         )}
         {lost && (
@@ -231,6 +239,26 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
   );
 }
 
+/** The one-line instruction under the header, beside the mini Tick. Blocks replace it as their phases move. */
+function instructionFor(type: BlockType, child: Child, nextTitle: string | null): string {
+  switch (type) {
+    case "scales":
+      return "Right hand, up and back. Listen for one note louder than the rest.";
+    case "rhythm":
+      return "The click plays the rhythm once, counts you in, then you tap it back.";
+    case "ear":
+      return "Hear it, play it back, then find it on the staff.";
+    case "reading":
+      return `Keep going through mistakes — stopping counts more than a wrong note. Level ${child.settings.readingLevel}.`;
+    case "theory":
+      return "Hear the chord, then find it on the keys.";
+    case "repertoire":
+      return "Your piece first, slowly. Then the lead sheet.";
+    default:
+      return nextTitle ? "Play whatever you like. Nothing is measured here." : "Last stop. Play whatever you like — nothing is measured here.";
+  }
+}
+
 function metaFor(type: BlockType, child: Child, scale: ReturnType<typeof buildScale>, queueDetail?: string): React.ReactNode {
   const key = keyLabel(scale.key, scale.mode);
   const s = child.settings;
@@ -245,6 +273,8 @@ function metaFor(type: BlockType, child: Child, scale: ReturnType<typeof buildSc
       const spec = readingSpec(s.readingLevel);
       return <>Level {s.readingLevel} · {handsText(spec.hands)} · {key} · <Tempo bpm={spec.tempo} /></>;
     }
+    case "ear":
+      return <>{key} · three to five notes · by ear, then on the staff</>;
     default:
       return queueDetail ?? key;
   }

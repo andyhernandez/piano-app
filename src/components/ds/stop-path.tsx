@@ -17,9 +17,10 @@ export interface Stop {
  * best is sunshine with a star. Lays out seven stops in a ~790px column.
  */
 export function StopPath({ stops, done = false, style }: { stops: Stop[]; done?: boolean; style?: React.CSSProperties }) {
+  const tagged = !done && stops.some((s, i) => (s.state ?? (i === 0 ? "first" : "upcoming")) === "first");
   return (
-    <div style={{ position: "relative", display: "flex", justifyContent: "space-between", ...style }}>
-      <span aria-hidden style={{ position: "absolute", top: 68, left: 46, right: 46, borderTop: done ? "5px solid var(--kc-mint)" : "5px dotted var(--kc-border-dashed)" }} />
+    <div style={{ position: "relative", display: "flex", justifyContent: "space-between", paddingTop: tagged ? 22 : 0, ...style }}>
+      <span aria-hidden style={{ position: "absolute", top: (tagged ? 22 : 0) + 68, left: 46, right: 46, borderTop: done ? "5px solid var(--kc-mint)" : "5px dotted var(--kc-border-dashed)" }} />
       {stops.map((s, i) => {
         const state: StopState = s.state ?? (done ? "done" : i === 0 ? "first" : "upcoming");
         const circle: React.CSSProperties = { position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", width: 68, height: 68, fontSize: 28, boxSizing: "border-box", background: "var(--kc-panel)", border: "3px solid var(--kc-border)", color: "var(--kc-ink)" };

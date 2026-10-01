@@ -1,69 +1,98 @@
 "use client";
 import * as React from "react";
-import { Rail, RailSection, SectionLabel, WeekStrip, MeterRow, SegmentBar, Tempo, keyLabel } from "@/components/ds";
+import { Rail, RailSection, WeekKeys, Small, Sticky, Panel, keyLabel } from "@/components/ds";
 import type { Assignment, Child, Session, Teacher } from "@/lib/types";
 import type { SessionPlan } from "@/lib/store/app-store";
-import { weekCells, weekProgress } from "@/lib/engine/record";
+import { weekCells, weekProgress, weeksAtTarget, fastestClean } from "@/lib/engine/record";
 import { DEFAULT_ROADMAP } from "@/lib/music/roadmap";
-import { dateKey, daysBetween } from "@/lib/utils/date";
-import { weekdayName } from "./words";
+import { prettyPc } from "@/lib/music/notes";
+import { keySignatureWords } from "./today-copy";
+import { words, capitalize } from "./words";
 
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-function restDaysSentence(rest: number[]): string {
-  const names = rest.slice().sort().map((i) => DAY_NAMES[i]).filter(Boolean);
-  if (!names.length) return "No rest days planned. Bars show minutes played.";
-  if (names.length === 1) return `Rest day ${names[0]}. Bars show minutes played.`;
-  return `Rest days ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}. Bars show minutes played.`;
+function num(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
-export function TodayRail({ child, plan, sessions, assignment, teacher, today, activeToday }: { child: Child; plan: SessionPlan; sessions: Session[]; assignment: Assignment | null; teacher: Teacher | null; today: string; activeToday: boolean }) {
+/** "Wednesday and Sunday are rest days. Two more keys light up the octave." */
+function weekLine(child: Child, played: number, target: number): string {
+  const rest = child.settings.restDays.slice().sort().map((i) => DAY_NAMES[i]).filter(Boolean);
+  const restText = !rest.length ? "" : rest.length === 1 ? `${rest[0]} is a rest day. ` : `${rest.slice(0, -1).join(", ")} and ${rest[rest.length - 1]} are rest days. `;
+  const left = target - played;
+  const keys = left <= 0 ? "The whole octave's lit this week." : left === 1 ? "One more key makes the week." : `${capitalize(words(left))} more keys light up the octave.`;
+  return restText + keys;
+}
+
+export function TodayRail({ child, plan, sessions, assignment, teacher, today, activeToday, variant = "guided" }: { child: Child; plan: SessionPlan; sessions: Session[]; assignment: Assignment | null; teacher: Teacher | null; today: string; activeToday: boolean; variant?: "guided" | "own" }) {
   const week = weekProgress(child, sessions, today);
-  const days = weekCells(child, sessions, today, activeToday);
-  const profile = child.skillProfile;
-  const profileAge = profile ? daysBetween(dateKey(new Date(profile.assessedAt)), today) : null;
+  const cells = weekCells(child, sessions, today, activeToday);
+  const days = cells.map((d) => ({ letter: d.letter, minutes: d.state === "played" || d.state === "playing" ? d.minutes : undefined, today: d.state === "today" || d.state === "playing", rest: d.state === "rest" }));
   const roadmap = child.roadmap.length ? child.roadmap : DEFAULT_ROADMAP;
   const weekIndex = Math.min(child.roadmapIndex, roadmap.length - 1);
   const pinnedBy = assignment?.scaleOverride ? (teacher?.name ?? "your teacher") : child.scaleOverride ? "the household" : null;
-  const teacherName = (teacher?.name ?? "your teacher").toUpperCase();
+  const atTarget = weeksAtTarget(child, today);
+  const keyName = keyLabel(plan.scale.key, plan.scale.mode);
+
+  const last = sessions.find((s) => s.endedAt !== null);
+  const lastScales = last?.blocks.find((b) => b.type === "scales");
+  const lastRhythm = last?.blocks.find((b) => b.type === "rhythm");
+  const lastReading = last?.blocks.find((b) => b.type === "reading");
+  const cleanBpm = lastScales?.midiScore?.badge === "clean-scale" ? num(lastScales.details?.tempoBest) ?? num(lastScales.details?.bpm) : fastestClean(sessions);
+  const ahead = num(lastRhythm?.details?.aheadMs);
+  const notesRight = num(lastReading?.details?.notesRight);
+  const notesTotal = num(lastReading?.details?.total);
 
   return (
     <Rail>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <SectionLabel>THIS WEEK</SectionLabel>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 32, color: "var(--kc-mint)" }}>{week.played}</span>
-          <span style={{ fontSize: 15, color: "var(--kc-ink-dim)" }}>of {week.target} days</span>
-        </div>
-        <WeekStrip days={days} target={child.settings.sessionMinutes} />
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>{restDaysSentence(child.settings.restDays)}</p>
-      </div>
+      <RailSection label="This week" right={`${week.played} of ${week.target} days`}>
+        <WeekKeys days={days} target={child.settings.sessionMinutes} />
+        <Small>{weekLine(child, week.played, week.target)}</Small>
+      </RailSection>
       {assignment?.note && (
-        <RailSection label={`FROM ${teacherName} · ${weekdayName(assignment.updatedAt).toUpperCase()}`} style={{ gap: 10 }}>
-          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: "var(--kc-ink-muted)" }}>{assignment.note}</p>
-        </RailSection>
+        <Sticky from={`From ${teacher?.name ?? "your teacher"}`}>{assignment.note}</Sticky>
       )}
-      <RailSection label={profile ? `SKILL PROFILE · ${profileAge === 0 ? "TODAY" : `${profileAge} DAY${profileAge === 1 ? "" : "S"} AGO`}` : "SKILL PROFILE"} style={{ gap: 11 }}>
-        {profile ? (
-          <>
-            <MeterRow label="Ear" value={profile.ear} tone={profile.ear < 50 ? "clay" : "mint"} labelWidth={58} />
-            <MeterRow label="Reading" value={profile.eye} tone={profile.eye < 50 ? "clay" : "mint"} labelWidth={58} />
-            <MeterRow label="Timing" value={profile.pulse} tone={profile.pulse < 50 ? "clay" : "mint"} labelWidth={58} />
-          </>
-        ) : (
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>Not taken yet. Three short checks, about four minutes; the plan is evenly weighted until then.</p>
-        )}
-      </RailSection>
-      <RailSection label="CURRENT KEY" last style={{ gap: 8 }}>
-        <div style={{ fontSize: 22, fontWeight: 600 }}>
-          {keyLabel(plan.scale.key, plan.scale.mode)}{" "}
-          <span style={{ fontSize: 15, fontWeight: 400, color: "var(--kc-ink-dim)" }}>{pinnedBy ? `· pinned by ${pinnedBy}` : `· week ${weekIndex + 1}`}</span>
-        </div>
-        <SegmentBar total={roadmap.length} filled={weekIndex} current={weekIndex} />
-        <p style={{ margin: 0, fontSize: 13, color: "var(--kc-ink-dim)", lineHeight: 1.4 }}>
-          Move on when the scale is even at <Tempo bpm={80} /> and reading holds at level {Math.min(10, child.settings.readingLevel + 1)}.
-        </p>
-      </RailSection>
+      {variant === "guided" ? (
+        <>
+          <Panel tone="indigo" style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: "16px 18px" }}>
+            <span style={{ width: 56, height: 56, flex: "none", borderRadius: 16, background: "var(--kc-indigo)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--kc-font-display)", fontSize: 30, fontWeight: 600 }}>{prettyPc(plan.scale.key)}</span>
+            <div>
+              <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 19, fontWeight: 600, lineHeight: 1.15 }}>{keyName}</div>
+              <Small>{pinnedBy ? `${keySignatureWords(plan.scale)} · pinned by ${pinnedBy}` : `${keySignatureWords(plan.scale)} · week ${weekIndex + 1} of ${roadmap.length}`}</Small>
+            </div>
+          </Panel>
+          <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ width: 62, height: 62, flex: "none", borderRadius: "50%", background: "var(--kc-mint-wash)", border: "3px solid var(--kc-mint)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--kc-font-display)", fontSize: 28, fontWeight: 600, color: "var(--kc-mint-ink)" }}>{atTarget}</span>
+            <div>
+              <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 19, fontWeight: 600, lineHeight: 1.15 }}>Weeks at target</div>
+              <Small>Rest days count. Nothing to lose.</Small>
+            </div>
+          </div>
+        </>
+      ) : (
+        <Panel style={{ marginTop: "auto" }}>
+          <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600, lineHeight: 1.15 }}>{last ? "Last session, in numbers" : "Nothing in the record yet"}</div>
+          {last ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Figure value={cleanBpm ?? "—"} label={cleanBpm != null ? "bpm, clean scale" : "no clean scale yet"} />
+              <Figure value={ahead != null ? Math.abs(ahead) : "—"} unit={ahead != null ? "ms" : undefined} label={ahead == null ? "timing not measured" : ahead > 0 ? "early on the click" : ahead < 0 ? "late on the click" : "right on the click"} />
+              <Figure value={notesRight != null && notesTotal != null ? `${notesRight}/${notesTotal}` : "—"} label="reading notes" />
+              <Figure value={child.settings.readingLevel} label="reading level" />
+            </div>
+          ) : (
+            <Small>The first session fills this in: tempo, timing, reading notes and level.</Small>
+          )}
+        </Panel>
+      )}
     </Rail>
+  );
+}
+
+function Figure({ value, unit, label }: { value: React.ReactNode; unit?: string; label: string }) {
+  return (
+    <div>
+      <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 28, fontWeight: 600, lineHeight: 1.1 }}>{value}{unit && <span style={{ fontSize: 16 }}>{unit}</span>}</div>
+      <Small>{label}</Small>
+    </div>
   );
 }
