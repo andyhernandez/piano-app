@@ -1,12 +1,12 @@
 "use client";
 import * as React from "react";
-import { Button, Keyboard, Metric, Pill, SectionLabel, SegmentBar, SheetPanel, Staff, exerciseToLines, type NoteState } from "@/components/ds";
+import { Button, Icon, Instruction, Keyboard, SheetPanel, Staff, StatChip, exerciseToLines, type NoteState } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { generateExercise, noteTimeline, type Exercise, type TimelineNote } from "@/lib/generator/sightreading";
 import { buildScale } from "@/lib/music/scales";
-import type { ScaleId } from "@/lib/types";
-import { PartProps, ReadingLevelResult, ReadingResult, timesWord } from "./shared";
+import type { Experience, ScaleId } from "@/lib/types";
+import { CARD_TITLE, NOTE, PartBar, type PartProps, type ReadingLevelResult, type ReadingResult } from "./shared";
 
 /** Eight rungs, right hand only, two bars each. Generator level and tempo rise together. */
 const LADDER = [
@@ -20,28 +20,33 @@ const IN_TIME_MS = 150;
 type Phase = "ready" | "countin" | "playing" | "result";
 interface Match { pitchOk: boolean; dev: number }
 
-function heldLevel(levels: ReadingLevelResult[]): number {
-  let held = 0;
+const EXPERIENCE_WORDS: Record<Experience, string> = { starting: "you're just starting", "under-year": "you said under a year", "one-to-three": "you said one to three years", "more-than-three": "you said more than three years", returning: "you said you're coming back" };
+
+/** The highest rung held in an unbroken run from the start rung; rungs below the start count as held. */
+function heldLevel(levels: ReadingLevelResult[], start: number): number {
+  let held = start - 1;
   for (const r of levels) { if (r.level === held + 1 && r.held) held = r.level; else break; }
   return held;
 }
 
 /**
- * B2 · Reading. One two-bar exercise per level, played once through on a click after a one-bar count-in.
+ * B2 · Reading. One two-bar exercise per rung, played once through on a click after a one-bar count-in.
  * Notes are matched live to the page: right pitch in the window is played, wrong pitch is missed, a gap is a stop.
- * A level is held when most notes were right and the playing kept going; then the next one is a little harder.
+ * A rung is held when most notes were right and the playing kept going; then the next one is a little harder.
+ * The ladder starts where the player's experience says.
  */
-export function ReadingPart({ scale: scaleId, paused, onDone }: PartProps<ReadingResult> & { scale: ScaleId }) {
+export function ReadingPart({ scale: scaleId, start, experience, paused, onDone }: PartProps<ReadingResult> & { scale: ScaleId; start: number; experience?: Experience }) {
   const { audio, unlock } = useAudio();
   const scale = React.useMemo(() => buildScale(scaleId), [scaleId]);
   const [seed] = React.useState(() => Math.floor(Math.random() * 1e9));
-  const [level, setLevel] = React.useState(1);
+  const [level, setLevel] = React.useState(start);
   const [phase, setPhase] = React.useState<Phase>("ready");
   const [count, setCount] = React.useState(0);
   const [states, setStates] = React.useState<Map<number, NoteState>>(() => new Map());
   const [pos, setPos] = React.useState<number | null>(null);
   const [levels, setLevels] = React.useState<ReadingLevelResult[]>([]);
   const [over, setOver] = React.useState(false);
+  const [heldBar, setHeldBar] = React.useState<number | null>(null);
   const exercise: Exercise = React.useMemo(() => generateExercise({ level: LADDER[level - 1].level, scale: scaleId, seed: `check-${seed}-${level}`, bars: BARS, hands: "RH", tempo: LADDER[level - 1].tempo }), [scaleId, seed, level]);
   const timeline = React.useMemo(() => noteTimeline(exercise), [exercise]);
   const beatMs = 60_000 / exercise.tempo;
@@ -82,6 +87,10 @@ export function ReadingPart({ scale: scaleId, paused, onDone }: PartProps<Readin
     }
     if (gap >= 2) stopped++;
     const held = total > 0 && right / total >= 0.7 && matched / total >= 0.75;
+    // How far the beat was held: the last bar before a note was late or missed.
+    let bar = 0;
+    for (const n of tl) { const m = matches.current.get(n.index); if (!m || Math.abs(m.dev) > IN_TIME_MS) break; bar = Math.floor(n.beat / 4) + 1; }
+    setHeldBar(bar);
     setLevels((ls) => [...ls, { level, total, right, matched, inTime, stopped, held }]);
     setStates(computeStates(BEATS + 2));
     setPos(null);
@@ -89,7 +98,7 @@ export function ReadingPart({ scale: scaleId, paused, onDone }: PartProps<Readin
     if (!held || level === TOTAL) setOver(true);
   }, [audio, level]);
 
-  const start = async () => {
+  const begin = async () => {
     if (paused || phase === "countin" || phase === "playing") return;
     await unlock();
     matches.current = new Map();
@@ -129,7 +138,7 @@ export function ReadingPart({ scale: scaleId, paused, onDone }: PartProps<Readin
       const tl = timelineRef.current;
       for (let i = cursor.current; i < Math.min(tl.length, cursor.current + 4); i++) {
         const expT = tl[i].beat * beatMs;
-        if (t > expT + beatMs) continue; // that note is gone
+        if (t > expT + beatMs) continue;
         if (Math.abs(t - expT) <= beatMs) {
           matches.current.set(tl[i].index, { pitchOk: e.midi % 12 === tl[i].midi % 12, dev: t - expT });
           cursor.current = i + 1;
@@ -140,66 +149,78 @@ export function ReadingPart({ scale: scaleId, paused, onDone }: PartProps<Readin
     },
   });
 
-  const nextLevel = () => { setLevel(level + 1); setPhase("ready"); phaseRef.current = "ready"; setStates(new Map()); };
+  const nextLevel = () => { setLevel(level + 1); setPhase("ready"); phaseRef.current = "ready"; setStates(new Map()); setHeldBar(null); };
   const endLadder = () => { audio.stopMetronome(); phaseRef.current = "result"; setPhase("result"); setOver(true); };
   const done = () => {
-    const held = heldLevel(levels);
+    const held = heldLevel(levels, start);
     const acc = levels.length ? levels.reduce((s, r) => s + (r.total ? r.right / r.total : 0), 0) / levels.length : 0;
     const score = Math.round(100 * (0.7 * (held / TOTAL) + 0.3 * acc));
-    onDone({ score, heldLevel: held, stoppedAt: held < TOTAL ? held + 1 : null, levels });
+    onDone({ score, heldLevel: held, stoppedAt: held < TOTAL ? held + 1 : null, levels, startedAt: start });
   };
 
-  const held = heldLevel(levels);
+  const held = heldLevel(levels, start);
   const current = levels.find((r) => r.level === level);
-  const line = exerciseToLines(exercise, scale, { barsPerLine: BARS, states })[0];
+  const line = exerciseToLines(exercise, scale, { barsPerLine: BARS, states, tops: { treble: 36, bass: 132 } })[0];
   const barOf = pos != null ? Math.floor(pos / 4) : null;
-  const status = over
-    ? held === 0 ? "Level 1 is where it stopped." : held === TOTAL ? `Level ${held} held. That's the top of the ladder.` : `Level ${held} held. Level ${held + 1} is where it stopped.`
-    : phase === "result" ? `Level ${level} held.` : phase === "ready" ? (level === 1 ? "Level 1 first. Each one held is a little harder." : `Level ${held} held. Level ${level} next.`) : phase === "countin" ? `Count-in — ${count}.` : `Level ${level} — playing.`;
+  const instruction = over
+    ? held === 0 ? "Level 1 is where it stopped. That's where the page starts." : held === TOTAL ? `Level ${held} held. That's the top of the ladder.` : `Level ${held} held. Level ${held + 1} is where it stopped.`
+    : phase === "countin" ? `Count-in — ${count}.` : phase === "playing" ? "Keep going — don't stop to fix a note." : phase === "result" ? `Level ${level} held. One rung up.` : "Play what you see. It gets harder until you stop.";
+  const startLine = `Started at level ${start} because ${experience ? EXPERIENCE_WORDS[experience] : "the ladder starts there"}. Right hand only — keep going through mistakes.`;
+
+  // The ladder shows the rungs around the one being played: held mint, now indigo, upcoming outlined.
+  const lo = Math.max(1, Math.min(level - 3, TOTAL - 5));
+  const rungs = Array.from({ length: Math.min(6, TOTAL - lo + 1) }, (_, i) => lo + i);
 
   return (
     <>
-      <div style={{ flex: 1, minHeight: 0, padding: "30px 38px 0", display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
-          <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)" }}>Play it once through. Don&apos;t stop to fix a note — if you lose your place, wait for the next bar.</p>
-          <Pill tone="mint" style={{ marginLeft: "auto" }}>Level {level} of {TOTAL}</Pill>
+      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 260px", gap: 20, padding: "24px 32px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, minHeight: 0 }}>
+          <Instruction>{instruction}</Instruction>
+          <SheetPanel padding={16} style={{ flex: 1, minHeight: 0 }}>
+            <Staff systems={line.systems} notes={line.notes} rests={line.rests} layout={{ bars: line.bars, beatsPerBar: 4, left: 190, right: 40 }} regions={barOf != null ? [{ bar: barOf, beat: (pos ?? 0) % 4, width: 54 }] : []} width={780} height={150} lineGap={14} />
+          </SheetPanel>
+          {mode !== "midi" && <Keyboard from={60} to={83} height={110} disabled={paused || phase === "result"} onNoteOn={(m) => tap.note(m, "on")} onNoteOff={(m) => tap.note(m, "off")} style={{ flex: "none" }} />}
+          <div style={NOTE}>{startLine}</div>
         </div>
-        <SheetPanel padding={18} style={{ flex: "none", height: 300 }}>
-          <Staff systems={line.systems} notes={line.notes} rests={line.rests} layout={{ bars: line.bars, beatsPerBar: 4, left: 190, right: 40 }} regions={barOf != null ? [{ bar: barOf, beat: (pos ?? 0) % 4, width: 54 }] : []} width={1050} height={180} />
-        </SheetPanel>
-        {mode !== "midi" && (
-          <Keyboard from={60} to={83} height={120} disabled={paused || phase === "result"} onNoteOn={(m) => tap.note(m, "on")} onNoteOff={(m) => tap.note(m, "off")} />
-        )}
-      </div>
-      <div style={{ flex: "none", borderTop: "1px solid var(--kc-border)", background: "var(--kc-panel)", padding: "18px 38px 22px", display: "flex", alignItems: "center", gap: 28, marginTop: 16 }}>
-        <div style={{ width: 300, display: "flex", flexDirection: "column", gap: 6 }}>
-          <SectionLabel>How far you got</SectionLabel>
-          <SegmentBar total={TOTAL} filled={held} current={over ? undefined : level - 1} height={8} radius={3} />
-          <span style={{ fontSize: 14, color: "var(--kc-ink-muted)" }}>{status}</span>
-        </div>
-        <div style={{ display: "flex", gap: 26 }}>
-          <Metric label="Notes right" value={current ? `${current.right} / ${current.total}` : `— / ${timeline.length}`} />
-          <Metric label="In time" value={current ? `${current.inTime} / ${current.total}` : `— / ${timeline.length}`} />
-          <Metric label="Stopped" value={current ? timesWord(current.stopped) : "—"} tone={current && current.stopped ? "clay" : undefined} />
-        </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-          {over ? (
-            <Button size="control" onClick={done}>Next — timing</Button>
-          ) : phase === "ready" ? (
-            <>
-              {level > 1 && <Button variant="secondary" size="control" onClick={endLadder}>That was too hard</Button>}
-              <Button size="control" icon="play_arrow" disabled={paused} onClick={() => void start()}>Play level {level}</Button>
-            </>
-          ) : phase === "result" ? (
-            <>
-              <Button variant="secondary" size="control" onClick={endLadder}>That was too hard</Button>
-              <Button size="control" onClick={nextLevel}>Next level</Button>
-            </>
-          ) : (
-            <Button size="control" disabled>{phase === "countin" ? `Count-in ${count}` : "Listening"}</Button>
-          )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "flex-end", minHeight: 0 }}>
+          <div style={CARD_TITLE}>The ladder</div>
+          <div style={{ display: "flex", flexDirection: "column-reverse", gap: 6 }}>
+            {rungs.map((r) => {
+              const isHeld = r <= held || (r < start);
+              const now = r === level && !over;
+              const style: React.CSSProperties = { height: 44, borderRadius: 14, display: "flex", alignItems: "center", gap: 10, padding: "0 14px", boxSizing: "border-box", fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600 };
+              const look: React.CSSProperties = now ? { background: "var(--kc-indigo)", color: "#ffffff", boxShadow: "0 3px 0 0 var(--kc-indigo-shadow)" } : isHeld ? { background: "var(--kc-mint)", color: "var(--kc-ink)" } : { background: "var(--kc-panel)", border: "2px solid var(--kc-border)", color: "var(--kc-ink-faint)" };
+              return (
+                <div key={r} style={{ ...style, ...look }}>
+                  <Icon name={now ? "arrow_right" : isHeld ? "check" : "lock_open"} size={20} />
+                  <span>Level {r}</span>
+                  {now && <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 800, fontFamily: "var(--kc-font-sans)" }}>NOW</span>}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
+      <PartBar actions={
+        over ? (
+          <Button size="control" iconAfter icon="arrow_forward" onClick={done}>Next — timing</Button>
+        ) : phase === "ready" ? (
+          <>
+            {levels.length > 0 && <Button variant="secondary" size="control" icon="flag" onClick={endLadder}>That&apos;s my limit</Button>}
+            <Button size="control" icon="play_arrow" disabled={paused} onClick={() => void begin()}>Play level {level}</Button>
+          </>
+        ) : phase === "result" ? (
+          <>
+            <Button variant="secondary" size="control" icon="flag" onClick={endLadder}>That&apos;s my limit</Button>
+            <Button size="control" iconAfter icon="arrow_forward" onClick={nextLevel}>Next level</Button>
+          </>
+        ) : (
+          <Button size="control" disabled>{phase === "countin" ? `Count-in ${count}` : "Listening"}</Button>
+        )
+      }>
+        <StatChip tone="mint" value={current ? current.right : "—"} unit={`/${current ? current.total : timeline.length}`} label={<>notes<br />right</>} />
+        <StatChip tone="indigo" icon="timer" line1={current ? `${current.inTime} of ${current.total} in time` : "In time"} line2={current ? (heldBar ? `held the beat to bar ${heldBar}` : "lost the beat early") : "after the count-in"} />
+      </PartBar>
     </>
   );
 }

@@ -1,6 +1,9 @@
 "use client";
 import { create } from "zustand";
-import type { AssessmentResult, Assignment, BlockResult, BlockType, BlockWeights, Child, ChildSettings, InputMode, Parent, ScaleId, Session, SkillProfile } from "../types";
+import type { AssessmentResult, Assignment, BlockResult, BlockType, BlockWeights, Child, ChildSettings, ChordsHeard, InputMode, Parent, ScaleHeard, ScaleId, Session, SkillProfile } from "../types";
+
+/** What a finished skill check sets on the child, beyond the three numbers. */
+export interface AssessmentApply { scale?: ScaleId | null; techniqueTempo?: number; theoryLevel?: number; readingLevel?: number; scales?: ScaleHeard[]; chords?: ChordsHeard }
 import { repo } from "../db/repo";
 import { newId } from "../utils/id";
 import { dateKey, weekDays, weekKey } from "../utils/date";
@@ -41,7 +44,7 @@ interface AppState {
   setParentUnlocked(v: boolean): void;
   setInputMode(m: InputMode): void;
 
-  saveAssessment(childId: string, result: Omit<AssessmentResult, "id" | "childId" | "takenAt">): Promise<SkillProfile>;
+  saveAssessment(childId: string, result: Omit<AssessmentResult, "id" | "childId" | "takenAt">, apply?: AssessmentApply): Promise<SkillProfile>;
 
   /** Plan today's session. A linked teacher's assignment, when passed, pins the key and the block weights. */
   planSession(child: Child, assignment?: Assignment | null): SessionPlan;
@@ -196,16 +199,29 @@ export const useAppStore = create<AppState>((set, get) => ({
   setParentUnlocked(v) { set({ parentUnlocked: v }); },
   setInputMode(m) { set({ inputMode: m }); },
 
-  async saveAssessment(childId, result) {
+  async saveAssessment(childId, result, apply) {
     const takenAt = new Date().toISOString();
     const row: AssessmentResult = { id: newId("asm"), childId, takenAt, ...result };
     await repo.putAssessment(row);
-    const profile: SkillProfile = { ear: result.echo, eye: result.flash, pulse: result.pulse, assessedAt: takenAt };
+    const profile: SkillProfile = { ear: result.echo, eye: result.flash, pulse: result.pulse, assessedAt: takenAt, scales: apply?.scales, chords: apply?.chords };
     const child = get().children.find((c) => c.id === childId);
     const retake = !!child?.skillProfile;
     await get().updateChild(childId, (c) => {
       let next: Child = { ...c, skillProfile: profile, xp: c.xp + (retake ? XP_ASSESSMENT_RETAKE : 0) };
       if (!hasBadge(next, "assessment-complete")) next = awardBadge(next, "assessment-complete");
+      // What the check decided: the starting key (an override only when it differs from the roadmap), the
+      // technique tempo, and where harmony and reading begin.
+      if (apply?.scale !== undefined) {
+        const roadmap = next.roadmap.length ? next.roadmap : DEFAULT_ROADMAP;
+        const onRoadmap = roadmap[Math.min(next.roadmapIndex, roadmap.length - 1)];
+        const same = apply.scale && onRoadmap && apply.scale.key === onRoadmap.key && apply.scale.mode === onRoadmap.mode;
+        next = { ...next, scaleOverride: apply.scale && !same ? apply.scale : null };
+      }
+      const settings: Partial<ChildSettings> = {};
+      if (apply?.techniqueTempo) settings.techniqueTempo = apply.techniqueTempo;
+      if (apply?.theoryLevel) settings.theoryLevel = Math.max(1, Math.min(5, apply.theoryLevel));
+      if (apply?.readingLevel) settings.readingLevel = Math.max(1, Math.min(10, apply.readingLevel));
+      if (Object.keys(settings).length) next = { ...next, settings: { ...next.settings, ...settings } };
       return next;
     });
     return profile;
