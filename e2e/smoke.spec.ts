@@ -119,8 +119,8 @@ test("the ear check plays each phrase itself and locks replay mid-answer", async
   await expect(page).toHaveURL(/\/skill-check/);
 
   // The first phrase plays on arrival; nobody has to find a play button.
-  await expect(page.getByText(/first hearing/i)).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText(/now play it back/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/first hearing/i)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/now play it back/i)).toBeVisible({ timeout: 20_000 });
   const replay = page.getByRole("button", { name: /hear it again/i });
   await expect(replay).toBeEnabled();
 

@@ -147,6 +147,7 @@ function Runner({ session, plan, child, onFinishing, onDone }: { session: Sessio
   const right = (
     <>
       {recording && <Pill tone="indigo" icon="fiber_manual_record">Rec</Pill>}
+      {type === "ear" && <Pill tone="mint" icon="volume_up">Sound on</Pill>}
       <InputStatus mode={liveMode} lost={lost} />
     </>
   );
