@@ -197,14 +197,15 @@ export function ChoiceTile({ value, unit, selected, onClick, height = 96 }: { va
   );
 }
 
-/** A segmented choice on a cream track; the chosen option is indigo. */
-export function Choice<T extends string>({ options, value, onChange, labels }: { options: T[]; value: T; onChange: (v: T) => void; labels?: Partial<Record<T, string>> }) {
+/** A segmented choice on a cream track; the chosen option is indigo. `compact` is the shorter row a settings card wants. */
+export function Choice<T extends string>({ options, value, onChange, labels, size = "default", style }: { options: T[]; value: T; onChange: (v: T) => void; labels?: Partial<Record<T, string>>; size?: "default" | "compact"; style?: React.CSSProperties }) {
+  const small = size === "compact";
   return (
-    <div style={{ display: "inline-flex", gap: 4, background: "var(--kc-cream)", borderRadius: 14, padding: 4, flexWrap: "wrap" }}>
+    <div style={{ display: "inline-flex", gap: small ? 3 : 4, background: "var(--kc-cream)", borderRadius: small ? 12 : 14, padding: small ? 3 : 4, flexWrap: "wrap", boxSizing: "border-box", ...style }}>
       {options.map((o) => {
         const on = value === o;
         return (
-          <button key={o} type="button" onClick={() => onChange(o)} style={{ height: 38, padding: "0 14px", borderRadius: 11, border: "none", display: "inline-flex", alignItems: "center", fontFamily: "var(--kc-font-display)", fontSize: 15, fontWeight: 600, cursor: "pointer", background: on ? "var(--kc-indigo)" : "transparent", color: on ? "#ffffff" : "var(--kc-ink-muted)" }}>
+          <button key={o} type="button" onClick={() => onChange(o)} style={{ height: small ? 30 : 38, padding: small ? "0 10px" : "0 14px", borderRadius: small ? 9 : 11, border: "none", display: "inline-flex", alignItems: "center", fontFamily: "var(--kc-font-display)", fontSize: small ? 14 : 15, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", flex: "none", background: on ? "var(--kc-indigo)" : "transparent", color: on ? "#ffffff" : "var(--kc-ink-muted)" }}>
             {labels?.[o] ?? o}
           </button>
         );

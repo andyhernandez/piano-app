@@ -106,6 +106,23 @@ function describe(q: { triad: Triad; inversion?: Inversion; seventh?: boolean },
   return <>Left hand: <b>{prettyPc(t.root)}</b> and <b>{prettyPc(fifth)}</b>. {ORDINAL[t.degree - 1][0].toUpperCase()}{ORDINAL[t.degree - 1].slice(1)} degree of {prettyPc(scale.key)} — {quality}{inv}{seventh}.</>;
 }
 
+/** The live height of the chart, so its cells can be cut to whatever the page has left. */
+function useHeight<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
+  const ref = React.useRef<T>(null);
+  const [height, setHeight] = React.useState(400);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setHeight((prev) => (Math.floor(h) === prev ? prev : Math.floor(h)));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, height];
+}
+
 function useTimeouts() {
   const ids = React.useRef<Set<number>>(new Set());
   const after = React.useCallback((fn: () => void, ms: number) => {
@@ -117,8 +134,8 @@ function useTimeouts() {
   return { after, clear };
 }
 
-/** A cell on the chart: number top-left, chord symbol big. */
-function ChordCell({ n, chord, state, onClick }: { n: number; chord: string; state: "done" | "current" | "upcoming" | "missed" | "revealed"; onClick?: () => void }) {
+/** A cell on the chart: number top-left, chord symbol big. The symbol scales with the cell so a short page never cuts it. */
+function ChordCell({ n, chord, state, size = 34, onClick }: { n: number; chord: string; state: "done" | "current" | "upcoming" | "missed" | "revealed"; size?: number; onClick?: () => void }) {
   const look: React.CSSProperties = state === "current"
     ? { background: "var(--kc-indigo)", color: "#ffffff", boxShadow: "0 4px 0 0 var(--kc-indigo-shadow)" }
     : state === "done" ? { background: "var(--kc-mint-wash)" }
@@ -127,9 +144,9 @@ function ChordCell({ n, chord, state, onClick }: { n: number; chord: string; sta
     : { background: "var(--kc-base)", border: "2px solid var(--kc-hairline)" };
   const Tag = onClick ? "button" : "div";
   return (
-    <Tag type={onClick ? "button" : undefined} onClick={onClick} className={onClick ? "kc-press" : undefined} style={{ borderRadius: 18, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "10px 14px", boxSizing: "border-box", minHeight: 0, cursor: onClick ? "pointer" : "default", font: "inherit", textAlign: "left", color: "var(--kc-ink)", ...look }}>
-      <span style={{ fontSize: 12, fontWeight: 900, color: state === "current" ? "rgba(255,255,255,.8)" : "var(--kc-ink-faint)" }}>{n}</span>
-      <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 34, fontWeight: 600, lineHeight: 1 }}>{chord}</span>
+    <Tag type={onClick ? "button" : undefined} onClick={onClick} className={onClick ? "kc-press" : undefined} style={{ borderRadius: 18, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: size >= 26 ? "10px 14px" : "6px 10px", boxSizing: "border-box", minHeight: 0, overflow: "hidden", cursor: onClick ? "pointer" : "default", font: "inherit", textAlign: "left", color: "var(--kc-ink)", ...look }}>
+      <span style={{ fontSize: 12, fontWeight: 900, lineHeight: 1, color: state === "current" ? "rgba(255,255,255,.8)" : "var(--kc-ink-faint)" }}>{n}</span>
+      <span style={{ fontFamily: "var(--kc-font-display)", fontSize: size, fontWeight: 600, lineHeight: 1 }}>{chord}</span>
     </Tag>
   );
 }
@@ -138,6 +155,7 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
   const { audio, unlock } = useAudio();
   const updateSettings = useAppStore((s) => s.updateSettings);
   const { after, clear } = useTimeouts();
+  const [chartRef, chartHeight] = useHeight<HTMLDivElement>();
   const level = Math.min(5, Math.max(1, child.settings.theoryLevel || 1));
   const keyName = prettyPc(scale.key);
 
@@ -362,6 +380,11 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
     : bar >= 0 ? describe({ triad: chartChords[bar] }, scale) : "Twice through the four bars is one chorus. The chart marks each bar as it comes round.";
 
   const canCheck = inputMode === "mic" && phase === "find" && step === "play";
+  // The chart gives way first: its rows shrink and the symbols scale, so the keys below are never cut off.
+  const chartColumns = phase === "find" ? Math.min(4, Math.max(2, Math.ceil(pool.length / 2))) : 4;
+  const chartRows = Math.max(1, Math.ceil((phase === "find" ? pool.length : chartChords.length) / chartColumns));
+  const cellHeight = (chartHeight - 10 * (chartRows - 1)) / chartRows;
+  const chordSize = Math.max(20, Math.min(34, Math.round(cellHeight * 0.36)));
   const cellState = (i: number): "done" | "current" | "upcoming" | "missed" => {
     const m = marks[i];
     if (running && i === bar) return "current";
@@ -374,14 +397,14 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
     <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px" }}>
       <div style={{ minHeight: 0, padding: "22px 26px 22px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
         <Instruction>{instruction}</Instruction>
-        <div style={{ flex: 1, minHeight: 0, background: "var(--kc-panel)", border: "2px solid var(--kc-border)", borderRadius: 26, boxShadow: "var(--kc-shadow-press-sheet)", padding: 20, display: "grid", gridTemplateColumns: `repeat(${phase === "find" ? Math.min(4, Math.max(2, Math.ceil(pool.length / 2))) : 4}, 1fr)`, gridAutoRows: "1fr", gap: 10, boxSizing: "border-box" }}>
+        <div ref={chartRef} style={{ flex: 1, minHeight: 0, background: "var(--kc-panel)", border: "2px solid var(--kc-border)", borderRadius: 26, boxShadow: "var(--kc-shadow-press-sheet)", padding: 20, display: "grid", gridTemplateColumns: `repeat(${chartColumns}, minmax(0, 1fr))`, gridAutoRows: "minmax(0, 1fr)", gap: 10, boxSizing: "border-box", overflow: "hidden" }}>
           {phase === "find"
             ? pool.map((t, i) => {
                 const label = chordLabel(t, scale, question?.seventh ?? false);
                 const isAnswer = revealed && !!question && t === question.triad;
-                return <ChordCell key={i} n={i + 1} chord={label} state={isAnswer ? "revealed" : "upcoming"} onClick={step === "name" ? () => { void unlock(); answer(label, false); } : undefined} />;
+                return <ChordCell key={i} n={i + 1} chord={label} size={chordSize} state={isAnswer ? "revealed" : "upcoming"} onClick={step === "name" ? () => { void unlock(); answer(label, false); } : undefined} />;
               })
-            : chartChords.map((t, i) => <ChordCell key={i} n={i + 1} chord={chordSymbol(t)} state={cellState(i)} />)}
+            : chartChords.map((t, i) => <ChordCell key={i} n={i + 1} chord={chordSymbol(t)} size={chordSize} state={cellState(i)} />)}
         </div>
         {inputMode === "timer" && <PlayStrip from={kbFrom} to={kbTo} height={96} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} />}
       </div>

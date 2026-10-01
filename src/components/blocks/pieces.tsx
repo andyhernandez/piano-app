@@ -62,17 +62,24 @@ function levelPattern(level: LeadLevel, triad: Triad): { beat: number; midis: nu
   }
 }
 
-function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
+/** The live size of the sheet card's inner box, so the staves can be cut to whatever height is left. */
+function useBox<T extends HTMLElement>(): [React.RefObject<T | null>, number, number] {
   const ref = React.useRef<T>(null);
-  const [width, setWidth] = React.useState(1000);
+  const [box, setBox] = React.useState({ w: 1000, h: 300 });
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => { const w = entries[0]?.contentRect.width; if (w) setWidth(Math.floor(w)); });
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (!r) return;
+      const w = Math.floor(r.width);
+      const h = Math.floor(r.height);
+      setBox((b) => (b.w === w && b.h === h ? b : { w, h }));
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  return [ref, width];
+  return [ref, box.w, box.h];
 }
 
 /** Shift a voicing by whole octaves until it sits inside the on-screen keyboard. */
@@ -249,11 +256,17 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
   };
 
   // ---- the sheet ----
-  const [sheetRef, sheetWidth] = useWidth<HTMLDivElement>();
+  const [sheetRef, sheetWidth, sheetHeight] = useBox<HTMLDivElement>();
   const perRow = bars.length > 8 ? 8 : 4;
   const rowsOfBars: ChartBar[][] = [];
   for (let s = 0; s < bars.length; s += perRow) rowsOfBars.push(bars.slice(s, s + perRow));
   const leadWidth = Math.max(560, Math.min(1040, sheetWidth - 8));
+  // The staves take whatever the card has left: full height for one row, cut down when two must share it.
+  const rowCount = Math.max(1, rowsOfBars.length);
+  const rowGap = rowCount > 1 ? 24 : 0;
+  const leadHeight = Math.max(88, Math.min(perRow === 8 ? 124 : 150, Math.floor((sheetHeight - rowGap * (rowCount - 1)) / rowCount)));
+  const chartRows = Math.max(1, Math.ceil(bars.length / 4));
+  const chartCellHeight = Math.max(44, Math.min(bars.length > 12 ? 60 : 76, Math.floor((sheetHeight - 6 * (chartRows - 1)) / chartRows)));
   const stateFor = (b: ChartBar): NoteState => (b.index < loop.from || b.index > loop.to ? "upcoming" : bar === b.index ? "current" : undefined);
   const leadRow = (row: ChartBar[]) => {
     const padded: LeadSheetBar[] = row.map((b) => ({ chord: b.chords.map((c) => c.symbol).join(" "), dim: b.index < loop.from || b.index > loop.to }));
@@ -320,38 +333,38 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
           </div>
         ) : (
           <>
-            <SheetPanel padding={20} style={{ flex: 1, minHeight: 0 }}>
-              <div ref={sheetRef} style={{ width: "100%", maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 36 }}>
+            <SheetPanel padding={16} style={{ flex: 1, minHeight: 0 }}>
+              <div ref={sheetRef} style={{ width: "100%", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "safe center", gap: view === "lead-sheet" ? rowGap : 0 }}>
                 {view === "lead-sheet"
-                  ? rowsOfBars.map((row, r) => { const { bars: lb, melody } = leadRow(row); return <LeadSheet key={r} width={leadWidth} height={perRow === 8 ? 124 : 140} bars={lb} melody={melody} />; })
-                  : <ChordChart bars={chartBars} perRow={4} cellHeight={bars.length > 12 ? 60 : 76} style={{ maxWidth: 900 }} />}
+                  ? rowsOfBars.map((row, r) => { const { bars: lb, melody } = leadRow(row); return <LeadSheet key={r} width={leadWidth} height={leadHeight} bars={lb} melody={melody} />; })
+                  : <ChordChart bars={chartBars} perRow={4} cellHeight={chartCellHeight} style={{ maxWidth: 900 }} />}
               </div>
             </SheetPanel>
             {inputMode === "timer" && <PlayStrip from={kbFrom} to={kbTo} height={84} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} />}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, flex: "none" }}>
-              <div style={{ ...CARD, padding: "16px 18px", gap: 10 }}>
-                <CardTitle size={17}>Times through</CardTitle>
-                <Cells count={cells} current={timesCount} labels={false} />
-                <div style={SMALL}>{running ? `Looping ${loopText} at ${bpm}.` : "Start the click and the loop counts itself."}</div>
+            {/* One short row of settings, so the sheet above keeps the height it needs. */}
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 0.85fr) minmax(0, 1.5fr) minmax(0, 1.05fr)", gap: 12, flex: "none" }}>
+              <div style={{ ...CARD, padding: "11px 15px", gap: 7, justifyContent: "center" }}>
+                <CardTitle size={16}>Times through</CardTitle>
+                <Cells count={cells} current={timesCount} labels={false} height={22} />
+                <div style={{ ...SMALL, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{running ? `Looping ${loopText} at ${bpm}.` : "The click counts each loop."}</div>
               </div>
-              <div style={{ ...CARD, padding: "14px 18px", gap: 8, justifyContent: "center" }}>
+              <div style={{ ...CARD, padding: "11px 15px", gap: 7, justifyContent: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <CardTitle size={17}>Left hand</CardTitle>
-                    <div style={{ ...SMALL, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{levelTitle(level)}</div>
+                    <CardTitle size={16}>Left hand</CardTitle>
+                    <div style={{ ...SMALL, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{levelTitle(level)}</div>
                   </div>
-                  <Choice options={levels.map(String)} value={String(level)} onChange={(v) => setLevelPref(Number(v) as LeadLevel)} labels={Object.fromEntries(levels.map((l) => [String(l), LEVEL_CHIP[l] ?? levelShort(l)])) as Record<string, string>} />
+                  <Choice size="compact" options={levels.map(String)} value={String(level)} onChange={(v) => setLevelPref(Number(v) as LeadLevel)} labels={Object.fromEntries(levels.map((l) => [String(l), LEVEL_CHIP[l] ?? levelShort(l)])) as Record<string, string>} />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-ink-faint)", flex: 1 }}>Loop</span>
-                  <Choice options={loopOptions} value={loopPref} onChange={setLoopPref} labels={loopLabels} />
-                  <Choice options={["lead-sheet", "chord-chart"] as View[]} value={view} onChange={setView} labels={{ "lead-sheet": "Sheet", "chord-chart": "Chords" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "var(--kc-ink-faint)", flex: "none" }}>Loop</span>
+                  <Choice size="compact" options={loopOptions} value={loopPref} onChange={setLoopPref} labels={loopLabels} style={{ flexWrap: "nowrap", overflowX: "auto", minWidth: 0, flex: "0 1 auto" }} />
+                  <Choice size="compact" options={["lead-sheet", "chord-chart"] as View[]} value={view} onChange={setView} labels={{ "lead-sheet": "Sheet", "chord-chart": "Chords" }} style={{ marginLeft: "auto", flexWrap: "nowrap" }} />
                 </div>
               </div>
-              <div style={{ ...CARD, padding: "16px 18px", gap: 8 }}>
-                <CardTitle size={17}>Note for next time</CardTitle>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--kc-ink-muted)", border: "2px dashed var(--kc-border)", borderRadius: 12, padding: "8px 12px", lineHeight: 1.4 }}>{loaded.note || (assigned ? "No note from your teacher this week." : "Play it through at this tempo before going faster.")}</div>
-                {candidates.length > 1 && <Button variant="quiet" size="pill" icon="swap_horiz" onClick={() => { setPickIndex((i) => i + 1); setLoopPref("all"); }} style={{ alignSelf: "flex-start" }}>Another piece</Button>}
+              <div style={{ ...CARD, padding: "11px 15px", gap: 6, justifyContent: "center" }}>
+                <CardTitle size={16} meta={candidates.length > 1 ? <Button variant="quiet" size="pill" icon="swap_horiz" onClick={() => { setPickIndex((i) => i + 1); setLoopPref("all"); }} style={{ height: 28, padding: "0 8px", fontSize: 14, gap: 5 }}>Another piece</Button> : undefined}>Note for next time</CardTitle>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--kc-ink-muted)", border: "2px dashed var(--kc-border)", borderRadius: 12, padding: "6px 10px", lineHeight: 1.35, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{loaded.note || (assigned ? "No note from your teacher this week." : "Play it through at this tempo before going faster.")}</div>
               </div>
             </div>
           </>
