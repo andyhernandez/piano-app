@@ -31,6 +31,14 @@ export function readingStartFor(e: Experience | undefined): number {
   }
 }
 
+/** "No sharps or flats", "One sharp", "Two flats" — the hint under a scale's name. */
+function accidentalWord(id: ScaleId): string {
+  const acc = buildScale(id).accidentals;
+  const n = Math.abs(acc);
+  if (n === 0) return "No sharps or flats";
+  return `${["", "One", "Two", "Three", "Four", "Five", "Six"][n] ?? n} ${acc > 0 ? "sharp" : "flat"}${n === 1 ? "" : "s"}`;
+}
+
 interface Played { midi: number; time: number }
 
 /** Which key and mode the played notes belong to: every played pitch class in the scale, and most of the scale played. */
@@ -135,6 +143,10 @@ export function ScalesPart({ scale: roadmapScale, paused, onDone }: PartProps<Sc
   });
 
   const timerOnly = mode === "timer";
+  // On the timer nothing is heard, so the side column lists what has been ticked instead.
+  const listed: ScaleHeard[] = timerOnly
+    ? SELF_REPORT.filter((s) => picked.includes(`${s.key}-${s.mode}`)).map((s) => ({ key: s.key, mode: s.mode, hand: "RH", bpm: 60, evenMs: 0, selfReported: true }))
+    : heard;
   const latest = heard[heard.length - 1] ?? null;
   const latestScale = latest ? buildScale({ key: latest.key, mode: latest.mode }) : null;
   const flats = latest ? prefersFlats({ key: latest.key, mode: latest.mode }) : false;
@@ -185,8 +197,7 @@ export function ScalesPart({ scale: roadmapScale, paused, onDone }: PartProps<Sc
   const finish = () => {
     if (timer.current) clearTimeout(timer.current);
     if (timerOnly) {
-      const list: ScaleHeard[] = SELF_REPORT.filter((s) => picked.includes(`${s.key}-${s.mode}`)).map((s) => ({ key: s.key, mode: s.mode, hand: "RH", bpm: 60, evenMs: 0, selfReported: true }));
-      onDone({ scales: list, selfReported: true });
+      onDone({ scales: listed, selfReported: true });
       return;
     }
     onDone({ scales: heard, selfReported: false });
@@ -204,18 +215,21 @@ export function ScalesPart({ scale: roadmapScale, paused, onDone }: PartProps<Sc
           {timerOnly ? (
             <div style={{ ...PANEL, flex: 1 }}>
               <div style={CARD_TITLE}>Which scales can you play, hands separately?</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gridAutoRows: "1fr", gap: 12 }}>
                 {SELF_REPORT.map((s) => {
                   const id = `${s.key}-${s.mode}`;
                   const on = picked.includes(id);
                   return (
-                    <button key={id} type="button" onClick={() => setPicked((p) => (on ? p.filter((x) => x !== id) : [...p, id]))} className="kc-press" style={{ height: 56, padding: "0 22px", borderRadius: 18, fontFamily: "var(--kc-font-display)", fontSize: 18, fontWeight: 600, cursor: "pointer", ...(on ? { background: "var(--kc-indigo)", color: "#ffffff", border: "none", boxShadow: "0 4px 0 0 var(--kc-indigo-shadow)" } : { background: "var(--kc-panel)", color: "var(--kc-ink)", border: "2px solid var(--kc-border)", boxShadow: "var(--kc-shadow-press)" }) }}>
-                      {on && <Icon name="check" size={20} style={{ marginRight: 8 }} />}{scaleName(s)}
+                    <button key={id} type="button" aria-pressed={on} onClick={() => setPicked((p) => (on ? p.filter((x) => x !== id) : [...p, id]))} className="kc-press" style={{ minHeight: 86, padding: "14px 18px", borderRadius: 20, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 4, textAlign: "left", cursor: "pointer", boxSizing: "border-box", ...(on ? { background: "var(--kc-indigo)", color: "#ffffff", border: "none", boxShadow: "0 4px 0 0 var(--kc-indigo-shadow)" } : { background: "var(--kc-panel)", color: "var(--kc-ink)", border: "2px solid var(--kc-border)", boxShadow: "var(--kc-shadow-press)" }) }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--kc-font-display)", fontSize: 20, fontWeight: 600, lineHeight: 1.15 }}>
+                        {on && <Icon name="check" size={20} />}{scaleName(s)}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, color: on ? "rgba(255,255,255,.82)" : "var(--kc-ink-faint)" }}>{accidentalWord(s)}</span>
                     </button>
                   );
                 })}
               </div>
-              <div style={{ ...NOTE, marginTop: "auto" }}>Marked as your own answer, not measured. The scale stop starts gently either way.</div>
+              <div style={NOTE}>Marked as your own answer, not measured. The scale stop starts gently either way.</div>
             </div>
           ) : (
             <>
@@ -253,16 +267,16 @@ export function ScalesPart({ scale: roadmapScale, paused, onDone }: PartProps<Sc
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 0 }}>
-          <div style={CARD_TITLE}>Scales we&apos;ve heard</div>
-          {heard.length === 0 && !timerOnly && <div style={{ ...NOTE, padding: "10px 14px", borderRadius: 16, background: "var(--kc-cream)" }}>Nothing yet. Up and back is enough.</div>}
-          {heard.map((s, i) => {
-            const isLatest = i === heard.length - 1;
+          <div style={CARD_TITLE}>{timerOnly ? "Scales you've ticked" : "Scales we've heard"}</div>
+          {listed.length === 0 && <div style={{ ...NOTE, padding: "10px 14px", borderRadius: 16, background: "var(--kc-cream)" }}>{timerOnly ? "Nothing ticked yet. Tick any you can play." : "Nothing yet. Up and back is enough."}</div>}
+          {listed.map((s, i) => {
+            const isLatest = i === listed.length - 1;
             return (
               <div key={`${s.key}-${s.mode}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 16, background: isLatest ? "var(--kc-indigo-wash)" : "var(--kc-mint-wash)", border: isLatest ? "2px solid var(--kc-indigo)" : "2px solid transparent" }}>
                 <Icon name="check_circle" size={22} color={isLatest ? "var(--kc-indigo)" : "var(--kc-mint-ink)"} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600, lineHeight: 1.15 }}>{scaleName({ key: s.key, mode: s.mode })}</div>
-                  <div style={NOTE}>{handWord(s.hand)} · {s.bpm} bpm</div>
+                  <div style={NOTE}>{s.selfReported ? "Your own answer" : `${handWord(s.hand)} · ${s.bpm} bpm`}</div>
                 </div>
               </div>
             );

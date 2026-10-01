@@ -91,7 +91,7 @@ export function ResultScreen({ name, profile, minutes, scale: scaleId, seconds, 
             <div style={{ background: "var(--kc-indigo-wash)", borderRadius: 20, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 19, fontWeight: 600, lineHeight: 1.15 }}>So your {numberWord(minutes)} minutes become</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 4 }}>
-                {rows.map((b) => { const m = Math.max(1, Math.round(secs[b] / 60)); return <MeterRow key={b} label={DISCIPLINE[b].title} value={Math.round(weights[b] * 100)} max={Math.max(35, Math.round(weights[rows[0]] * 100))} suffix={`${m} min`} labelWidth={96} />; })}
+                {rows.map((b) => { const m = Math.max(1, Math.round(secs[b] / 60)); return <MeterRow key={b} label={DISCIPLINE[b].short} value={Math.round(weights[b] * 100)} max={Math.max(35, Math.round(weights[rows[0]] * 100))} suffix={`${m} min`} labelWidth={96} />; })}
               </div>
             </div>
             <div style={{ background: "var(--kc-panel)", border: "2px solid var(--kc-border)", borderRadius: 22, boxShadow: "var(--kc-shadow-press)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 12, flex: 1, minHeight: 0, justifyContent: "space-between" }}>

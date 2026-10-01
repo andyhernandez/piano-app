@@ -99,13 +99,14 @@ export function ChordsPart({ paused, onDone }: PartProps<ChordsResult>) {
 
   const required = TARGETS.filter((t) => !t.optional).length;
   const requiredHeard = heard.filter((n) => TARGETS.find((t) => t.name === n && !t.optional)).length;
+  const requiredAnswered = TARGETS.filter((t, i) => !t.optional && answers[i] === true).length;
   const instruction = timerOnly ? "On the timer, three quick questions — your own answer, not measured." : current ? `Play a ${current.name} chord${current.optional ? " if you know it" : ""}. Then any others you know — or tap “Not yet”.` : "That's every chord we ask for. See your result when you're ready.";
 
   return (
     <>
       <div style={{ flex: 1, minHeight: 0, padding: "22px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
         <Instruction>{instruction}</Instruction>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, ...(timerOnly ? { flex: 1, minHeight: 0, alignContent: "center", gridAutoRows: 300 } : null) }}>
           {TARGETS.map((t, ti) => {
             const isHeard = timerOnly ? answers[ti] === true : heard.includes(t.name);
             const isCurrent = !timerOnly && current?.name === t.name;
@@ -113,11 +114,11 @@ export function ChordsPart({ paused, onDone }: PartProps<ChordsResult>) {
             const card: React.CSSProperties = isHeard ? { background: "var(--kc-mint-wash)", border: "3px solid var(--kc-mint)" } : isCurrent ? { background: "var(--kc-indigo-wash)", border: "3px solid var(--kc-indigo)" } : { background: "var(--kc-base)", border: "3px dashed var(--kc-border-dashed)" };
             const n = t.notes.filter((_, i) => heldPcs.has(t.pcs[i])).length;
             return (
-              <div key={t.name} style={{ borderRadius: 22, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10, boxSizing: "border-box", ...card }}>
+              <div key={t.name} style={{ borderRadius: 22, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10, boxSizing: "border-box", ...(timerOnly ? { justifyContent: "center", gap: 16 } : null), ...card }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 24, fontWeight: 600, lineHeight: 1.15 }}>{t.name}</div>
                   <span style={{ marginLeft: "auto" }}>
-                    {isHeard ? <Pill tone="mint-fill" icon="check">{timerOnly ? "Yes" : "Heard"}</Pill> : isCurrent ? <Pill tone="indigo-fill" icon="hearing">Listening</Pill> : isSkipped ? <Pill>Not yet</Pill> : <Pill>{t.optional ? "Optional" : "Next"}</Pill>}
+                    {isHeard ? <Pill tone="mint-fill" icon="check">{timerOnly ? "Yes" : "Heard"}</Pill> : isCurrent ? <Pill tone="indigo-fill" icon="hearing">Listening</Pill> : isSkipped ? <Pill>Not yet</Pill> : t.optional ? <Pill>Optional</Pill> : timerOnly ? null : <Pill>Next</Pill>}
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
@@ -142,7 +143,7 @@ export function ChordsPart({ paused, onDone }: PartProps<ChordsResult>) {
           })}
         </div>
         {timerOnly ? (
-          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10 }}>
+          <div style={{ flex: "none", display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ background: "var(--kc-indigo-wash)", borderRadius: 20, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
               <Icon name="timer" size={24} color="var(--kc-indigo)" />
               <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4, color: "var(--kc-indigo-shadow)" }}>{QUESTIONS.join(" · ")} — marked as your own answer, not measured.</div>
@@ -170,7 +171,7 @@ export function ChordsPart({ paused, onDone }: PartProps<ChordsResult>) {
           <Button size="control" iconAfter icon="arrow_forward" disabled={paused || (timerOnly && answers.some((a, i) => a === null && !TARGETS[i].optional))} onClick={finish}>See my result</Button>
         </>
       }>
-        <StatChip tone="mint" value={timerOnly ? answers.filter((a) => a === true).length : requiredHeard} unit={`/${required}`} label={<>chords<br />so far</>} />
+        <StatChip tone="mint" value={timerOnly ? requiredAnswered : requiredHeard} unit={`/${required}`} label={<>chords<br />so far</>} />
         <div style={{ ...NOTE, maxWidth: 260 }}>Sets where the harmony stop starts. Most people begin with C, F and G.</div>
       </PartBar>
     </>

@@ -160,7 +160,7 @@ export function ReadingPart({ scale: scaleId, start, experience, paused, onDone 
 
   const held = heldLevel(levels, start);
   const current = levels.find((r) => r.level === level);
-  const line = exerciseToLines(exercise, scale, { barsPerLine: BARS, states, tops: { treble: 36, bass: 132 } })[0];
+  const line = exerciseToLines(exercise, scale, { barsPerLine: BARS, states, tops: { treble: 56, bass: 182 } })[0];
   const barOf = pos != null ? Math.floor(pos / 4) : null;
   const instruction = over
     ? held === 0 ? "Level 1 is where it stopped. That's where the page starts." : held === TOTAL ? `Level ${held} held. That's the top of the ladder.` : `Level ${held} held. Level ${held + 1} is where it stopped.`
@@ -177,7 +177,7 @@ export function ReadingPart({ scale: scaleId, start, experience, paused, onDone 
         <div style={{ display: "flex", flexDirection: "column", gap: 16, minHeight: 0 }}>
           <Instruction>{instruction}</Instruction>
           <SheetPanel padding={16} style={{ flex: 1, minHeight: 0 }}>
-            <Staff systems={line.systems} notes={line.notes} rests={line.rests} layout={{ bars: line.bars, beatsPerBar: 4, left: 190, right: 40 }} regions={barOf != null ? [{ bar: barOf, beat: (pos ?? 0) % 4, width: 54 }] : []} width={780} height={150} lineGap={14} />
+            <Staff systems={line.systems} notes={line.notes} rests={line.rests} layout={{ bars: line.bars, beatsPerBar: 4, left: 180, right: 30 }} regions={barOf != null ? [{ bar: barOf, beat: (pos ?? 0) % 4, bars: 0.25, top: 30, height: 150 }] : []} width={780} height={220} lineGap={26} />
           </SheetPanel>
           {mode !== "midi" && <Keyboard from={60} to={83} height={110} disabled={paused || phase === "result"} onNoteOn={(m) => tap.note(m, "on")} onNoteOff={(m) => tap.note(m, "off")} style={{ flex: "none" }} />}
           <div style={NOTE}>{startLine}</div>
