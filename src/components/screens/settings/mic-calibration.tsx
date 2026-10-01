@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { Panel, SectionLabel, Button, Icon, ProgressStrip } from "@/components/ds";
+import { Panel, SectionLabel, Button, Icon, ProgressStrip, Small } from "@/components/ds";
 import { getInput } from "@/lib/input/manager";
 import { micPermissionState } from "@/lib/input/mic";
 import { useAppStore } from "@/lib/store/app-store";
@@ -60,35 +60,33 @@ export function MicCalibrationPanel({ childId, onClose }: { childId: string; onC
   const busy = phase.kind === "starting" || phase.kind === "measuring";
 
   return (
-    <Panel state="current" padding="card" style={{ gap: 12 }}>
-      <SectionLabel size="meta">MICROPHONE CALIBRATION</SectionLabel>
-      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>
-        Keep the room as quiet as it usually is during practice. The app listens for three seconds to learn the background noise, so a quiet note is never marked wrong.
-      </p>
+    <Panel tone="indigo" style={{ gap: 10 }}>
+      <SectionLabel size="title">Microphone calibration</SectionLabel>
+      <Small>Keep the room as quiet as it usually is during practice. The app listens for three seconds to learn the background noise, so a quiet note is never marked wrong.</Small>
       {phase.kind === "measuring" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <ProgressStrip value={progress} />
-          <span style={{ fontSize: 14, color: "var(--kc-ink-dim)", display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="mic" size={20} color="var(--kc-mint)" />Listening…</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-indigo-shadow)", display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="mic" size={20} color="var(--kc-indigo)" />Listening…</span>
         </div>
       )}
       {phase.kind === "done" && (
-        <span style={{ fontSize: 14, color: "var(--kc-mint)", display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <Icon name="check" size={20} />
-          Saved. Noise floor <span style={{ fontFamily: "var(--kc-font-mono)" }}>{phase.noiseFloor.toFixed(4)}</span>, confidence 0.80.
+        <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-mint-ink)", display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <Icon name="check_circle" size={20} />
+          Saved. Noise floor {phase.noiseFloor.toFixed(4)}, confidence 0.80.
         </span>
       )}
       {phase.kind === "denied" && (
-        <span style={{ fontSize: 14, color: "var(--kc-clay)", display: "inline-flex", alignItems: "flex-start", gap: 8, lineHeight: 1.45 }}>
-          <Icon name="error" size={20} />
-          <span>Microphone access is blocked. Allow it for this site in the browser&apos;s address-bar settings, then try again. Practice still works on the timer.</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--kc-indigo-shadow)", display: "inline-flex", alignItems: "flex-start", gap: 8, lineHeight: 1.45 }}>
+          <Icon name="info" size={20} color="var(--kc-indigo)" />
+          <span>Microphone access is blocked. Allow it for this site in the browser’s address-bar settings, then try again. Practice still works on the timer.</span>
         </span>
       )}
-      {phase.kind === "error" && <span style={{ fontSize: 14, color: "var(--kc-clay)", lineHeight: 1.45 }}>{phase.message}</span>}
-      <div style={{ display: "flex", gap: 10 }}>
-        <Button size="control" variant={phase.kind === "done" ? "secondary" : "primary"} icon="mic" onClick={() => void run()} disabled={busy}>
+      {phase.kind === "error" && <Small color="var(--kc-indigo-shadow)">{phase.message}</Small>}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Button size="pill" variant={phase.kind === "done" ? "secondary" : "primary"} icon="mic" onClick={() => void run()} disabled={busy}>
           {phase.kind === "starting" ? "Asking for the microphone…" : phase.kind === "measuring" ? "Listening…" : phase.kind === "done" ? "Measure again" : "Measure for 3 seconds"}
         </Button>
-        <Button size="control" variant="quiet" onClick={onClose} disabled={busy}>{phase.kind === "done" ? "Done" : "Cancel"}</Button>
+        <Button size="pill" variant="quiet" onClick={onClose} disabled={busy}>{phase.kind === "done" ? "Done" : "Cancel"}</Button>
       </div>
     </Panel>
   );

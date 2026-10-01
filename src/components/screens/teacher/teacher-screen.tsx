@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Screen, SectionLabel, Button, StatTile, LogTable, MeterRow, Icon } from "@/components/ds";
+import { Screen, SectionLabel, Button, LogTable, MeterRow, Icon, Headline, Panel, Rail, Small, ActionNote } from "@/components/ds";
 import { repo } from "@/lib/db/repo";
 import { DEFAULT_TEACHER_SHARE } from "@/lib/store/app-store";
 import type { Assignment, Child, Session, Teacher } from "@/lib/types";
@@ -14,7 +14,7 @@ import { AssignmentEditor, draftFrom, assignmentFrom, type Draft } from "./assig
 
 interface Student { child: Child; sessions: Session[]; assignment: Assignment | null }
 
-const inputStyle: React.CSSProperties = { height: 48, padding: "0 16px", borderRadius: "var(--kc-radius-control)", background: "var(--kc-panel)", border: "1px solid var(--kc-border-active)", color: "var(--kc-ink)", fontFamily: "var(--kc-font-mono)", fontSize: 20, letterSpacing: "0.12em", textTransform: "uppercase", outline: "none", width: 220 };
+const inputStyle: React.CSSProperties = { height: 60, padding: "0 18px", borderRadius: 18, background: "var(--kc-panel)", border: "2px solid var(--kc-border)", color: "var(--kc-ink)", fontFamily: "var(--kc-font-display)", fontWeight: 600, fontSize: 26, letterSpacing: "0.12em", textTransform: "uppercase", outline: "none", width: 230, boxSizing: "border-box" };
 
 /** Code entry when the teacher view is opened without a code. */
 function CodeEntry({ error }: { error?: string | null }) {
@@ -22,17 +22,24 @@ function CodeEntry({ error }: { error?: string | null }) {
   const [code, setCode] = React.useState("");
   const open = () => { if (code.trim().length >= 4) router.push(`/teacher?code=${encodeURIComponent(code.trim().toUpperCase())}`); };
   return (
-    <div style={{ padding: "36px 38px", display: "flex", flexDirection: "column", gap: 22, flex: 1 }}>
-      <div>
-        <SectionLabel>TEACHER VIEW</SectionLabel>
-        <h1 style={{ margin: "8px 0 0", fontSize: 42, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.05, maxWidth: 620 }}>Enter your invite code.</h1>
-        <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 520 }}>The household made it on the teacher link screen and read it out at the lesson. It opens the record of every student linked to you on this device.</p>
-      </div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+    <div style={{ padding: "34px 40px", display: "flex", flexDirection: "column", gap: 26, flex: 1 }}>
+      <Headline kicker="Teacher view" title="Enter your invite code." lede="The household made it on the teacher link screen and read it out at the lesson. It opens the record of every student linked to you on this device." />
+      <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
         <input autoFocus value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter") open(); }} placeholder="4K7MQ2" aria-label="Invite code" maxLength={8} style={inputStyle} />
-        <Button icon="arrow_forward" onClick={open} disabled={code.trim().length < 4}>Open</Button>
+        <Button size="control" icon="arrow_forward" iconAfter onClick={open} disabled={code.trim().length < 4}>Open</Button>
       </div>
-      {error && <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--kc-clay)" }}><Icon name="error" size={20} />{error}</span>}
+      {error && <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800, color: "var(--kc-indigo-shadow)" }}><Icon name="info" size={22} color="var(--kc-indigo)" />{error}</span>}
+    </div>
+  );
+}
+
+/** A four-week figure on a small card. */
+function Figure({ label, value, sub, sun }: { label: string; value: React.ReactNode; sub: string; sun?: boolean }) {
+  return (
+    <div style={{ background: sun ? "var(--kc-sun)" : "var(--kc-panel)", border: sun ? "none" : "2px solid var(--kc-border)", borderRadius: 20, boxShadow: sun ? "var(--kc-shadow-press-sun)" : "var(--kc-shadow-press)", padding: "14px 16px", minWidth: 0 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: sun ? "var(--kc-sun-ink)" : "var(--kc-ink-faint)" }}>{label}</div>
+      <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 32, fontWeight: 600, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4, color: sun ? "var(--kc-sun-ink)" : "var(--kc-ink-faint)" }}>{sub}</div>
     </div>
   );
 }
@@ -69,16 +76,21 @@ export function TeacherScreen({ code }: { code: string | null }) {
   const teacher: Teacher | null | undefined = code ? (current ? current.teacher : undefined) : undefined;
   const students = current?.students ?? [];
   const setStudents = (fn: (all: Student[]) => Student[]) => setLoaded((l) => (l ? { ...l, students: fn(l.students) } : l));
-  const upper = teacher ? teacher.name.toUpperCase() : "";
   const student = students[index];
+  const pick = (i: number) => { setIndex(i); setDraft(draftFrom(students[i].assignment)); setSent(null); };
+  const shortName = (c: Child) => c.name.length > 12 ? `${c.name.slice(0, 11)}…` : c.name;
   const right = teacher ? (
     <>
-      <SectionLabel>TEACHER · {upper}</SectionLabel>
-      <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>{students.length} student{students.length === 1 ? "" : "s"}</span>
-      {student && <span style={{ fontSize: 15, fontWeight: 600 }}>{student.child.name}</span>}
-      {students.length > 1 && <Button variant="quiet" size="control" onClick={() => { const i = (index + 1) % students.length; setIndex(i); setDraft(draftFrom(students[i].assignment)); setSent(null); }}>Next student</Button>}
+      <span style={{ fontSize: 15, fontWeight: 800, color: "var(--kc-ink-faint)" }}>Teacher · {teacher.name}</span>
+      <div style={{ display: "flex", gap: 6 }}>
+        {students.map((s, i) => (
+          <button key={s.child.id} type="button" onClick={() => pick(i)} aria-pressed={i === index} style={{ height: 40, padding: "0 14px", borderRadius: 999, border: "none", display: "inline-flex", alignItems: "center", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", background: i === index ? "var(--kc-indigo)" : "transparent", color: i === index ? "#ffffff" : "var(--kc-ink-muted)" }}>
+            {shortName(s.child)}
+          </button>
+        ))}
+      </div>
     </>
-  ) : <SectionLabel>TEACHER VIEW</SectionLabel>;
+  ) : <span style={{ fontSize: 15, fontWeight: 800, color: "var(--kc-ink-faint)" }}>Teacher view</span>;
 
   if (!code || teacher === null) {
     return (
@@ -93,9 +105,8 @@ export function TeacherScreen({ code }: { code: string | null }) {
     return (
       <Screen>
         <AppHeader active="" right={right} />
-        <div style={{ padding: "36px 38px" }}>
-          <h1 style={{ margin: 0, fontSize: 38, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.05, maxWidth: 620 }}>No students linked yet.</h1>
-          <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 620 }}>A household links a profile to you by entering <span style={{ fontFamily: "var(--kc-font-mono)" }}>{teacher.inviteCode}</span> on their teacher link screen.</p>
+        <div style={{ padding: "34px 40px" }}>
+          <Headline title="No students linked yet." lede={<>A household links a profile to you by entering <span style={{ fontFamily: "var(--kc-font-display)", fontWeight: 600, letterSpacing: "0.08em" }}>{teacher.inviteCode}</span> on their teacher link screen.</>} />
         </div>
       </Screen>
     );
@@ -108,17 +119,17 @@ export function TeacherScreen({ code }: { code: string | null }) {
   const drifting = f.driftMs != null && f.driftMs > 20;
   const held = f.weeksHeld >= 2;
   const headline = f.window.length === 0
-    ? `Four weeks: nothing recorded yet.`
-    : `Four weeks: reading ${held ? "held" : "moving"}, timing ${f.driftMs == null ? "not measured" : drifting ? "drifting early" : "steady"}.`;
+    ? "Nothing recorded yet."
+    : `Reading ${held ? "held" : "moving"}, timing ${f.driftMs == null ? "not measured" : drifting ? "drifting early" : "steady"}.`;
   const rows = f.window.slice(0, 6).map((s) => {
     const h = sessionHeadline(s);
     const level = s.blocks.find((b) => b.type === "reading")?.details?.level;
     const drift = s.blocks.find((b) => b.type === "rhythm")?.midiScore?.components?.avgDeviationMs;
-    const fact = h.marked || !h.text.startsWith("LEVEL") ? h.text : typeof drift === "number" ? `${drift} MS DRIFT` : s.completed ? "DONE" : "PARTIAL";
-    return { cells: [dayLabel(s.date), fmtClock(s.durationSec), `LEVEL ${typeof level === "number" ? level : child.settings.readingLevel}`, share.figures ? fact : s.completed ? "DONE" : "PARTIAL"], marked: share.figures && h.marked };
+    const fact = h.marked || !h.text.startsWith("LEVEL") ? h.text.toLowerCase() : typeof drift === "number" ? `${drift} ms drift` : s.completed ? "done" : "partial";
+    return { cells: [dayLabel(s.date), fmtClock(s.durationSec), `level ${typeof level === "number" ? level : child.settings.readingLevel}`, share.figures ? fact : s.completed ? "done" : "partial"], marked: share.figures && h.marked };
   });
-  const smallest = f.smallest ? (f.smallest === "improv" ? "Their own" : DISCIPLINE[f.smallest].title) : null;
-  const timeNote = !smallest ? "Nothing to weigh yet." : drifting && f.smallest === "rhythm" ? "Timing is the smallest block and the one drifting. Raise it at the lesson." : drifting ? `Timing is drifting; ${smallest.toLowerCase()} is the smallest block.` : `${smallest} is the smallest block. Even, otherwise.`;
+  const smallest = f.smallest ? (f.smallest === "improv" ? "Own" : DISCIPLINE[f.smallest].title) : null;
+  const timeNote = !smallest ? "Nothing to weigh yet." : drifting && f.smallest === "rhythm" ? "Timing is the smallest stop and the one drifting. Raise it at the lesson." : drifting ? `Timing is drifting; ${smallest.toLowerCase()} is the smallest stop.` : `${smallest} is the smallest stop. Even, otherwise.`;
 
   const send = async () => {
     setBusy(true);
@@ -133,7 +144,7 @@ export function TeacherScreen({ code }: { code: string | null }) {
     const payload = { student: name, teacher: teacher.name, exportedAt: new Date().toISOString(), days: f.daysPracticed, minutes: f.minutes, readingLevel: f.readingLevel, driftMs: f.driftMs, sessions: share.log ? f.window.map((s) => ({ date: s.date, minutes: Math.round(s.durationSec / 60), completed: s.completed, blocks: s.blocks.map((b) => ({ type: b.type, minutes: Math.round(b.durationSec / 60), completed: b.completed, score: share.figures ? b.midiScore?.score ?? null : null })) })) : [] };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
     const a = document.createElement("a");
-    a.href = url; a.download = `keycadence-${name.toLowerCase()}-four-weeks.json`; a.click();
+    a.href = url; a.download = `${name.toLowerCase()}-four-weeks.json`; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -141,47 +152,44 @@ export function TeacherScreen({ code }: { code: string | null }) {
     <Screen>
       <AppHeader active="" right={right} />
       <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px" }}>
-        <div style={{ padding: "32px 34px", display: "flex", flexDirection: "column", gap: 22, minHeight: 0, overflowY: "auto" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 38, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.05, maxWidth: 620 }}>{headline}</h1>
-            <p style={{ margin: "10px 0 0", fontSize: 17, lineHeight: 1.5, color: "var(--kc-ink-muted)", maxWidth: 620 }}>Read before the lesson. These are minutes and measurements, not a grade — what {name} practised is at the bottom.</p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
-            <StatTile label="DAYS PRACTICED" value={f.daysPracticed} unit="of 28" />
-            <StatTile label="TIME PLAYED" value={`${Math.floor(f.minutes / 60)}h ${String(f.minutes % 60).padStart(2, "0")}m`} unit="four weeks" />
-            <StatTile label={f.weeksHeld > 0 ? `READING LEVEL · HELD ${words(f.weeksHeld)} WEEK${f.weeksHeld === 1 ? "" : "S"}` : "READING LEVEL · NEW THIS WEEK"} value={f.readingLevel} />
+        <div style={{ padding: "30px 32px", display: "flex", flexDirection: "column", gap: 18, minHeight: 0, overflowY: "auto" }}>
+          <Headline size={40} kicker="Four weeks · read before the lesson" title={headline} lede={<>Minutes and measurements, not a grade. What {name} practised is below.</>} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+            <Figure label="Days played" value={f.daysPracticed} sub="of 28" />
+            <Figure label="Time" value={`${Math.floor(f.minutes / 60)}h ${String(f.minutes % 60).padStart(2, "0")}m`} sub="four weeks" />
+            <Figure label="Reading" value={f.readingLevel} sub={f.weeksHeld > 0 ? `held ${words(f.weeksHeld)} week${f.weeksHeld === 1 ? "" : "s"}` : "new this week"} />
             {share.figures ? (
-              <StatTile label="TIMING DRIFT" value={f.driftMs ?? "—"} unit={f.driftMs == null ? "not measured" : "ms average"} tone={drifting ? "clay" : f.driftMs != null && f.driftMs > 10 ? "amber" : "default"} />
+              <Figure label="Ahead of beat" value={f.driftMs ?? "—"} sub={f.driftMs == null ? "not measured" : "ms average"} />
             ) : (
-              <StatTile label="TIMING DRIFT" value="—" unit="not shared" />
+              <Figure label="Ahead of beat" value="—" sub="not shared" />
             )}
           </div>
           <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 11, minHeight: 0 }}>
-              <SectionLabel>{name.toUpperCase()}&apos;S LAST SIX SESSIONS</SectionLabel>
+            <Panel style={{ padding: "16px 20px", gap: 2, minHeight: 0, overflowY: "auto" }}>
+              <SectionLabel size="title" style={{ fontSize: 17 }}>Last six sessions</SectionLabel>
               {!share.log ? (
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>The household keeps the log private. Minutes and days still count above.</p>
-              ) : rows.length ? <LogTable rows={rows} emphasize={1} /> : <p style={{ margin: 0, fontSize: 14, color: "var(--kc-ink-dim)" }}>No sessions in the last four weeks.</p>}
-            </div>
-            <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
-              <SectionLabel>WHERE THE TIME WENT</SectionLabel>
+                <Small>The household keeps the log private. Minutes and days still count above.</Small>
+              ) : rows.length ? <LogTable rows={rows} emphasize={1} /> : <Small>No sessions in the last four weeks.</Small>}
+            </Panel>
+            <Panel style={{ padding: "16px 20px", gap: 12, minHeight: 0 }}>
+              <SectionLabel size="title" style={{ fontSize: 17 }}>Where the time went</SectionLabel>
               <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                 {f.byDiscipline.map((d) => (
-                  <MeterRow key={d.type} label={d.type === "improv" ? "Their own" : DISCIPLINE[d.type].title} value={d.pct} suffix={fmtHours(d.minutes)} tone={drifting && d.type === "rhythm" ? "clay" : "mint"} labelWidth={86} />
+                  <MeterRow key={d.type} label={d.type === "improv" ? "Own" : DISCIPLINE[d.type].title} value={d.pct} suffix={fmtHours(d.minutes).replace(/ /g, "")} tone={drifting && d.type === "rhythm" ? "lilac" : "indigo"} labelWidth={86} />
                 ))}
               </div>
-              <p style={{ margin: "auto 0 0", fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>{timeNote}</p>
-            </div>
+              <Small color="var(--kc-indigo-shadow)" style={{ marginTop: "auto" }}>{timeNote}</Small>
+            </Panel>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Button icon="check" onClick={() => void send()} disabled={busy}>{assignment ? "Send the assignment" : "Send the first assignment"}</Button>
-            <Button variant="secondary" size="control" icon="download" onClick={exportWeeks}>Export four weeks</Button>
-            <span style={{ marginLeft: "auto", fontSize: 14, color: sent ? "var(--kc-mint)" : "var(--kc-ink-faint)" }}>{sent ? `Sent · ${stamp(sent)}` : `${capitalize(name)} sees it as a note on Today, not a notification.`}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Button variant="secondary" size="pill" icon="download" onClick={exportWeeks}>Export four weeks</Button>
+            <ActionNote>{sent ? `Sent · ${stamp(sent)}` : `${capitalize(name)} sees it as a note on Today, not a notification.`}</ActionNote>
           </div>
         </div>
-        <div style={{ borderLeft: "1px solid var(--kc-border)", background: "var(--kc-panel)", padding: "32px 28px", display: "flex", flexDirection: "column", gap: 22, minHeight: 0, overflowY: "auto" }}>
+        <Rail>
           <AssignmentEditor key={child.id} child={child} draft={draft} onChange={(d) => { setDraft(d); setSent(null); }} profile={child.skillProfile} showProfile={share.skillChecks} />
-        </div>
+          <Button size="control" icon="send" onClick={() => void send()} disabled={busy} style={{ alignSelf: "stretch" }}>{assignment ? "Send the assignment" : "Send the first assignment"}</Button>
+        </Rail>
       </div>
     </Screen>
   );

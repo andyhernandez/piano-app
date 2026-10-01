@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Screen, Panel, SectionLabel, Row, Choice, Toggle, Button, WeekStrip, Avatar, Pill } from "@/components/ds";
+import { Screen, Panel, SectionLabel, Row, Choice, Toggle, Button, WeekKeys, Avatar, Pill, Rail, RailSection, Small } from "@/components/ds";
 import { useAppStore, useActiveChild } from "@/lib/store/app-store";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { repo } from "@/lib/db/repo";
@@ -14,11 +14,12 @@ import { Stepper } from "./stepper";
 import { MicCalibrationPanel } from "./mic-calibration";
 import { nativeMidiAvailable, pairBluetoothKeyboard } from "@/lib/input/native-midi";
 import { SyncPanel } from "./sync-panel";
+import { dayMonth } from "../today/words";
 
 type Pref = InputMode | "auto";
-const INPUT_LABELS: Record<Pref, string> = { auto: "Auto", midi: "MIDI keyboard", mic: "Microphone", timer: "Timer only" };
+const INPUT_LABELS: Record<Pref, string> = { auto: "Auto", midi: "Keys", mic: "Mic", timer: "Timer" };
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const LENGTHS = [10, 20, 30];
+const RETAKE_DAYS = 28;
 
 function restSentence(rest: number[]): string {
   const names = rest.slice().sort().map((i) => DAY_NAMES[i]).filter(Boolean);
@@ -40,6 +41,8 @@ export function SettingsScreen() {
   const [sessions, setSessions] = React.useState<Session[]>([]);
   const [recordings, setRecordings] = React.useState(0);
   const [sound, setSound] = React.useState<{ volume: number; accent: boolean } | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
     if (!parent || children.length === 0) router.replace("/onboarding");
@@ -60,137 +63,150 @@ export function SettingsScreen() {
     return () => { cancelled = true; };
   }, []);
 
-  if (!child) return <Screen><AppHeader active="settings" /></Screen>;
+  const right = parent?.pin && !locked ? <Pill tone="mint" icon="check">Code entered</Pill> : undefined;
+
+  if (!child) return <Screen><AppHeader active="settings" right={right} /></Screen>;
 
   const s = child.settings;
   const set = (patch: Parameters<typeof updateSettings>[1]) => void updateSettings(child.id, patch);
-  const lengthOptions = LENGTHS.includes(s.sessionMinutes) ? LENGTHS : [...LENGTHS, s.sessionMinutes].sort((a, b) => a - b);
-  const days = weekCells(child, sessions, today);
+  const days = weekCells(child, sessions, today).map((d) => ({ letter: d.letter, minutes: d.state === "played" || d.state === "playing" ? d.minutes : undefined, today: d.state === "today" || d.state === "playing", rest: d.state === "rest" }));
   const toggleRest = (i: number) => {
     const rest = s.restDays.includes(i) ? s.restDays.filter((d) => d !== i) : [...s.restDays, i].sort();
     set({ restDays: rest, practiceDaysPerWeek: 7 - rest.length });
   };
   const setVolume = (v: number) => { audio.setVolume(v); setSound((o) => ({ volume: v, accent: o?.accent ?? true })); void repo.setKV("sound.volume", v); };
   const setAccent = (a: boolean) => { setSound((o) => ({ volume: o?.volume ?? 0.8, accent: a })); void repo.setKV("sound.accent", a); };
-  const weeks = Math.max(0, Math.floor(daysBetween(dateKey(new Date(child.createdAt)), today) / 7));
   const profileAge = child.skillProfile ? daysBetween(dateKey(new Date(child.skillProfile.assessedAt)), today) : null;
+  const retakeDue = child.skillProfile ? new Date(new Date(child.skillProfile.assessedAt).getTime() + RETAKE_DAYS * 86_400_000).toISOString() : null;
+
+  const exportLog = () => {
+    const payload = { player: child.name, exportedAt: new Date().toISOString(), settings: s, sessions: sessions.map((x) => ({ date: x.date, startedAt: x.startedAt, minutes: Math.round(x.durationSec / 60), completed: x.completed, scale: x.scale, blocks: x.blocks.map((b) => ({ type: b.type, minutes: Math.round(b.durationSec / 60), completed: b.completed, skipped: b.skipped, score: b.midiScore?.score ?? null, badge: b.midiScore?.badge ?? null, details: b.details ?? null })) })) };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `${child.name.toLowerCase()}-practice-log.json`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  const deleteEverything = async () => {
+    setBusy(true);
+    await repo.nuke();
+    useAppStore.setState({ parent: null, children: [], activeChildId: null, activeSession: null, plan: null, parentUnlocked: false });
+    router.replace("/onboarding");
+  };
 
   const rail = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 22, minHeight: 0 }}>
-      <Panel padding="panel">
-        <SectionLabel>WEEKLY TARGET</SectionLabel>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 32, color: "var(--kc-mint)" }}>{s.practiceDaysPerWeek}</span>
-          <span style={{ fontSize: 15, color: "var(--kc-ink-dim)" }}>days a week</span>
+    <Rail>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <Avatar initial={child.name.slice(0, 1).toUpperCase()} active size={56} />
+        <div>
+          <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 22, fontWeight: 600, lineHeight: 1.15 }}>{child.name}</div>
+          <Small>{child.ageBand === "adult" ? "Adult" : "Under thirteen"} · since {dayMonth(child.createdAt)}</Small>
         </div>
-        <WeekStrip days={days} target={s.sessionMinutes} height={40} onDay={locked ? undefined : toggleRest} />
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>{restSentence(s.restDays)} A missed day is a fact, not a failure — tap a day to plan it off.</p>
+      </div>
+      <RailSection label="Weekly target" right={`${s.practiceDaysPerWeek} days a week`}>
+        <WeekKeys days={days} target={s.sessionMinutes} height={64} onDay={locked ? undefined : toggleRest} />
+        <Small>{restSentence(s.restDays)} Tap a day to plan it off.</Small>
+      </RailSection>
+      <Panel tone="indigo">
+        <SectionLabel size="title">Skill check</SectionLabel>
+        <Small>
+          {child.skillProfile && retakeDue
+            ? `Last taken ${dayMonth(child.skillProfile.assessedAt)}. ${profileAge != null && profileAge >= RETAKE_DAYS ? "A new one is due" : `Next one is due ${dayMonth(retakeDue)}`} — or take it now.`
+            : "Not taken yet. Five short parts set where every stop starts."}
+        </Small>
+        <div><Button variant="secondary" size="pill" icon="replay" onClick={() => router.push("/skill-check")}>{child.skillProfile ? "Take it again" : "Take the skill check"}</Button></div>
       </Panel>
-      <Panel padding="panel">
-        <SectionLabel>PROFILE</SectionLabel>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Avatar initial={child.name.slice(0, 1).toUpperCase()} />
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>{child.name}</div>
-            <div style={{ fontFamily: "var(--kc-font-mono)", fontSize: 12, color: "var(--kc-ink-faint)" }}>
-              {(child.ageBand === "adult" ? "ADULT" : "CHILD")} · LEVEL {s.readingLevel} · {weeks} WEEK{weeks === 1 ? "" : "S"}
+      <SyncPanel />
+      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+        <SectionLabel size="title">Your recordings and log</SectionLabel>
+        <Small>{sessions.length} session{sessions.length === 1 ? "" : "s"} and {recordings} recording{recordings === 1 ? "" : "s"} on this device.</Small>
+        {confirmDelete ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Small color="var(--kc-indigo-shadow)">Every profile, the log, recordings, the code and the sync settings. This cannot be undone; a synced copy on another device stays.</Small>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Button size="pill" variant="secondary" icon="delete" onClick={() => void deleteEverything()} disabled={busy}>Yes, delete everything</Button>
+              <Button size="pill" variant="quiet" onClick={() => setConfirmDelete(false)} disabled={busy}>Keep it</Button>
             </div>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>{child.skillProfile ? "Retake skill check" : "Take the skill check"}</Button>
-          <Button variant="quiet" size="control" onClick={() => router.push("/household")}>Household</Button>
-        </div>
-        {profileAge != null && <span style={{ fontSize: 13, color: "var(--kc-ink-faint)" }}>Last checked {profileAge === 0 ? "today" : `${profileAge} day${profileAge === 1 ? "" : "s"} ago`}.</span>}
-      </Panel>
-      <Panel padding="panel" style={{ marginTop: "auto" }}>
-        <SectionLabel>YOUR RECORDINGS AND LOG</SectionLabel>
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-dim)" }}>
-          <span style={{ fontFamily: "var(--kc-font-mono)", color: "var(--kc-ink)" }}>{sessions.length}</span> session{sessions.length === 1 ? "" : "s"} and <span style={{ fontFamily: "var(--kc-font-mono)", color: "var(--kc-ink)" }}>{recordings}</span> recording{recordings === 1 ? "" : "s"} on this device. Everything stays here unless sync is on. Deleting the app deletes the log with it.
-        </p>
-        <Button variant="secondary" size="control" onClick={() => router.push("/household")}>Open the household</Button>
-      </Panel>
-    </div>
+        ) : (
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button size="pill" variant="secondary" icon="download" onClick={exportLog} style={{ height: 44 }}>Export</Button>
+            <Button size="pill" variant="quiet" onClick={() => setConfirmDelete(true)}>Delete all</Button>
+          </div>
+        )}
+      </div>
+    </Rail>
+  );
+
+  const card = (title: string, children: React.ReactNode) => (
+    <Panel style={{ padding: "18px 22px", gap: 0, minHeight: 0, overflowY: "auto" }}>
+      <SectionLabel size="title">{title}</SectionLabel>
+      {children}
+    </Panel>
   );
 
   return (
     <Screen>
-      <AppHeader active="settings" />
-      <div style={{ flex: 1, minHeight: 0, padding: "32px 36px", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 26, overflow: "hidden" }}>
+      <AppHeader active="settings" right={right} />
+      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px" }}>
         {locked ? (
-          <CodePrompt title="Settings sit behind the household code" lede="Mode, weekly target and the teacher link are the household's to change. Practising never asks for the code." />
+          <CodePrompt title="Settings sit behind the household code" lede="Mode, weekly target and the teacher link are the household’s to change. Practising never asks for the code." />
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 18, minHeight: 0, overflowY: "auto", paddingRight: 2 }}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em" }}>Settings</h1>
-              <p style={{ margin: "8px 0 0", fontSize: 15, color: "var(--kc-ink-muted)", maxWidth: 520 }}>{child.name}&apos;s profile. Every setting here can be changed back, and nothing you change deletes what already happened.</p>
-            </div>
-
-            <Panel padding="panel">
-              <SectionLabel>THE SESSION</SectionLabel>
-              <div>
-                <Row title="Mode" detail="Guided shows one next action. Own plan shows the whole queue and the numbers.">
+          <div style={{ padding: "28px 32px", display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 16, minHeight: 0, overflowY: "auto" }}>
+            {card("The session", (
+              <>
+                <Row title="Mode">
                   <Choice options={["guided", "own"] as const} value={s.mode} onChange={(v) => set({ mode: v })} labels={{ guided: "Guided", own: "Own plan" }} />
                 </Row>
-                <Row title="Session length" detail="The engine fits the six disciplines into whatever you pick.">
-                  <Choice options={lengthOptions.map(String)} value={String(s.sessionMinutes)} onChange={(v) => set({ sessionMinutes: Number(v) })} labels={Object.fromEntries(lengthOptions.map((m) => [String(m), `${m} min`]))} />
+                <Row title="Length">
+                  <Stepper value={s.sessionMinutes} min={5} max={60} step={5} onChange={(v) => set({ sessionMinutes: v })} format={(v) => `${v} min`} label="Session length" />
                 </Row>
-                <Row title="Hard stop" detail={s.hardStop ? "Practice ends at the length above." : "The timer keeps counting; nothing interrupts."}>
+                <Row title="Hard stop" detail={s.hardStop ? "Ends at the length above." : "The timer keeps counting; nothing interrupts."}>
                   <Toggle checked={s.hardStop} onChange={(v) => set({ hardStop: v })} label="Hard stop" />
                 </Row>
-                <Row title="Count-in" detail="Two bars of click before an exercise that measures timing." last>
+                <Row title="Count-in" detail="Two bars of click first." last>
                   <Toggle checked={s.countIn} onChange={(v) => set({ countIn: v })} label="Count-in" />
                 </Row>
-              </div>
-            </Panel>
-
-            <Panel padding="panel">
-              <SectionLabel>WHAT THE APP LISTENS TO</SectionLabel>
-              <div>
-                <Row title="Input" detail="A MIDI keyboard hears every note. The microphone hears timing. The timer just counts. Auto picks the best one it finds.">
+              </>
+            ))}
+            {card("What the app listens to", (
+              <>
+                <Row title="Input" detail="Auto picks the best one it finds.">
                   <Choice options={["auto", "midi", "mic", "timer"] as const} value={s.inputModePreference} onChange={(v) => set({ inputModePreference: v })} labels={INPUT_LABELS} />
                 </Row>
-                <Row title="Microphone" detail={s.micCalibration ? <>Calibrated. Noise floor <span style={{ fontFamily: "var(--kc-font-mono)" }}>{s.micCalibration.noiseFloor.toFixed(4)}</span>, confidence <span style={{ fontFamily: "var(--kc-font-mono)" }}>{s.micCalibration.confidenceThreshold.toFixed(2)}</span>. Measure again if the room changes.</> : "Not calibrated. Three seconds of quiet teaches the app what the room sounds like."} last={!calibrating}>
-                  {s.micCalibration ? <Pill tone="mint" icon="check">CALIBRATED</Pill> : <Pill>NOT YET</Pill>}
-                  <Button size="control" variant="secondary" onClick={() => setCalibrating((c) => !c)}>{s.micCalibration ? "Measure again" : "Calibrate"}</Button>
+                <Row title="Microphone" detail={s.micCalibration ? "Calibrated. Measure again if the room changes." : "Not calibrated. Three seconds of quiet teaches it the room."} last={!calibrating && !nativeMidiAvailable()}>
+                  <Button size="pill" variant="secondary" onClick={() => setCalibrating((c) => !c)} style={{ height: 44 }}>{s.micCalibration ? "Measure again" : "Calibrate"}</Button>
                 </Row>
-                {calibrating && <div style={{ paddingTop: 16 }}><MicCalibrationPanel childId={child.id} onClose={() => setCalibrating(false)} /></div>}
+                {calibrating && <div style={{ padding: "12px 0" }}><MicCalibrationPanel childId={child.id} onClose={() => setCalibrating(false)} /></div>}
                 {nativeMidiAvailable() && (
-                  <Row title="Bluetooth keyboard" detail="A USB keyboard is heard as soon as it is plugged in. A Bluetooth one pairs once through Apple's sheet." last>
-                    <Button size="control" variant="secondary" icon="bluetooth" onClick={() => void pairBluetoothKeyboard()}>Pair</Button>
+                  <Row title="Bluetooth keyboard" detail="Pair once through the iPad’s sheet." last>
+                    <Button size="pill" variant="secondary" icon="bluetooth" onClick={() => void pairBluetoothKeyboard()} style={{ height: 44 }}>Pair</Button>
                   </Row>
                 )}
-              </div>
-            </Panel>
-
-            <Panel padding="panel">
-              <SectionLabel>LEVELS</SectionLabel>
-              <div>
-                <Row title="Sight reading" detail="Ten levels. Three clean runs at a level moves it up on its own; set it by hand after a lesson.">
+              </>
+            ))}
+            {card("Levels", (
+              <>
+                <Row title="Sight reading" detail="Moves up after two clean runs.">
                   <Stepper value={s.readingLevel} min={1} max={10} onChange={(v) => set({ readingLevel: v, noStopStreak: 0 })} label="Reading level" />
                 </Row>
-                <Row title="Timing" detail="Ten levels of rhythm patterns, from quarters to dotted figures.">
+                <Row title="Timing" detail="Quarters to dotted figures.">
                   <Stepper value={s.rhythmLevel} min={1} max={10} onChange={(v) => set({ rhythmLevel: v })} label="Timing level" />
                 </Row>
-                <Row title="Harmony" detail="Five levels: primary triads first, then the rest of the key, then sevenths." last>
+                <Row title="Harmony" detail="Primary triads first." last>
                   <Stepper value={s.theoryLevel} min={1} max={5} onChange={(v) => set({ theoryLevel: v })} label="Harmony level" />
                 </Row>
-              </div>
-            </Panel>
-
-            <Panel padding="panel">
-              <SectionLabel>SOUND</SectionLabel>
-              <div>
-                <Row title="Volume" detail="The piano, the click and the backing loops together.">
-                  <Stepper value={Math.round((sound?.volume ?? 0.8) * 100)} min={0} max={100} step={10} onChange={(v) => setVolume(v / 100)} format={(v) => `${v}%`} label="Volume" width={56} />
+              </>
+            ))}
+            {card("Sound", (
+              <>
+                <Row title="Volume" detail="Piano, click and loops together.">
+                  <Stepper value={Math.round((sound?.volume ?? 0.8) * 100)} min={0} max={100} step={10} onChange={(v) => setVolume(v / 100)} format={(v) => `${v}%`} label="Volume" />
                 </Row>
-                <Row title="Metronome accent" detail={sound?.accent === false ? "Every click the same." : "The first beat of the bar is louder."} last>
+                <Row title="Metronome accent" detail={sound?.accent === false ? "Every click the same." : "First beat of the bar is louder."} last>
                   <Toggle checked={sound?.accent !== false} onChange={setAccent} label="Metronome accent" />
                 </Row>
-              </div>
-            </Panel>
-
-            <SyncPanel />
+              </>
+            ))}
           </div>
         )}
         {rail}

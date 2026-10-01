@@ -2,7 +2,7 @@
 import * as React from "react";
 import type { BlockProps } from "./types";
 import type { Recording, Scale, Song, Triad } from "@/lib/types";
-import { BottomBar, Button, Choice, ChordChart, FormatBadge, IconButton, Keyboard, LeadSheet, Metric, Pill, SectionLabel, SheetPanel, Tempo, midiToStep, type ChordBar, type KeyTone, type LeadMelodyNote, type LeadSheetBar, type NoteState } from "@/components/ds";
+import { BottomBar, Button, Choice, ChordChart, FormatBadge, Instruction, LeadSheet, Pill, SheetPanel, StatChip, midiToStep, type ChordBar, type LeadMelodyNote, type LeadSheetBar, type NoteState } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { repo } from "@/lib/db/repo";
@@ -12,12 +12,14 @@ import { chordSymbol, romanToTriad } from "@/lib/music/chords";
 import { prefersFlats, scaleSlug } from "@/lib/music/scales";
 import { pcToMidi } from "@/lib/music/notes";
 import { newId } from "@/lib/utils/id";
+import { CARD, CardTitle, Cells, MetronomeDots, NextStopButton, PAGE, RoundButton, SMALL } from "./shared/controls";
+import { PlayStrip, type StripTone } from "./shared/play-strip";
 
 /*
- * Pieces (the kit's LeadSheetScreen, inside the runner). The assigned or suggested piece as a lead sheet in the
- * session key at one of the four level cards, or chords only; a metronome that loops a bar range, a
- * times-through count, and an optional take saved to the library. A custom piece (teacher upload, link) is a
- * plain timed practice card with notes.
+ * Pieces (D5). The assigned or suggested piece as a lead sheet in the session key at one of the four level
+ * cards, or chords only; a metronome that loops a bar range, a times-through count, the teacher's note, and
+ * an optional take saved to the library. A custom piece (teacher upload, link) is a plain timed practice card
+ * with notes.
  */
 
 type LeadLevel = 1 | 2 | 3 | 4;
@@ -81,17 +83,26 @@ function foldInto(midis: number[], from: number, to: number): number[] {
   return midis.map((m) => m + shift);
 }
 
-/** "L2 · Block Triads" as the library stores it, in sentence case. */
+/** "L2 · Block triads" as the library stores it, in sentence case. */
 function levelTitle(level: LeadLevel): string {
   const [code, name] = LEAD_SHEET_LEVELS[level].title.split(" · ");
   return `${code} · ${name[0]}${name.slice(1).toLowerCase()}`;
+}
+
+/** The short name of a level card for a segmented choice: "Bass roots". */
+/** One-word chip labels so the four levels fit one row of the settings card. */
+const LEVEL_CHIP: Record<number, string> = { 1: "Roots", 2: "Triads", 3: "Broken", 4: "Groove" };
+
+function levelShort(level: LeadLevel): string {
+  const name = LEAD_SHEET_LEVELS[level].title.split(" · ")[1] ?? `L${level}`;
+  return `${name[0]}${name.slice(1).toLowerCase()}`;
 }
 
 function dateLabel(): string {
   return new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-export function PiecesBlock({ child, session, scale, inputMode, nextTitle, paused, timeUp, onDone, setPrimaryLabel }: BlockProps) {
+export function PiecesBlock({ child, session, scale, inputMode, nextTitle, paused, timeUp, onDone, setPrimaryLabel, setMeta, setRecording }: BlockProps) {
   const { audio, unlock } = useAudio();
   React.useEffect(() => { setPrimaryLabel?.(null); }, [setPrimaryLabel]);
 
@@ -108,6 +119,7 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
   const [pickIndex, setPickIndex] = React.useState(0);
   const song = candidates[pickIndex % Math.max(1, candidates.length)];
   const custom = song ? isCustomPiece(song) : false;
+  const assigned = !!song && loaded.assigned.includes(song.id);
   const bars = React.useMemo(() => (song && !custom ? transposeChart(song, scale) : []), [song, custom, scale]);
   const flats = prefersFlats(scale);
 
@@ -136,6 +148,12 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
   const barRef = React.useRef<number | null>(null);
   const loopRef = React.useRef(loop);
   React.useEffect(() => { loopRef.current = loop; }, [loop]);
+
+  React.useEffect(() => {
+    if (!song) return;
+    setMeta?.(custom ? `${song.title} · your own copy` : `${song.title} · ${levelTitle(level)} · bars ${loop.from + 1}–${loop.to + 1}`);
+    return () => setMeta?.(null);
+  }, [setMeta, song, custom, level, loop.from, loop.to]);
 
   const onBeat = (b: number) => {
     if (b === 0) {
@@ -180,7 +198,7 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
   const tonic = pcToMidi(scale.key, 4);
   const kbFrom = tonic - 12;
   const kbTo = tonic + 12;
-  const tones: Partial<Record<number, KeyTone>> = {};
+  const tones: Partial<Record<number, StripTone>> = {};
   if (bar !== null && bars[bar]?.chords[0]) {
     const pattern = levelPattern(level, bars[bar].chords[0].triad);
     for (const m of foldInto(pattern.flatMap((p) => p.midis), kbFrom, kbTo)) tones[m] = "mint";
@@ -193,6 +211,7 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
   const [recordingId, setRecordingId] = React.useState<string | null>(null);
   const canRecord = AudioRecorder.supported();
   React.useEffect(() => () => { recorder.current?.cancel(); }, []);
+  React.useEffect(() => { setRecording?.(rec === "recording"); return () => setRecording?.(false); }, [rec, setRecording]);
   const toggleRecord = async () => {
     if (rec === "recording") {
       setRec("saving");
@@ -249,70 +268,92 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
   };
   const chartBars: ChordBar[] = bars.map((b) => ({ chord: b.chords.map((c) => c.symbol).join(" "), current: bar === b.index, played: b.index < loop.from || b.index > loop.to ? false : undefined }));
 
-  const meta = song ? (custom ? `Your own copy · ${loaded.assigned.includes(song.id) ? "assigned" : "from the library"}` : `${levelTitle(level)} · ${scale.name}`) : "";
-  const lede = custom
-    ? "Your own piece. Practise from the score you have; count each time through here and leave a note for next time."
-    : view === "lead-sheet"
-      ? LEAD_SHEET_LEVELS[level].description
-      : "Chords only. Comp the changes on the first beat of each bar, or play the tune over them.";
+  const instruction = custom
+    ? "Your own piece. Practise from the score you have; count each time through here."
+    : running
+      ? `Bar ${(bar ?? loop.from) + 1}. ${LEAD_SHEET_LEVELS[level].description}`
+      : view === "lead-sheet"
+        ? LEAD_SHEET_LEVELS[level].description
+        : "Chords only. Comp the changes on the first beat of each bar, or play the tune over them.";
+  const timesCount = custom ? throughs : times;
+  const cells = Math.max(5, timesCount + 2);
+  const loopText = loop.from === 0 && loop.to === bars.length - 1 ? "the whole piece" : `bars ${loop.from + 1}–${loop.to + 1}`;
+  const recLine = rec === "recording" ? "Recording. Stop to keep the take." : rec === "saved" ? `Kept as “${song?.title} · ${dateLabel()}”.` : rec === "failed" ? "The microphone was not available." : null;
 
   if (!song) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--kc-ink-dim)" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 16, color: "var(--kc-ink-muted)", fontWeight: 700 }}>
         <span>No pieces yet.</span>
-        <Button size="control" style={{ marginLeft: 16 }} onClick={finish}>{nextTitle ? `Next — ${nextTitle}` : "Finish"}</Button>
+        <NextStopButton nextTitle={nextTitle} onClick={finish} />
       </div>
     );
   }
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "20px 30px 0", gap: 14 }}>
+      <div style={PAGE}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <FormatBadge format={custom ? "full-notation" : view} assigned={loaded.assigned.includes(song.id)} size={44} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.title}</div>
-            <div style={{ fontSize: 14, color: "var(--kc-ink-dim)", marginTop: 2 }}>{meta}</div>
-          </div>
-          <p style={{ margin: "0 0 0 10px", fontSize: 15, color: "var(--kc-ink-muted)", maxWidth: 460, lineHeight: 1.4 }}>{lede}</p>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8, flex: "none" }}>
-            {candidates.length > 1 && <Button variant="secondary" size="control" onClick={() => { setPickIndex((i) => i + 1); setLoopPref("all"); }}>Another piece</Button>}
-            {!custom && <Button variant={view === "lead-sheet" ? "quiet" : "secondary"} size="control" onClick={() => setView("lead-sheet")}>Lead sheet</Button>}
-            {!custom && <Button variant={view === "chord-chart" ? "quiet" : "secondary"} size="control" onClick={() => setView("chord-chart")}>Chords only</Button>}
-          </div>
+          <Instruction style={{ flex: 1, minWidth: 0 }}>{instruction}</Instruction>
+          {assigned && <Pill tone="sun" icon="push_pin">Assigned</Pill>}
+          {!custom && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 44, padding: "0 16px", borderRadius: 999, background: "var(--kc-indigo)", color: "#ffffff", whiteSpace: "nowrap", flex: "none" }}>
+              <span style={{ fontFamily: "var(--kc-font-music)", fontSize: 20, lineHeight: 1 }}>𝄆</span>
+              <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600 }}>{loopText}</span>
+              <span style={{ fontFamily: "var(--kc-font-music)", fontSize: 20, lineHeight: 1 }}>𝄇</span>
+            </span>
+          )}
         </div>
 
         {custom ? (
-          <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 14, paddingBottom: 20 }}>
-            <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
-              <SectionLabel>Notes for next time</SectionLabel>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Which bars, which hand, what to fix." style={{ flex: 1, minHeight: 120, resize: "none", background: "var(--kc-base)", color: "var(--kc-ink)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-control)", padding: 12, fontFamily: "var(--kc-font-sans)", fontSize: 15, lineHeight: 1.45, outline: "none" }} />
-              {song.externalLink && <Button variant="quiet" size="pill" icon="link" onClick={() => window.open(song.externalLink, "_blank", "noopener")} style={{ alignSelf: "flex-start" }}>Open the score</Button>}
+          <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 16 }}>
+            <div style={CARD}>
+              <CardTitle>Note for next time</CardTitle>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Which bars, which hand, what to fix." style={{ flex: 1, minHeight: 120, resize: "none", background: "var(--kc-base)", color: "var(--kc-ink)", border: "2px dashed var(--kc-border)", borderRadius: 14, padding: "10px 12px", fontFamily: "var(--kc-font-sans)", fontSize: 15, fontWeight: 700, lineHeight: 1.45, outline: "none" }} />
+              {song.externalLink && <Button variant="secondary" size="pill" icon="link" onClick={() => window.open(song.externalLink, "_blank", "noopener")} style={{ alignSelf: "flex-start" }}>Open the score</Button>}
             </div>
-            <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
-              <SectionLabel>Times through</SectionLabel>
-              <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 32 }}>{throughs}</span>
-              <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>Nothing is listening to the page; mark each run yourself.</span>
+            <div style={CARD}>
+              <CardTitle>Times through</CardTitle>
+              <Cells count={cells} current={throughs} />
+              <div style={SMALL}>Nothing is listening to the page; mark each run yourself.</div>
               <Button size="control" icon="check" onClick={() => setThroughs((t) => t + 1)} style={{ alignSelf: "flex-start", marginTop: "auto" }}>I played it through</Button>
             </div>
           </div>
         ) : (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
-              <Choice options={levels.map(String)} value={String(level)} onChange={(v) => setLevelPref(Number(v) as LeadLevel)} labels={Object.fromEntries(levels.map((l) => [String(l), levelTitle(l)])) as Record<string, string>} />
-              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-                <SectionLabel>Loop bars</SectionLabel>
-                <Choice options={loopOptions} value={loopPref} onChange={setLoopPref} labels={loopLabels} />
-              </div>
-            </div>
-            <SheetPanel padding={22} style={{ flex: 1, minHeight: 0 }}>
-              <div ref={sheetRef} style={{ width: "100%", maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 44 }}>
+            <SheetPanel padding={20} style={{ flex: 1, minHeight: 0 }}>
+              <div ref={sheetRef} style={{ width: "100%", maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 36 }}>
                 {view === "lead-sheet"
-                  ? rowsOfBars.map((row, r) => { const { bars: lb, melody } = leadRow(row); return <LeadSheet key={r} width={leadWidth} height={perRow === 8 ? 132 : 150} bars={lb} melody={melody} />; })
-                  : <ChordChart bars={chartBars} perRow={4} cellHeight={bars.length > 12 ? 64 : 80} style={{ maxWidth: 900 }} />}
+                  ? rowsOfBars.map((row, r) => { const { bars: lb, melody } = leadRow(row); return <LeadSheet key={r} width={leadWidth} height={perRow === 8 ? 124 : 140} bars={lb} melody={melody} />; })
+                  : <ChordChart bars={chartBars} perRow={4} cellHeight={bars.length > 12 ? 60 : 76} style={{ maxWidth: 900 }} />}
               </div>
             </SheetPanel>
-            <Keyboard from={kbFrom} to={kbTo} height={104} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} style={{ flex: "none", marginBottom: 20 }} />
+            {inputMode === "timer" && <PlayStrip from={kbFrom} to={kbTo} height={84} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} />}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, flex: "none" }}>
+              <div style={{ ...CARD, padding: "16px 18px", gap: 10 }}>
+                <CardTitle size={17}>Times through</CardTitle>
+                <Cells count={cells} current={timesCount} labels={false} />
+                <div style={SMALL}>{running ? `Looping ${loopText} at ${bpm}.` : "Start the click and the loop counts itself."}</div>
+              </div>
+              <div style={{ ...CARD, padding: "14px 18px", gap: 8, justifyContent: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <CardTitle size={17}>Left hand</CardTitle>
+                    <div style={{ ...SMALL, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{levelTitle(level)}</div>
+                  </div>
+                  <Choice options={levels.map(String)} value={String(level)} onChange={(v) => setLevelPref(Number(v) as LeadLevel)} labels={Object.fromEntries(levels.map((l) => [String(l), LEVEL_CHIP[l] ?? levelShort(l)])) as Record<string, string>} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-ink-faint)", flex: 1 }}>Loop</span>
+                  <Choice options={loopOptions} value={loopPref} onChange={setLoopPref} labels={loopLabels} />
+                  <Choice options={["lead-sheet", "chord-chart"] as View[]} value={view} onChange={setView} labels={{ "lead-sheet": "Sheet", "chord-chart": "Chords" }} />
+                </div>
+              </div>
+              <div style={{ ...CARD, padding: "16px 18px", gap: 8 }}>
+                <CardTitle size={17}>Note for next time</CardTitle>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--kc-ink-muted)", border: "2px dashed var(--kc-border)", borderRadius: 12, padding: "8px 12px", lineHeight: 1.4 }}>{loaded.note || (assigned ? "No note from your teacher this week." : "Play it through at this tempo before going faster.")}</div>
+                {candidates.length > 1 && <Button variant="quiet" size="pill" icon="swap_horiz" onClick={() => { setPickIndex((i) => i + 1); setLoopPref("all"); }} style={{ alignSelf: "flex-start" }}>Another piece</Button>}
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -320,28 +361,23 @@ export function PiecesBlock({ child, session, scale, inputMode, nextTitle, pause
       <BottomBar
         actions={
           <>
-            {timeUp && <Pill tone="amber">Time</Pill>}
-            {!custom && <Button variant="secondary" size="control" onClick={() => setBpm((b) => Math.max(40, b - 6))}>Slower</Button>}
-            {!custom && <Button variant="secondary" size="control" onClick={() => setBpm((b) => Math.min(160, b + 6))}>Faster</Button>}
-            {!custom && <IconButton icon={running ? "stop" : "play_arrow"} label={running ? "Stop the metronome" : "Start the metronome"} size={40} onClick={toggleMetronome} style={running ? { borderColor: "var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />}
-            {canRecord && <IconButton icon={rec === "recording" ? "stop" : "mic"} label={rec === "recording" ? "Stop recording" : "Record this"} size={40} disabled={rec === "saving"} onClick={() => { void toggleRecord(); }} style={rec === "recording" ? { borderColor: "var(--kc-clay)", color: "var(--kc-clay)" } : undefined} />}
-            <Button size="control" onClick={finish}>{nextTitle ? `Next — ${nextTitle}` : "Finish"}</Button>
+            {timeUp && <Pill tone="sun">Time</Pill>}
+            {!custom && <Button variant="secondary" size="control" icon="slow_motion_video" onClick={() => setBpm((b) => Math.max(40, b - 6))}>Slower</Button>}
+            {!custom && <Button variant="secondary" size="control" icon="speed" onClick={() => setBpm((b) => Math.min(160, b + 6))}>Faster</Button>}
+            {!custom && <RoundButton icon={running ? "stop" : "play_arrow"} primary label={running ? "Stop the click" : "Start the click"} onClick={toggleMetronome} />}
+            {canRecord && <RoundButton icon={rec === "recording" ? "stop" : "mic"} label={rec === "recording" ? "Stop recording" : "Record this"} disabled={rec === "saving"} onClick={() => { void toggleRecord(); }} />}
+            <NextStopButton nextTitle={nextTitle} onClick={finish} />
           </>
         }
       >
-        <div style={{ display: "flex", gap: 26 }}>
-          {!custom && <Metric label="Tempo" value={<Tempo bpm={bpm} size={15} />} />}
-          {!custom && <Metric label="Loop" value={loop.from === 0 && loop.to === bars.length - 1 ? "whole piece" : <span><span style={{ fontFamily: "var(--kc-font-music)" }}>𝄆</span> bars {loop.from + 1}–{loop.to + 1} <span style={{ fontFamily: "var(--kc-font-music)" }}>𝄇</span></span>} />}
-          <Metric label="Times through" value={custom ? throughs : times} />
-          {!custom && running && (
-            <div style={{ display: "flex", gap: 8, alignItems: "flex-end", paddingBottom: 6 }}>
-              {[0, 1, 2, 3].map((b) => <span key={b} style={{ width: 10, height: 10, borderRadius: "50%", background: beat === b ? "var(--kc-mint)" : "var(--kc-raised)" }} />)}
-            </div>
-          )}
+        <StatChip tone="mint" value={timesCount} label={<>times<br />through</>} />
+        {!custom && <StatChip tone="indigo" icon="speed" line1={<><span style={{ fontFamily: "var(--kc-font-music)" }}>𝅘𝅥</span>{bpm} · {loopText}</>} line2={recLine ?? (running ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><MetronomeDots beat={beat} size={8} /> looping</span> : "click is off")} />}
+        {custom && recLine && <StatChip tone="indigo" icon="mic" line1={recLine} line2={song.title} />}
+        <FormatBadge format={custom ? "full-notation" : view} assigned={assigned} size={48} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }}>{song.title}</div>
+          <div style={{ ...SMALL, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }}>{custom ? "Your own copy" : `${scale.name}`}</div>
         </div>
-        <span style={{ fontSize: 14, color: "var(--kc-ink-dim)", maxWidth: 300, lineHeight: 1.4 }}>
-          {rec === "recording" ? "Recording. Stop to keep the take." : rec === "saved" ? `Kept as “${song.title} · ${dateLabel()}”.` : rec === "failed" ? "The microphone was not available." : loaded.note || (custom ? "" : "Play it through at this tempo before going faster.")}
-        </span>
       </BottomBar>
     </div>
   );

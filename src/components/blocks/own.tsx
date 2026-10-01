@@ -3,22 +3,24 @@ import * as React from "react";
 import type { BlockProps } from "./types";
 import type { NoteEvent, Recording } from "@/lib/types";
 import type { GrooveId } from "@/lib/audio/engine";
-import { BottomBar, Button, Choice, ChoiceTile, Clock, Keyboard, Metric, Pill, SectionLabel, Tempo, type KeyTone } from "@/components/ds";
+import { BottomBar, Button, Choice, Icon, Pill, TickSays, Waveform } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput, useNoteRecorder } from "@/lib/hooks/use-input";
 import { useStopwatch } from "@/lib/hooks/use-timer";
 import { repo } from "@/lib/db/repo";
 import { AudioRecorder } from "@/lib/recording/audio-recorder";
 import { isInScale } from "@/lib/music/scales";
-import { pcToMidi, prettyPc } from "@/lib/music/notes";
-import { CheckItem } from "@/components/ds";
+import { isBlackKey, midiToName, pcToMidi, prettyPc } from "@/lib/music/notes";
 import { newId } from "@/lib/utils/id";
 import { useAppStore } from "@/lib/store/app-store";
 import { SongPlayer } from "./shared/song-player";
+import { CardTitle, PAGE, RoundButton } from "./shared/controls";
+import { PlayStrip, type StripTone } from "./shared/play-strip";
 
 /*
- * Your own. A backing groove in the session key, the keys outside the key dimmed, a clock that just runs, and an
- * optional take kept in the library when the player says so. Nothing is scored and nothing is praised.
+ * Your own (D7). Tick hands over: a backing groove in the session key (or a real song to play along with), the
+ * safe-zone keys lit, a clock that just runs, and an optional take saved to My Songs when the player says so.
+ * Nothing is scored and nothing is praised.
  */
 
 type Backing = "groove" | "song";
@@ -26,6 +28,7 @@ const BACKINGS: Backing[] = ["groove", "song"];
 const BACKING_LABELS: Record<Backing, string> = { groove: "Groove", song: "A song in this key" };
 const GROOVES: GrooveId[] = ["pop", "waltz", "blues", "lofi"];
 const GROOVE_LABELS: Record<GrooveId, string> = { pop: "Pop", waltz: "Waltz", blues: "Blues", lofi: "Lo-fi" };
+const GROOVE_ICONS: Record<GrooveId, string> = { pop: "music_note", waltz: "waves", blues: "queue_music", lofi: "nightlight" };
 const TEMPOS = [72, 84, 96, 112];
 const MIDI_MIME = "application/x-keycadence-midi";
 
@@ -36,9 +39,18 @@ function fmt(sec: number): string {
   return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 }
 
-export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, timeUp, onDone, setPrimaryLabel }: BlockProps) {
+/** A pseudo-waveform for a take of n seconds: the same shape every time it is drawn. */
+function waveFor(seconds: number, n = 40): number[] {
+  return Array.from({ length: n }, (_, i) => 20 + Math.round(Math.abs(Math.sin((i + 1) * 1.37 + seconds * 0.11) * 60 + Math.cos(i * 0.53) * 20)));
+}
+
+export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, timeUp, onDone, setPrimaryLabel, setMeta, setRecording, seconds: planned }: BlockProps) {
   const { audio, unlock } = useAudio();
   React.useEffect(() => { setPrimaryLabel?.(null); }, [setPrimaryLabel]);
+  React.useEffect(() => {
+    setMeta?.(`${planned >= 120 ? `${Math.round(planned / 60)} minutes` : "One minute"} · nothing is measured`);
+    return () => setMeta?.(null);
+  }, [setMeta, planned]);
 
   const rootMidi = pcToMidi(scale.key, 3);
   const minor = scale.mode !== "major";
@@ -79,6 +91,7 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
   const toggleGroove = () => { void unlock(); setTick(0); setPlaying((p) => !p); };
   const stopGroove = React.useCallback(() => setPlaying(false), []);
   const chooseBacking = (b: Backing) => { if (b === "song") stopGroove(); setBacking(b); };
+  const pickGroove = (g: GrooveId) => { void unlock(); setGroove(g); if (!playing) { setTick(0); setPlaying(true); } };
 
   // ---- the clock ----
   const { seconds } = useStopwatch(!paused);
@@ -92,9 +105,21 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
       setHeld(Array.from(heldRef.current));
     },
   });
-  const tones: Partial<Record<number, KeyTone>> = {};
-  for (let m = kbFrom; m <= kbTo; m++) if (!isInScale(m, scale)) tones[m] = "dim";
+  const tones: Partial<Record<number, StripTone>> = {};
+  const labels: Partial<Record<number, string>> = {};
+  for (let m = kbFrom; m <= kbTo; m++) {
+    tones[m] = isInScale(m, scale) ? "wash" : "dim";
+    if (m % 12 === tonic % 12) { tones[m] = "mint"; labels[m] = prettyPc(scale.key); }
+  }
   for (const m of held) tones[m] = "mint";
+  const outside = [] as string[];
+  const inBlack = [] as string[];
+  for (let m = tonic; m < tonic + 12; m++) {
+    const inKey = isInScale(m, scale);
+    if (!isBlackKey(m) && !inKey) outside.push(midiToName(m).replace(/\d+$/, ""));
+    if (isBlackKey(m) && inKey) inBlack.push(prettyPc(scale.notes.find((n) => pcToMidi(n, 4) % 12 === m % 12) ?? "C"));
+  }
+  const safeZone = `${scale.name} — ${outside.length ? `every white key but ${outside.join(" and ")}` : "every white key"}${inBlack.length ? `, plus ${inBlack.join(", ")}` : ""}`;
 
   // ---- the take ----
   const useMidi = inputMode === "midi" || !AudioRecorder.supported();
@@ -107,6 +132,7 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
   const { events, reset } = useNoteRecorder(takeState === "recording");
   const { seconds: recSeconds, reset: resetRec } = useStopwatch(takeState === "recording");
   React.useEffect(() => () => { recorder.current?.cancel(); }, []);
+  React.useEffect(() => { setRecording?.(takeState === "recording"); return () => setRecording?.(false); }, [takeState, setRecording]);
 
   const startTake = async () => {
     void unlock();
@@ -158,82 +184,76 @@ export function OwnBlock({ child, session, scale, inputMode, nextTitle, paused, 
   };
 
   const takeLine = takeState === "recording"
-    ? `Recording · ${fmt(recSeconds)}`
-    : takeState === "ready" && take ? `A ${fmt(take.seconds)} take. Keep it, or let it go.`
-    : takeState === "kept" ? "Kept in the library."
-    : takeState === "failed" ? (useMidi ? "Nothing was played." : "The microphone was not available.")
-    : useMidi ? "Records what the keys send. Kept only when you say so." : "Records the room. Kept only when you say so.";
+    ? "Recording"
+    : takeState === "ready" && take ? "Keep it, or let it go"
+    : takeState === "kept" ? "Kept in My Songs"
+    : takeState === "failed" ? (useMidi ? "Nothing was played" : "The microphone was not available")
+    : useMidi ? "Record what the keys send" : "Record the room";
+  const takeSeconds = takeState === "recording" ? recSeconds : take?.seconds ?? 0;
+  const tickSays = backing === "song"
+    ? "Pick a song in this key and play along. The green keys always sound right."
+    : "Your minute. Play whatever you like over the loop — the green keys always sound right.";
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "22px 30px 0", gap: 14 }}>
-        <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)" }}>
-          Play whatever you like in {scale.name}. The groove keeps time, or pick a song in this key and play along; the dimmed keys are the ones outside the key.
-        </p>
-        <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 14 }}>
-          <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <SectionLabel>Backing</SectionLabel>
+      <div style={{ ...PAGE, gap: 18 }}>
+        <TickSays mood="cheer" bpm={bpm}>{tickSays}</TickSays>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: backing === "song" ? 1 : "none", minHeight: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <CardTitle>{backing === "song" ? "Play along" : "Pick a groove"}</CardTitle>
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+              {backing === "groove" && <Choice options={TEMPOS.map(String)} value={String(bpm)} onChange={(v) => setBpm(Number(v))} labels={Object.fromEntries(TEMPOS.map((t) => [String(t), `${t}`])) as Record<string, string>} />}
               <Choice options={BACKINGS} value={backing} onChange={chooseBacking} labels={BACKING_LABELS} />
             </div>
-            {backing === "song" ? <SongPlayer scale={scale} videos={jamVideos} onSaveVideo={saveVideo} onPlay={stopGroove} /> : <>
-            <Choice options={GROOVES} value={groove} onChange={setGroove} labels={GROOVE_LABELS} />
-            <div style={{ display: "flex", gap: 8 }}>
-              {TEMPOS.map((t) => <ChoiceTile key={t} value={t} unit="bpm" selected={bpm === t} height={56} onClick={() => setBpm(t)} />)}
-            </div>
-            <div style={{ fontSize: 14, color: "var(--kc-ink-dim)", lineHeight: 1.45, marginTop: 2 }}>
-              {scale.name}: <span style={{ fontFamily: "var(--kc-font-mono)", color: "var(--kc-ink-muted)" }}>{scale.notes.map((n) => prettyPc(n)).join("  ")}</span>. The bass sits on {prettyPc(scale.key)}; the drums are the same in every key.
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: "auto" }}>
-              <Button variant={playing ? "secondary" : "primary"} size="control" icon={playing ? "stop" : "play_arrow"} onClick={toggleGroove}>{playing ? "Stop the groove" : "Start the groove"}</Button>
-              <div style={{ display: "flex", gap: 8 }}>
-                {Array.from({ length: beatsPerBar }).map((_, b) => <span key={b} style={{ width: 10, height: 10, borderRadius: "50%", background: beat === b ? "var(--kc-mint)" : "var(--kc-raised)" }} />)}
-              </div>
-              <span style={{ marginLeft: "auto", fontSize: 14, color: "var(--kc-ink-dim)" }}>{GROOVE_LABELS[groove]} · <Tempo bpm={bpm} /></span>
-            </div>
-            </>}
           </div>
-          <div style={{ background: "var(--kc-panel)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-panel)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
-            <SectionLabel>Recording</SectionLabel>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              {takeState === "recording" && <Pill tone="clay">Rec</Pill>}
-              {takeState === "kept" && <Pill tone="mint">Kept</Pill>}
-              <span style={{ fontSize: 14, color: "var(--kc-ink-muted)", lineHeight: 1.4 }}>{takeLine}</span>
+          {backing === "song" ? (
+            <SongPlayer scale={scale} videos={jamVideos} onSaveVideo={saveVideo} onPlay={stopGroove} />
+          ) : (
+            <div style={{ display: "flex", gap: 12 }}>
+              {GROOVES.map((g) => {
+                const on = groove === g && playing;
+                return (
+                  <button key={g} type="button" onClick={() => (groove === g && playing ? toggleGroove() : pickGroove(g))} className="kc-press" style={{ flex: 1, height: 92, borderRadius: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, boxSizing: "border-box", cursor: "pointer", padding: 0, ...(on ? { background: "var(--kc-indigo)", color: "#ffffff", border: "none", boxShadow: "0 5px 0 0 var(--kc-indigo-shadow)" } : { background: "var(--kc-panel)", color: "var(--kc-ink)", border: groove === g ? "3px solid var(--kc-indigo)" : "2px solid var(--kc-border)", boxShadow: "var(--kc-shadow-press)" }) }}>
+                    <Icon name={on ? "graphic_eq" : GROOVE_ICONS[g]} size={28} />
+                    <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 18, fontWeight: 600 }}>{GROOVE_LABELS[g]}</span>
+                  </button>
+                );
+              })}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-              <SectionLabel>What gets recorded</SectionLabel>
-              <CheckItem>Minutes, the groove and the tempo</CheckItem>
-              <CheckItem>A take, only when you keep it</CheckItem>
-              <CheckItem on={false}>Notes right, drift, evenness</CheckItem>
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
-              {takeState === "recording"
-                ? <Button variant="secondary" size="control" icon="stop" onClick={() => { void stopTake(); }}>Stop</Button>
-                : takeState === "ready"
-                  ? <>
-                      <Button size="control" icon="check" onClick={() => { void keepTake(); }}>Keep this</Button>
-                      <Button variant="quiet" size="control" onClick={discardTake}>Let it go</Button>
-                    </>
-                  : <Button variant="secondary" size="control" icon="mic" disabled={takeState === "saving"} onClick={() => { void startTake(); }}>{takeState === "kept" ? "Record another" : "Record"}</Button>}
-            </div>
-          </div>
+          )}
         </div>
-        <Keyboard from={kbFrom} to={kbTo} height={200} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} style={{ flex: "none", marginBottom: 20 }} />
+        <div style={{ flex: backing === "song" ? "none" : 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 10, justifyContent: "flex-end" }}>
+          <CardTitle meta={<span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>{safeZone}{playing && <span style={{ display: "inline-flex", gap: 5 }}>{Array.from({ length: beatsPerBar }).map((_, b) => <span key={b} style={{ width: 8, height: 8, borderRadius: "50%", background: beat === b ? "var(--kc-indigo)" : "var(--kc-border)" }} />)}</span>}</span>}>The safe zone</CardTitle>
+          <PlayStrip from={kbFrom} to={kbTo} height={backing === "song" ? 96 : 130} tones={tones} labels={labels} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} disabled={paused} />
+        </div>
       </div>
       <BottomBar
         actions={
           <>
-            {timeUp && <Pill tone="amber">Time</Pill>}
-            <Button size="control" onClick={finish}>{nextTitle ? `Next — ${nextTitle}` : "Finish"}</Button>
+            {timeUp && <Pill tone="sun">Time</Pill>}
+            {takeState === "ready"
+              ? <>
+                  <Button variant="secondary" size="control" icon="bookmark_add" onClick={() => { void keepTake(); }}>Save to My Songs</Button>
+                  <Button variant="quiet" size="control" onClick={discardTake}>Let it go</Button>
+                </>
+              : takeState === "kept"
+                ? <Pill tone="mint" icon="bookmark_added">Saved to My Songs</Pill>
+                : null}
+            <Button size="control" icon={nextTitle ? "arrow_forward" : "celebration"} iconAfter={!!nextTitle} onClick={finish}>{nextTitle ? "Next stop" : "Done for today!"}</Button>
           </>
         }
       >
-        <div style={{ display: "flex", gap: 26 }}>
-          <Metric label="Time playing" value={<Clock seconds={seconds} />} />
-          <Metric label="Tempo" value={<Tempo bpm={bpm} size={15} />} />
-          <Metric label="Groove" value={GROOVE_LABELS[groove]} />
-          <Metric label="Takes kept" value={kept} />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: "var(--kc-cream)", borderRadius: 18, padding: "10px 14px", minWidth: 0 }}>
+          {takeState === "recording"
+            ? <RoundButton icon="stop" primary label="Stop recording" onClick={() => { void stopTake(); }} />
+            : <RoundButton icon="mic" primary label={takeState === "kept" ? "Record another" : "Record"} disabled={takeState === "saving"} onClick={() => { void startTake(); }} />}
+          {takeState === "recording" || take
+            ? <Waveform bars={waveFor(takeSeconds)} height={34} tone="indigo" split={takeState === "recording" ? Math.min(1, (recSeconds % 20) / 20) : 1} />
+            : <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "var(--kc-ink-muted)" }}>{takeLine}. Kept only when you say so.</span>}
+          {(takeState === "recording" || take) && <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmt(takeSeconds)}</span>}
+          {(takeState === "recording" || take) && <span style={{ fontSize: 13, fontWeight: 800, color: takeState === "recording" ? "var(--kc-sun-ink)" : "var(--kc-ink-faint)", whiteSpace: "nowrap" }}>{takeLine}</span>}
         </div>
+        <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 17, fontWeight: 600, color: "var(--kc-ink-faint)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{fmt(seconds)} played</span>
       </BottomBar>
     </div>
   );

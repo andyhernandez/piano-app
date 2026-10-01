@@ -1,55 +1,57 @@
 "use client";
 import * as React from "react";
 import type { ScaleId } from "@/lib/types";
+import { weekKey } from "@/lib/utils/date";
 
 export interface TempoPoint { date: string; bpm: number; scale: ScaleId }
 
-/*
- * The kit's chart, drawn the same way: a 700×240 viewBox stretched to the panel (preserveAspectRatio none),
- * four raised gridlines, one mint polyline with a non-scaling 2.5px stroke, and HTML dots at percentage
- * positions so they stay round. The plateau markers sit on the first run in a new key; the last run is
- * the 12px marker. Two mono labels give the top and bottom of the scale.
- */
-const W = 700;
-const H = 240;
-const X0 = 20;
-const X1 = 680;
-const Y_TOP = 60;
-const Y_BOTTOM = 212;
-const GRID = [20, 80, 140, 200];
+export interface TempoBar { label: string; bpm: number; tone: "indigo" | "lilac" | "sun" }
 
-export function tempoLayout(points: TempoPoint[]) {
-  const bpms = points.map((p) => p.bpm);
-  const lo = Math.min(...bpms);
-  const hi = Math.max(...bpms);
-  const span = Math.max(1, hi - lo);
-  const n = points.length;
-  const xs = points.map((_, i) => (n === 1 ? (X0 + X1) / 2 : X0 + ((X1 - X0) * i) / (n - 1)));
-  const ys = points.map((p) => (hi === lo ? (Y_TOP + Y_BOTTOM) / 2 : Y_BOTTOM - ((p.bpm - lo) / span) * (Y_BOTTOM - Y_TOP)));
-  const markers = points.flatMap((p, i) => {
-    const last = i === n - 1;
-    const newKey = i > 0 && (p.scale.key !== points[i - 1].scale.key || p.scale.mode !== points[i - 1].scale.mode);
-    if (!last && !newKey) return [];
-    return [{ left: `${((xs[i] / W) * 100).toFixed(1)}%`, top: `${((ys[i] / H) * 100).toFixed(1)}%`, r: last ? 12 : 9 }];
+/**
+ * The staircase: one bar per week, the best clean tempo that week. A week that did not beat the one before is
+ * lilac (a plateau, worth a look, never a loss); the latest bar is sunshine when it is a new best.
+ * Weeks without a clean run are left out so the stairs read as runs, not gaps.
+ */
+export function tempoStaircase(points: TempoPoint[]): TempoBar[] {
+  const byWeek = new Map<string, number>();
+  for (const p of points) {
+    const wk = weekKey(p.date);
+    byWeek.set(wk, Math.max(byWeek.get(wk) ?? 0, p.bpm));
+  }
+  const weeks = Array.from(byWeek.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  const bars: TempoBar[] = [];
+  let best = 0;
+  weeks.forEach(([, bpm], i) => {
+    const plateau = i > 0 && bpm <= weeks[i - 1][1];
+    const last = i === weeks.length - 1;
+    const tone: TempoBar["tone"] = last && bpm > best && weeks.length > 1 ? "sun" : plateau ? "lilac" : "indigo";
+    best = Math.max(best, bpm);
+    bars.push({ label: `w${i + 1}`, bpm, tone });
   });
-  return { lo, hi, pts: points.map((_, i) => `${xs[i].toFixed(0)},${ys[i].toFixed(0)}`).join(" "), markers };
+  return bars;
 }
 
 export function TempoChart({ points, style }: { points: TempoPoint[]; style?: React.CSSProperties }) {
-  const { lo, hi, pts, markers } = React.useMemo(() => tempoLayout(points), [points]);
+  const bars = React.useMemo(() => tempoStaircase(points), [points]);
+  const lo = Math.min(...bars.map((b) => b.bpm));
+  const hi = Math.max(...bars.map((b) => b.bpm));
+  // Heights read from a floor a little below the slowest week so the slowest bar still has a body.
+  const floor = Math.max(0, lo - Math.max(12, (hi - lo) * 0.6));
+  const span = Math.max(1, hi - floor);
+  const shown = bars.slice(-12);
   return (
-    <div style={{ flex: 1, minHeight: 0, position: "relative", ...style }}>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-        {GRID.map((y) => (
-          <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="var(--kc-raised)" strokeWidth="1" />
-        ))}
-        {points.length > 1 && <polyline points={pts} fill="none" stroke="var(--kc-mint)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />}
-      </svg>
-      {markers.map((m, i) => (
-        <span key={i} style={{ position: "absolute", left: m.left, top: m.top, width: m.r, height: m.r, borderRadius: "50%", background: "var(--kc-mint)", transform: "translate(-50%, -50%)" }} />
-      ))}
-      <span style={{ position: "absolute", left: 0, top: 0, fontFamily: "var(--kc-font-mono)", fontSize: 11, color: "var(--kc-ink-dim)" }}>{hi}</span>
-      <span style={{ position: "absolute", left: 0, bottom: 0, fontFamily: "var(--kc-font-mono)", fontSize: 11, color: "var(--kc-ink-dim)" }}>{lo}</span>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "flex-end", gap: 8, ...style }}>
+      {shown.map((b, i) => {
+        const pct = Math.max(10, Math.round(((b.bpm - floor) / span) * 94));
+        const fill = b.tone === "sun" ? { background: "var(--kc-sun)", boxShadow: "var(--kc-shadow-press-sun)" } : b.tone === "lilac" ? { background: "var(--kc-lilac)", border: "2px solid var(--kc-indigo)" } : { background: "var(--kc-indigo)" };
+        return (
+          <div key={i} style={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 6, minWidth: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 900, color: "var(--kc-ink-muted)" }}>{b.bpm}</span>
+            <span style={{ display: "block", width: "100%", borderRadius: "12px 12px 6px 6px", height: `${pct}%`, boxSizing: "border-box", ...fill }} />
+            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--kc-ink-faint)" }}>{b.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

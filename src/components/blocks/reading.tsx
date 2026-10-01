@@ -3,7 +3,7 @@ import * as React from "react";
 import type { BlockProps } from "./types";
 import type { MidiScore, NoteEvent } from "@/lib/types";
 import type { NoteState, StaffRegion } from "@/components/ds";
-import { BottomBar, Button, CheckItem, Metric, Pill, SectionLabel, SegmentBar, SheetPanel, Staff, Tempo, exerciseToLines, keyLabel } from "@/components/ds";
+import { BottomBar, Button, CheckItem, Instruction, Panel, Pill, SheetPanel, Staff, StatChip, Tempo, exerciseToLines, keyLabel } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { useAppStore } from "@/lib/store/app-store";
@@ -11,12 +11,14 @@ import { generateExercise, levelSpec, noteTimeline, LEVELS, READING_PROMOTE_AT, 
 import { scoreReading } from "@/lib/engine/scoring";
 import { fmtClock } from "@/lib/engine/record";
 import { startBeatClock, audioTimeToPerfMs, meanSd } from "./shared/beat-clock";
-import { MetronomeDots, RecordControl, useBlockRecorder } from "./shared/controls";
+import { CardTitle, Cells, MetronomeDots, NextStopButton, PAGE, RecordControl, SMALL, useBlockRecorder } from "./shared/controls";
 
 /*
- * Sight reading (kit PracticeScreen; E2 when nothing is listening). A fresh exercise at the student's level in
- * the session key. The page moves with the click once they start; notes go mint as they land, clay when
- * missed. Continuity is what counts — keep going through mistakes. Two clean runs move the level up.
+ * Sight reading (D4). A fresh exercise at the student's level in the session key. The page moves with the
+ * click once they start; notes go mint as they land, lilac when missed. Bar by bar underneath shows where
+ * the page is and which bars had a miss. Continuity is what counts — keep going through mistakes. Two
+ * clean runs move the level up. When nothing is listening, the page sits still and the player marks each
+ * time through.
  */
 
 const BARS_PER_LINE = 4;
@@ -25,7 +27,7 @@ const STAFF_W = 1000;
 const LINE_GAP = 14;
 const LINE_TOPS = { treble: 36, bass: 132 };
 const LINE_H = { single: 136, grand: 200 };
-const LINES_SHOWN = { single: 4, grand: 3 };
+const LINES_SHOWN = { single: 3, grand: 2 };
 const SCROLL_EASE = "transform 480ms cubic-bezier(0.22, 0.61, 0.36, 1)";
 const PROMOTE_AT = READING_PROMOTE_AT;
 const TICK_MS = 50;
@@ -81,6 +83,15 @@ function liveStates(ex: Exercise, ons: { midi: number; t: number }[], nowMs: num
   return out;
 }
 
+/** "A hair early", "Right on the beat", "Dragging a little". */
+function beatWords(aheadMs: number): { line1: string; line2: string } {
+  const abs = Math.abs(aheadMs);
+  if (abs < 10) return { line1: "Right on the beat", line2: `within ${abs} ms` };
+  const dir = aheadMs > 0 ? "ahead of" : "behind";
+  if (abs < 35) return { line1: aheadMs > 0 ? "A hair early" : "A hair late", line2: `${abs} ms ${dir} the beat` };
+  return { line1: aheadMs > 0 ? "Rushing a little" : "Dragging a little", line2: `${abs} ms ${dir} the beat` };
+}
+
 export function ReadingBlock({ child, session, scale, inputMode, elapsed, seconds, timeUp, paused, nextTitle, onDone, setMeta, setRecording }: BlockProps) {
   const { audio, unlock } = useAudio();
   const updateSettings = useAppStore((s) => s.updateSettings);
@@ -113,7 +124,7 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
   const ex = exercise;
   const tl = React.useMemo(() => noteTimeline(ex), [ex]);
   React.useEffect(() => {
-    setMeta?.(<>Level {level} · {handsText(ex.hands)} · {key} · <Tempo bpm={tempo} /></>);
+    setMeta?.(<>Level {level} · {key} · {handsText(ex.hands)} · <Tempo bpm={tempo} /></>);
     return () => setMeta?.(null);
   }, [setMeta, level, ex.hands, key, tempo]);
 
@@ -226,7 +237,7 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
   };
   const slower = () => setTempo((t) => Math.max(40, t - 8));
 
-  // E2: a metronome on the rail, nothing else listening.
+  // A metronome on the rail, nothing else listening.
   const toggleClick = async () => {
     if (clickOn) { stopClock(); return; }
     await unlock();
@@ -267,90 +278,99 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
 
   const last = runs[runs.length - 1];
   const cleanCount = runs.filter((r) => r.clean).length;
-  const continuity = phase === "run" ? (live.passed ? live.moving / live.passed : 1) : last ? last.score.components.continuity / 100 : 0;
-  const heldThrough = live.firstMiss !== null ? Math.max(0, ex.notes[live.firstMiss].bar) : currentNote ? currentNote.bar + 1 : last ? ex.bars : 0;
-  const continuityCopy = phase === "run"
-    ? live.firstMiss !== null ? `A miss in bar ${ex.notes[live.firstMiss].bar + 1} — keep going` : `Moving through bar ${(currentNote?.bar ?? 0) + 1}`
-    : last
-      ? last.clean ? `You held the pulse through bar ${ex.bars}` : heldThrough > 0 ? `You held the pulse through bar ${heldThrough}` : "The pulse slipped in bar 1"
-      : "Nothing measured yet";
+  const currentBar = phase === "run" ? (currentNote?.bar ?? (live.passed >= tl.length ? ex.bars : 0)) : last && live.states.size ? ex.bars : -1;
+  const missedBars = Array.from(new Set(ex.notes.filter((n, i) => live.states.get(i) === "missed").map((n) => n.bar)));
+  const barMeta = phase === "run" ? `You're on bar ${Math.min(ex.bars, (currentNote?.bar ?? 0) + 1)} of ${ex.bars}` : last && live.states.size ? (missedBars.length ? `${missedBars.length} bar${missedBars.length === 1 ? "" : "s"} with a miss` : `All ${ex.bars} bars clean`) : `Level ${level} · ${ex.bars} bars`;
 
   const instruction = paused
     ? "Paused."
     : phase === "countin" ? `Count-in — ${Math.ceil(countLeft / 4)} bar${Math.ceil(countLeft / 4) === 1 ? "" : "s"}, then the page moves.`
     : phase === "run" ? "Keep going through mistakes — don't stop to fix a note."
-    : timeUp ? `Time. Finish this page, then Next — ${nextTitle ?? "done"}.`
+    : timeUp ? `Time. Finish this page, then on to ${nextTitle ?? "the summary"}.`
     : promoted ? `Two clean runs. Level ${level} from here — ${levelSpec(level).title.toLowerCase()}.`
-    : runs.length === 0 ? "Keep going through mistakes — don't stop to fix a note. Play the first note, or start with the click."
+    : runs.length === 0 ? "Keep going through mistakes — don't stop to fix a note."
     : last?.clean ? `Clean. ${PROMOTE_AT - streak === 1 ? "One more" : `${PROMOTE_AT - streak} more`} like that moves the level up.`
     : `${last.notesRight} of ${last.total} right. Same page again, or a new one.`;
 
+  const ahead = phase === "run" ? live.aheadMs : last?.aheadMs ?? null;
+  const beat2 = ahead !== null ? beatWords(ahead) : { line1: "Nothing measured yet", line2: "play the first note to start" };
+
   if (!measured) {
     return (
-      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px" }}>
-        <div style={{ minHeight: 0, padding: "22px 26px 22px 30px", display: "flex", flexDirection: "column", gap: 14 }}>
-          <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)" }}>Nothing is listening, so the page doesn&apos;t move on its own — play it through twice at your own pace.</p>
-          <SheetPanel padding={22} style={{ flex: 1, minHeight: 0 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxHeight: "100%", overflow: "auto" }}>
-              {lines.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={820} height={lineH} lineGap={LINE_GAP} />)}
+      <>
+        <div style={{ ...PAGE, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 16, padding: "22px 32px 22px" }}>
+          <div style={{ minHeight: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+            <Instruction>Nothing is listening, so the page sits still — play it through twice at your own pace.</Instruction>
+            <SheetPanel padding={20} style={{ flex: 1, minHeight: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxHeight: "100%", overflow: "auto" }}>
+                {lines.map((l) => <Staff key={l.firstBar} systems={l.systems} notes={l.notes} rests={l.rests} layout={{ bars: l.bars, beatsPerBar: ex.timeSig[0], left: 190, right: 40 }} width={780} height={lineH} lineGap={LINE_GAP} />)}
+              </div>
+            </SheetPanel>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <CardTitle meta={marks.length ? `You marked the first run done at ${fmtClock(marks[0])}.` : "Mark each run when you reach the last bar."}>Times through</CardTitle>
+              <Cells count={2} current={marks.length} />
             </div>
-          </SheetPanel>
-          <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 22 }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-              <SectionLabel>TIMES THROUGH</SectionLabel>
-              <SegmentBar total={2} filled={marks.length} current={Math.min(marks.length, 1)} height={8} radius={3} />
-              <span style={{ fontSize: 14, color: "var(--kc-ink-muted)" }}>{marks.length ? `You marked the first run done at ${fmtClock(marks[0])}.` : "Mark each run when you reach the last bar."}</span>
-            </div>
-            <Button variant="secondary" size="control" onClick={newExercise} disabled={paused}>New exercise</Button>
-            <Button size="control" icon="check" onClick={markThrough} disabled={paused}>{marks.length >= 1 ? (nextTitle ? `Next — ${nextTitle}` : "Finish") : "I played it through"}</Button>
           </div>
-        </div>
-        <div style={{ borderLeft: "1px solid var(--kc-border)", background: "var(--kc-panel)", padding: "26px 24px", display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <SectionLabel>TIME IN THIS BLOCK</SectionLabel>
-            <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 32, fontVariantNumeric: "tabular-nums" }}>{fmtClock(elapsed)}</span>
-            <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>of {Math.round(seconds / 60)} minutes planned</span>
-          </div>
-          <div style={{ borderTop: "1px solid var(--kc-border)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 11 }}>
-            <SectionLabel>WHAT GETS RECORDED</SectionLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, minHeight: 0 }}>
+            <Panel tone="indigo">
+              <div style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-indigo-shadow)" }}>Time in this stop</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 40, fontWeight: 600, lineHeight: 1, color: "var(--kc-indigo)", fontVariantNumeric: "tabular-nums" }}>{fmtClock(elapsed)}</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "var(--kc-ink-muted)" }}>of {Math.round(seconds / 60)} minutes planned</span>
+              </div>
+            </Panel>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <CardTitle size={17}>What gets recorded</CardTitle>
               <CheckItem>Minutes, and the page you read</CheckItem>
               <CheckItem>The level you chose, held or dropped</CheckItem>
               <CheckItem on={false}>Notes right, drift, evenness</CheckItem>
+              <div style={SMALL}>Four of the seven stops work this way. Ear and harmony need something listening.</div>
             </div>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: "var(--kc-ink-faint)" }}>Four of the six blocks work this way. Ear and harmony need something listening.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <CardTitle size={17}>Metronome</CardTitle>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 34, fontWeight: 600, lineHeight: 1 }}>{tempo}</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "var(--kc-ink-faint)" }}>bpm</span>
+                <div style={{ marginLeft: "auto" }}><MetronomeDots beat={clickOn ? beat ?? 0 : null} /></div>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <Button variant="secondary" size="pill" icon="slow_motion_video" onClick={slower} disabled={tempo <= 40}>Slower</Button>
+                <Button variant="secondary" size="pill" icon={clickOn ? "stop" : "play_arrow"} onClick={() => void toggleClick()}>{clickOn ? "Stop the click" : "Start the click"}</Button>
+              </div>
+            </div>
+            <div style={{ ...SMALL, marginTop: "auto", color: "var(--kc-ink-faint)" }}>Plug the keyboard in from the header — switching mid-stop keeps the minutes you&apos;ve already played.</div>
           </div>
-          <div style={{ borderTop: "1px solid var(--kc-border)", paddingTop: 22, display: "flex", flexDirection: "column", gap: 12 }}>
-            <SectionLabel>METRONOME</SectionLabel>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={() => void toggleClick()} role="button" aria-pressed={clickOn}>
-              <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 32 }}>{tempo}</span>
-              <span style={{ fontSize: 15, color: "var(--kc-ink-dim)" }}>bpm</span>
-              <div style={{ marginLeft: "auto" }}><MetronomeDots beat={clickOn ? beat ?? 0 : null} /></div>
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <Button variant="secondary" size="pill" onClick={slower} disabled={tempo <= 40}>Slower</Button>
-              <Button variant="secondary" size="pill" onClick={() => void toggleClick()}>{clickOn ? "Stop the click" : "Start the click"}</Button>
-            </div>
-          </div>
-          <span style={{ marginTop: "auto", fontSize: 14, color: "var(--kc-ink-faint)" }}>Plug the keyboard in from the header — switching mid-block keeps the minutes you&apos;ve already played.</span>
         </div>
-      </div>
+        <BottomBar
+          actions={
+            <>
+              <Button variant="secondary" size="control" icon="refresh" onClick={newExercise} disabled={paused}>New page</Button>
+              {marks.length >= 1
+                ? <NextStopButton nextTitle={nextTitle} onClick={markThrough} disabled={paused} />
+                : <Button size="control" icon="check" onClick={markThrough} disabled={paused}>I played it through</Button>}
+            </>
+          }
+        >
+          <StatChip tone="mint" value={marks.length} unit="/2" label={<>times<br />through</>} />
+          <StatChip tone="indigo" icon="menu_book" line1={`Level ${level} · ${ex.bars} bars`} line2={`${handsText(ex.hands)} · ${key}`} />
+        </BottomBar>
+      </>
     );
   }
 
   return (
     <>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "22px 30px 0", gap: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)", flex: 1, minWidth: 0 }}>{instruction}</p>
-          <Pill tone={phase === "run" ? "mint" : "neutral"}>{phase === "countin" ? `COUNT ${countLeft}` : phase === "run" ? `BAR ${(currentNote?.bar ?? 0) + 1} OF ${ex.bars}` : `LEVEL ${level} · ${ex.bars} BARS`}</Pill>
+      <div style={PAGE}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Instruction style={{ flex: 1, minWidth: 0 }}>{instruction}</Instruction>
+          <Pill tone={phase === "run" ? "mint" : "neutral"}>{phase === "countin" ? `Count ${countLeft}` : `Level ${level}`}</Pill>
           <MetronomeDots beat={beat} />
           <RecordControl recording={recorder.recording} supported={recorder.supported} onToggle={() => void recorder.toggle()} />
           {phase === "idle"
-            ? <Button variant="quiet" size="control" icon="play_arrow" onClick={() => void startWithClick()} disabled={paused}>Start with the click</Button>
-            : <Button variant="quiet" size="control" icon="stop" onClick={stopRun}>Stop</Button>}
+            ? <Button variant="secondary" size="pill" icon="play_arrow" onClick={() => void startWithClick()} disabled={paused}>Start with the click</Button>
+            : <Button variant="secondary" size="pill" icon="stop" onClick={stopRun}>Stop</Button>}
         </div>
-        <SheetPanel padding={18} style={{ flex: 1, minHeight: 0 }}>
+        <SheetPanel padding={16} style={{ flex: 1, minHeight: 0 }}>
           <div style={{ display: "flex", justifyContent: "center", height: "100%", overflow: "hidden" }}>
             <div style={{ width: STAFF_W, height: shown * lineH, maxHeight: "100%", overflow: "hidden" }}>
               <div style={{ display: "flex", flexDirection: "column", transform: `translateY(${-firstShown * lineH}px)`, transition: SCROLL_EASE, willChange: "transform" }}>
@@ -359,29 +379,23 @@ export function ReadingBlock({ child, session, scale, inputMode, elapsed, second
             </div>
           </div>
         </SheetPanel>
-        <div style={{ height: 8, flex: "none" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "none" }}>
+          <CardTitle meta={barMeta}>Bar by bar</CardTitle>
+          <Cells count={ex.bars} current={currentBar} missed={missedBars} labels={false} />
+        </div>
       </div>
       <BottomBar
         actions={
           <>
-            <Button variant="secondary" size="control" onClick={slower} disabled={phase !== "idle" || tempo <= 40 || paused}>Slower</Button>
-            <Button variant="secondary" size="control" onClick={newExercise} disabled={paused}>New exercise</Button>
-            <Button size="control" onClick={finishBlock} disabled={paused}>{nextTitle ? `Next — ${nextTitle}` : "Finish"}</Button>
+            <Button variant="secondary" size="control" icon="slow_motion_video" onClick={slower} disabled={phase !== "idle" || tempo <= 40 || paused}>Slower</Button>
+            <Button variant="secondary" size="control" icon="refresh" onClick={newExercise} disabled={paused}>New page</Button>
+            <NextStopButton nextTitle={nextTitle} onClick={finishBlock} disabled={paused} />
           </>
         }
       >
-        <div style={{ width: 280, display: "flex", flexDirection: "column", gap: 6 }}>
-          <SectionLabel>CONTINUITY</SectionLabel>
-          <div style={{ height: 8, background: "var(--kc-raised)", borderRadius: 4 }}>
-            <div style={{ width: `${Math.round(Math.max(0, Math.min(1, continuity)) * 100)}%`, height: "100%", background: "var(--kc-mint)", borderRadius: 4 }} />
-          </div>
-          <span style={{ fontSize: 14, color: "var(--kc-ink-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{continuityCopy}</span>
-        </div>
-        <div style={{ display: "flex", gap: 26 }}>
-          <Metric label="NOTES RIGHT" value={phase === "run" ? `${live.right} / ${tl.length}` : last ? `${last.notesRight} / ${last.total}` : "—"} />
-          <Metric label="AHEAD OF BEAT" value={phase === "run" || last ? `${(phase === "run" ? live.aheadMs : last.aheadMs) >= 0 ? "" : "−"}${Math.abs(phase === "run" ? live.aheadMs : last.aheadMs)} ms` : "—"} tone={Math.abs(phase === "run" ? live.aheadMs : last?.aheadMs ?? 0) >= 25 ? "clay" : undefined} />
-          <Metric label="CLEAN RUNS" value={`${cleanCount} / ${PROMOTE_AT}`} tone={cleanCount ? "mint" : undefined} />
-        </div>
+        <StatChip tone="mint" value={phase === "run" ? live.right : last ? last.notesRight : "—"} unit={`/${tl.length}`} label={<>notes<br />right</>} />
+        <StatChip tone="indigo" icon="speed" line1={beat2.line1} line2={beat2.line2} />
+        {cleanCount > 0 && <StatChip tone="sun" icon="star" line1={`${cleanCount} clean run${cleanCount === 1 ? "" : "s"}`} line2={promoted ? `level ${level} now` : `${Math.max(1, PROMOTE_AT - streak)} more to level up`} />}
       </BottomBar>
     </>
   );

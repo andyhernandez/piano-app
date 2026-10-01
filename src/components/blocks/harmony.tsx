@@ -2,7 +2,7 @@
 import * as React from "react";
 import type { BlockProps } from "./types";
 import type { Scale, Triad } from "@/lib/types";
-import { Button, ChordChart, Keyboard, LogTable, Metric, Pill, SectionLabel, SegmentBar, SheetPanel, type ChordBar, type KeyTone, type LogRow } from "@/components/ds";
+import { Button, Instruction, Panel, Pill } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { useAppStore } from "@/lib/store/app-store";
@@ -10,9 +10,11 @@ import { invertTriad, primaryTriads } from "@/lib/music/scales";
 import { chordSymbol, romanToTriad, seventhOf } from "@/lib/music/chords";
 import { pcToMidi, prettyPc } from "@/lib/music/notes";
 import { hashString, pick, seededRandom } from "@/lib/utils/random";
+import { CardTitle, MetronomeDots, NOTE, RoundButton, SMALL } from "./shared/controls";
+import { PlayStrip, type StripTone } from "./shared/play-strip";
 
 /*
- * Harmony (design C2). Two halves, both on the cream chart:
+ * Harmony (D6). Two halves, both on the white chart:
  *   1. Hear it, then find it — the engine plays a chord from the key; the student names it on the chart or plays
  *      it (MIDI, on-screen keys, or a mic check). Naming and playing are both required for the point.
  *   2. The changes — a four-bar progression twice through with the metronome; each change scored on the first
@@ -95,13 +97,13 @@ function makeProgression(scale: Scale, level: number, rng: () => number): Triad[
   return romans.map((r) => romanToTriad(r, scale) ?? scale.triads[0]);
 }
 
-function describe(q: { triad: Triad; inversion?: Inversion; seventh?: boolean }, scale: Scale): string {
+function describe(q: { triad: Triad; inversion?: Inversion; seventh?: boolean }, scale: Scale): React.ReactNode {
   const t = q.triad;
   const fifth = scale.notes[(t.degree - 1 + 4) % 7];
   const quality = t.quality === "major" ? "major" : t.quality === "minor" ? "minor, the third a half step lower" : t.quality === "diminished" ? "diminished, the fifth flattened" : "augmented";
   const inv = q.inversion === 1 ? ", first inversion with the root on top" : q.inversion === 2 ? ", second inversion with the fifth at the bottom" : "";
   const seventh = q.seventh ? ", seventh added" : "";
-  return `Left hand: ${prettyPc(t.root)} and ${prettyPc(fifth)}. ${ORDINAL[t.degree - 1][0].toUpperCase()}${ORDINAL[t.degree - 1].slice(1)} degree of ${prettyPc(scale.key)} — ${quality}${inv}${seventh}.`;
+  return <>Left hand: <b>{prettyPc(t.root)}</b> and <b>{prettyPc(fifth)}</b>. {ORDINAL[t.degree - 1][0].toUpperCase()}{ORDINAL[t.degree - 1].slice(1)} degree of {prettyPc(scale.key)} — {quality}{inv}{seventh}.</>;
 }
 
 function useTimeouts() {
@@ -115,7 +117,24 @@ function useTimeouts() {
   return { after, clear };
 }
 
-export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitle, paused, timeUp, onDone, setPrimaryLabel }: BlockProps) {
+/** A cell on the chart: number top-left, chord symbol big. */
+function ChordCell({ n, chord, state, onClick }: { n: number; chord: string; state: "done" | "current" | "upcoming" | "missed" | "revealed"; onClick?: () => void }) {
+  const look: React.CSSProperties = state === "current"
+    ? { background: "var(--kc-indigo)", color: "#ffffff", boxShadow: "0 4px 0 0 var(--kc-indigo-shadow)" }
+    : state === "done" ? { background: "var(--kc-mint-wash)" }
+    : state === "missed" ? { background: "var(--kc-lilac)", border: "2px solid var(--kc-indigo)" }
+    : state === "revealed" ? { background: "var(--kc-indigo-wash)", border: "3px solid var(--kc-indigo)" }
+    : { background: "var(--kc-base)", border: "2px solid var(--kc-hairline)" };
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag type={onClick ? "button" : undefined} onClick={onClick} className={onClick ? "kc-press" : undefined} style={{ borderRadius: 18, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "10px 14px", boxSizing: "border-box", minHeight: 0, cursor: onClick ? "pointer" : "default", font: "inherit", textAlign: "left", color: "var(--kc-ink)", ...look }}>
+      <span style={{ fontSize: 12, fontWeight: 900, color: state === "current" ? "rgba(255,255,255,.8)" : "var(--kc-ink-faint)" }}>{n}</span>
+      <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 34, fontWeight: 600, lineHeight: 1 }}>{chord}</span>
+    </Tag>
+  );
+}
+
+export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitle, paused, timeUp, onDone, setPrimaryLabel, setMeta }: BlockProps) {
   const { audio, unlock } = useAudio();
   const updateSettings = useAppStore((s) => s.updateSettings);
   const { after, clear } = useTimeouts();
@@ -213,6 +232,11 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
   const firstOnsetRef = React.useRef<number | null>(null);
   const [started, setStarted] = React.useState(false);
 
+  React.useEffect(() => {
+    setMeta?.(phase === "find" ? `Hear it, then find it · ${keyName} ${scale.mode === "major" ? "major" : "minor"} · level ${level}` : <>{progression.map((t) => chordSymbol(t)).join(" · ")} · left hand comps · <span style={{ fontFamily: "var(--kc-font-music)", fontSize: 13 }}>𝅘𝅥</span>{bpm}</>);
+    return () => setMeta?.(null);
+  }, [setMeta, phase, keyName, scale.mode, level, progression, bpm]);
+
   const markBar = React.useCallback((i: number, late: number) => {
     barDoneRef.current = true;
     setMarks((m) => { const n = [...m]; n[i] = { late }; return n; });
@@ -305,122 +329,118 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
   const lastMissIndex = answers.map((a, i) => (a.right ? -1 : i)).filter((i) => i >= 0).pop();
   const revealed = step !== "name";
 
-  const findBars: ChordBar[] = pool.map((t) => ({ chord: chartLabelFor(t, scale, question?.seventh ?? false), current: revealed && !!question && t === question.triad }));
-  const playBars: ChordBar[] = chartChords.map((t, i) => ({ chord: chordSymbol(t), current: running && i === bar, played: marks[i] === "missed" ? false : undefined }));
-
-  const tones: Partial<Record<number, KeyTone>> = {};
+  const tones: Partial<Record<number, StripTone>> = {};
   if (phase === "find" && step === "play" && question) for (const m of foldInto(question.midis, kbFrom, kbTo)) tones[m] = "mint";
   if (phase === "play" && running && bar >= 0) for (const m of foldInto(chartChords[bar].midi, kbFrom, kbTo)) tones[m] = "mint";
   for (const m of held) tones[m] = "mint";
 
-  const rows: LogRow[] = phase === "find"
-    ? questions.map((q, i) => {
-        const a = answers[i];
-        return { cells: [`Q${i + 1}`, a || i === qIndex ? (a || revealed ? q.label : "?") : "—", a ? (a.right ? "RIGHT" : a.named ? `${a.named}, NOT ${q.label}` : "SKIPPED") : "—"], marked: !!a?.right };
-      })
-    : progression.map((t, i) => {
-        const m = marks[i + 4] ?? marks[i];
-        const state = m === null ? "—" : m === "missed" ? "MISSED" : m.late > LATE_MS ? `${m.late} MS LATE` : "CLEAN";
-        return { cells: [`BAR ${i + 1}`, chordSymbol(t), state], marked: m !== null && m !== "missed" && m.late <= LATE_MS };
-      });
-
-  const lede = phase === "find"
-    ? step === "name"
-      ? "Hear it, then find it. Tap the chord on the chart, or play it — root and fifth is enough."
-      : answers[answered - 1]?.right
-        ? `That was ${question?.label}. Now play it — the keys are marked.`
-        : answers[answered - 1]?.named
-          ? `That was ${question?.label}, not ${answers[answered - 1]?.named}. Play it — the keys are marked.`
-          : `That was ${question?.label}. Play it — the keys are marked.`
-    : "Change on the first beat of each bar. Root and fifth is enough — the shape matters more than the voicing.";
+  const instruction = paused
+    ? "Paused."
+    : phase === "find"
+      ? step === "name"
+        ? "Hear it, then find it. Tap the chord on the chart, or play it — root and fifth is enough."
+        : answers[answered - 1]?.right
+          ? `That was ${question?.label}. Now play it — the keys are marked.`
+          : answers[answered - 1]?.named
+            ? `That was ${question?.label}, not ${answers[answered - 1]?.named}. Play it — the keys are marked.`
+            : `That was ${question?.label}. Play it — the keys are marked.`
+      : "Change on the first beat of every bar. Root and fifth is plenty.";
 
   const findNote = answered === 0
-    ? `${ASKED} chords from ${keyName} ${scale.mode === "major" ? "major" : "minor"}. Each one counts when you name it and play it.`
+    ? `${wordCount(ASKED)} chords from ${keyName} ${scale.mode === "major" ? "major" : "minor"}. Each one counts when you name it and play it.`
     : `${wordCount(rightCount)} of ${wordCount(answered)} named.${lastMissIndex !== undefined ? (answers[lastMissIndex].named ? ` The ${questions[lastMissIndex].label} on question ${lastMissIndex + 1} came back as ${answers[lastMissIndex].named}.` : ` Question ${lastMissIndex + 1} was skipped.`) : ""}`;
   const playNote = changes.total === 0
     ? promoted
       ? `${wordCount(ASKED)} of ${wordCount(ASKED)} named. Level ${level + 1} from the next session.`
       : `${wordCount(rightCount)} of ${wordCount(ASKED)} named. Now the changes — twice through the four bars is one chorus.`
-    : `${wordCount(changes.clean)} of ${wordCount(changes.total)} clean.${changes.lastLate !== null && changes.lastLateBar !== null ? ` The change into bar ${(changes.lastLateBar % 4) + 1} came ${changes.lastLate} ms late.` : ""}`;
+    : `${wordCount(changes.clean)} of ${wordCount(changes.total)} clean.${changes.lastLate !== null && changes.lastLateBar !== null ? ` The change into bar ${(changes.lastLateBar % 4) + 1} came late.` : ""}`;
 
   const railChord = phase === "find" ? (revealed && question ? question.label : "?") : bar >= 0 ? chordSymbol(chartChords[bar]) : "—";
-  const railWhere = phase === "find" ? `question ${Math.min(qIndex + 1, ASKED)} of ${ASKED}` : bar >= 0 ? `bar ${(bar % 4) + 1} of 4` : running ? "count in" : "not started";
+  const railWhere = phase === "find" ? `question ${Math.min(qIndex + 1, ASKED)} of ${ASKED}` : bar >= 0 ? `bar ${bar + 1} of ${CHART_BARS}` : running ? "count in" : "not started";
   const railText = phase === "find"
     ? revealed && question ? describe(question, scale) : "Tap the chord on the chart, or play it on the keys."
-    : bar >= 0 ? describe({ triad: chartChords[bar] }, scale) : "Twice through the four bars is one chorus. The keys mark each chord as its bar comes round.";
+    : bar >= 0 ? describe({ triad: chartChords[bar] }, scale) : "Twice through the four bars is one chorus. The chart marks each bar as it comes round.";
 
   const canCheck = inputMode === "mic" && phase === "find" && step === "play";
+  const cellState = (i: number): "done" | "current" | "upcoming" | "missed" => {
+    const m = marks[i];
+    if (running && i === bar) return "current";
+    if (m === "missed") return "missed";
+    if (m !== null) return "done";
+    return "upcoming";
+  };
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px" }}>
-      <div style={{ minHeight: 0, padding: "22px 26px 22px 30px", display: "flex", flexDirection: "column", gap: 14 }}>
-        <p style={{ margin: 0, fontSize: 17, color: "var(--kc-ink-muted)" }}>{lede}</p>
-        <SheetPanel padding={22} style={{ flex: 1, minHeight: 0 }}>
-          <ChordChart bars={phase === "find" ? findBars : playBars} perRow={phase === "find" ? (pool.length <= 4 ? 2 : 3) : 4} cellHeight={96} style={phase === "find" ? { maxWidth: pool.length <= 4 ? 560 : 780 } : undefined} onBar={phase === "find" && step === "name" ? (i) => { void unlock(); answer(chartLabelFor(pool[i], scale, question?.seventh ?? false), false); } : undefined} />
-        </SheetPanel>
-        <Keyboard from={kbFrom} to={kbTo} height={120} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} style={{ flex: "none" }} />
-        <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 22 }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-            <SectionLabel>{phase === "find" ? "Named and played" : "Changes in time"}</SectionLabel>
-            {phase === "find"
-              ? <SegmentBar total={ASKED} filled={answered} current={Math.min(qIndex, ASKED - 1)} height={8} radius={3} />
-              : <SegmentBar total={CHART_BARS} filled={running && bar >= 0 ? bar : 0} current={running && bar >= 0 ? bar : undefined} height={8} radius={3} />}
-            <span style={{ fontSize: 14, color: "var(--kc-ink-muted)" }}>{phase === "find" ? findNote : playNote}</span>
-          </div>
-          {phase === "find" ? (
-            <div style={{ display: "flex", gap: 26, alignItems: "center" }}>
-              <Metric label="Named right" value={`${rightCount} / ${answered}`} tone={answered > 0 && rightCount < answered ? "amber" : undefined} />
-              <Metric label="Level" value={level} />
-              {canCheck && <Button variant="secondary" size="control" icon="hearing" disabled={checking === "listening"} onClick={async () => { setChecking("listening"); const r = await input.verifyChord(question!.midis, 1500); if (r === "heard") { setChecking("idle"); finishPlay(true); } else setChecking("unheard"); }}>{checking === "listening" ? "Listening" : checking === "unheard" ? "Not heard — check again" : "Check"}</Button>}
-              {step === "play" && <Button variant="quiet" size="control" onClick={() => finishPlay(false)}>Move on</Button>}
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: 26, alignItems: "center" }}>
-              <Metric label="Late change" value={changes.lastLate !== null ? `${changes.lastLate} ms` : "—"} tone={changes.lastLate !== null ? "clay" : undefined} />
-              <Metric label="Choruses" value={choruses} />
-              <Button variant={running ? "secondary" : "primary"} size="control" icon={running ? "stop" : "play_arrow"} onClick={toggleChanges}>{running ? "Stop" : started ? "Go again" : "Begin the changes"}</Button>
-            </div>
-          )}
+      <div style={{ minHeight: 0, padding: "22px 26px 22px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <Instruction>{instruction}</Instruction>
+        <div style={{ flex: 1, minHeight: 0, background: "var(--kc-panel)", border: "2px solid var(--kc-border)", borderRadius: 26, boxShadow: "var(--kc-shadow-press-sheet)", padding: 20, display: "grid", gridTemplateColumns: `repeat(${phase === "find" ? Math.min(4, Math.max(2, Math.ceil(pool.length / 2))) : 4}, 1fr)`, gridAutoRows: "1fr", gap: 10, boxSizing: "border-box" }}>
+          {phase === "find"
+            ? pool.map((t, i) => {
+                const label = chordLabel(t, scale, question?.seventh ?? false);
+                const isAnswer = revealed && !!question && t === question.triad;
+                return <ChordCell key={i} n={i + 1} chord={label} state={isAnswer ? "revealed" : "upcoming"} onClick={step === "name" ? () => { void unlock(); answer(label, false); } : undefined} />;
+              })
+            : chartChords.map((t, i) => <ChordCell key={i} n={i + 1} chord={chordSymbol(t)} state={cellState(i)} />)}
         </div>
+        {inputMode === "timer" && <PlayStrip from={kbFrom} to={kbTo} height={96} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} />}
       </div>
 
-      <aside style={{ borderLeft: "1px solid var(--kc-border)", background: "var(--kc-panel)", padding: "26px 24px", display: "flex", flexDirection: "column", gap: 22, minHeight: 0, overflowY: "auto" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <SectionLabel>{phase === "find" ? "The chord you heard" : "The bar you're in"}</SectionLabel>
+      <aside style={{ background: "var(--kc-panel)", borderLeft: "2px solid var(--kc-hairline)", padding: "26px 24px", display: "flex", flexDirection: "column", gap: 20, minHeight: 0, overflowY: "auto" }}>
+        <Panel tone="indigo">
+          <div style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-indigo-shadow)" }}>{phase === "find" ? "The chord you heard" : "The bar you're in"}</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 32, color: "var(--kc-mint)" }}>{railChord}</span>
-            <span style={{ fontSize: 15, color: "var(--kc-ink-muted)" }}>{railWhere}</span>
+            <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 48, fontWeight: 600, lineHeight: 1, color: "var(--kc-indigo)" }}>{railChord}</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "var(--kc-ink-muted)" }}>{railWhere}</span>
           </div>
-          <div style={{ fontSize: 15, color: "var(--kc-ink-muted)", lineHeight: 1.45 }}>{railText}</div>
-        </div>
+          <div style={SMALL}>{railText}</div>
+          {canCheck && <Button variant="secondary" size="pill" icon="hearing" disabled={checking === "listening"} onClick={async () => { setChecking("listening"); const r = await input.verifyChord(question!.midis, 1500); if (r === "heard") { setChecking("idle"); finishPlay(true); } else setChecking("unheard"); }} style={{ alignSelf: "flex-start" }}>{checking === "listening" ? "Listening" : checking === "unheard" ? "Not heard — check again" : "Check with the mic"}</Button>}
+          {phase === "find" && step === "play" && <Button variant="quiet" size="pill" onClick={() => finishPlay(false)} style={{ alignSelf: "flex-start" }}>Move on</Button>}
+        </Panel>
 
-        <div style={{ borderTop: "1px solid var(--kc-border)", paddingTop: 22, display: "flex", flexDirection: "column", gap: 12 }}>
-          <SectionLabel>{phase === "find" ? "Hear it" : "Metronome"}</SectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <CardTitle size={17}>{phase === "find" ? "Hear it" : "Metronome"}</CardTitle>
           {phase === "find" ? (
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 15, color: "var(--kc-ink-muted)" }}>heard {heard}×</span>
-              <Button variant="quiet" size="pill" icon="replay" onClick={() => { void unlock(); if (question) { audio.playChord(question.midis, 1.4, 0.7); setHeard((h) => h + 1); } }}>Hear again</Button>
+              <RoundButton icon="replay" primary label="Hear it again" onClick={() => { void unlock(); if (question) { audio.playChord(question.midis, 1.4, 0.7); setHeard((h) => h + 1); } }} />
+              <div style={SMALL}>Heard {heard}× so far. Hearing it more doesn&apos;t cost anything.</div>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <span style={{ fontFamily: "var(--kc-font-mono)", fontSize: 32 }}>{bpm}</span>
-              <span style={{ fontSize: 15, color: "var(--kc-ink-dim)" }}>bpm</span>
-              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                {[0, 1, 2, 3].map((b) => <span key={b} style={{ width: 10, height: 10, borderRadius: "50%", background: running && beat === b ? "var(--kc-mint)" : "var(--kc-raised)" }} />)}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <RoundButton icon={running ? "pause" : "play_arrow"} primary label={running ? "Stop the changes" : started ? "Go again" : "Begin the changes"} onClick={toggleChanges} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 24, fontWeight: 600, lineHeight: 1 }}>{bpm}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-ink-faint)" }}>bpm</span>
+                  <MetronomeDots beat={running ? beat : null} />
+                </div>
+                <div style={SMALL}>{running ? `Chorus ${choruses + 1} · four bars twice` : started ? `${choruses} chorus${choruses === 1 ? "" : "es"} so far` : "Press play for the click and the changes."}</div>
               </div>
             </div>
           )}
           {phase === "play" && <Button variant="quiet" size="pill" icon="volume_up" onClick={hearChanges} style={{ alignSelf: "flex-start" }}>Hear the changes</Button>}
         </div>
 
-        <div style={{ borderTop: "1px solid var(--kc-border)", paddingTop: 22, display: "flex", flexDirection: "column", gap: 11 }}>
-          <SectionLabel>The form</SectionLabel>
-          <LogTable rows={rows} emphasize={1} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <CardTitle size={17}>{phase === "find" ? "Named and played" : "Changes on time"}</CardTitle>
+          <div style={{ display: "flex", gap: 5 }}>
+            {phase === "find"
+              ? questions.map((q, i) => {
+                  const a = answers[i];
+                  const bg = a ? (a.right ? "var(--kc-mint)" : "var(--kc-lilac)") : i === qIndex ? "var(--kc-indigo)" : "var(--kc-hairline)";
+                  return <span key={i} title={a ? q.label : undefined} style={{ flex: 1, height: 14, borderRadius: 5, background: bg }} />;
+                })
+              : marks.map((m, i) => {
+                  const bg = running && i === bar ? "var(--kc-indigo)" : m === "missed" ? "var(--kc-lilac)" : m !== null ? (m.late <= LATE_MS ? "var(--kc-mint)" : "var(--kc-lilac)") : "var(--kc-hairline)";
+                  return <span key={i} style={{ flex: 1, height: 14, borderRadius: 5, background: bg }} />;
+                })}
+          </div>
+          <div style={NOTE}>{phase === "find" ? findNote : playNote}</div>
         </div>
 
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-          {timeUp && <Pill tone="amber" style={{ alignSelf: "flex-start" }}>Time</Pill>}
-          <Button size="control" onClick={finish} style={{ width: "100%" }}>{nextTitle ? `Next — ${nextTitle}` : "Finish"}</Button>
+          {timeUp && <Pill tone="sun" style={{ alignSelf: "flex-start" }}>Time</Pill>}
+          <Button size="control" icon={nextTitle ? "arrow_forward" : "celebration"} iconAfter={!!nextTitle} onClick={finish} style={{ width: "100%" }}>{nextTitle ? `Next — ${nextTitle}` : "Done for today!"}</Button>
           {phase === "find"
             ? <Button variant="quiet" size="control" style={{ width: "100%" }} onClick={skipQuestion}>Skip this chord</Button>
             : <Button variant="quiet" size="control" style={{ width: "100%" }} onClick={() => setBpm((b) => Math.max(48, b - 8))}>Take it slower</Button>}
@@ -428,10 +448,6 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
       </aside>
     </div>
   );
-}
-
-function chartLabelFor(t: Triad, scale: Scale, seventh: boolean): string {
-  return chordLabel(t, scale, seventh);
 }
 
 const WORDS = ["none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
