@@ -1,4 +1,5 @@
 "use client";
+import { APP_NAME } from "@/lib/brand";
 import * as React from "react";
 import { useAppStore } from "@/lib/store/app-store";
 import { getInput } from "@/lib/input/manager";
@@ -13,7 +14,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   }, []);
   if (!booted) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--kc-ink-dim)", fontSize: 17, fontWeight: 600 }}>KeyCadence</div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--kc-ink-dim)", fontSize: 17, fontWeight: 600 }}>{APP_NAME}</div>
     );
   }
   return <>{children}</>;

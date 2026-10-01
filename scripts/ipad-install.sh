@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build, sign, install and launch KeyCadence on a connected iPad from the command line.
+# Build, sign, install and launch EasyKeys on a connected iPad from the command line.
 # Companion to docs/ipad.md: this is the "Xcode → Run" step without opening Xcode.
 # Assumes `npm run build:static && npx cap sync ios` has already run.
 set -euo pipefail
@@ -30,4 +30,4 @@ echo "→ Installing"
 xcrun devicectl device install app --device "$COREDEVICE" "$APP"
 echo "→ Launching"
 xcrun devicectl device process launch --device "$COREDEVICE" com.andyhernandez.keycadence
-echo "✓ KeyCadence is on the iPad"
+echo "✓ EasyKeys is on the iPad"

@@ -1,8 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 
-/**
- * End-to-end smoke: first launch → onboarding → Today → a full six-block session in timer mode → the record.
- * Each test gets a fresh browser context, so IndexedDB starts empty. No MIDI or microphone in CI.
+/*
+ * End-to-end smoke: first launch → setting up → Today → a full seven-stop session in timer mode → the record.
+ * Runs against the production build (see playwright.config.ts) at the iPad landscape size and a smaller tablet.
  */
 
 function watchErrors(page: Page): string[] {
@@ -14,15 +14,16 @@ function watchErrors(page: Page): string[] {
 async function completeOnboarding(page: Page, name = "Ada") {
   await page.goto("/");
   await expect(page).toHaveURL(/\/onboarding/);
-  // A1 Who is playing.
+  // A1 Who's playing: a name, how long they have played, then continue.
   await page.getByPlaceholder("Name").fill(name);
   await page.getByRole("button", { name: "Adult" }).click();
+  await page.getByRole("button", { name: /1–3 years/i }).click();
   await page.getByRole("button", { name: /continue/i }).click();
-  // A2 Instrument and input: no keyboard in CI, so the timer is the way through.
+  // A2 Your keyboard: no keyboard in CI, so the timer is the way through.
   await page.getByRole("button", { name: /use the timer/i }).click({ timeout: 15_000 });
   // A3 Guided or own plan.
   await page.getByRole("button", { name: /use guided/i }).click();
-  // A4 Weekly target: keep the defaults and skip the skill check.
+  // A4 How often: keep the defaults and skip the skill check.
   await expect(page.getByText(/how often, and for how long/i)).toBeVisible();
   await page.getByRole("button", { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -31,45 +32,48 @@ async function completeOnboarding(page: Page, name = "Ada") {
 test("first launch sets up a profile and lands on Today", async ({ page }) => {
   const errors = watchErrors(page);
   await completeOnboarding(page);
-  await expect(page.getByRole("heading", { name: /start with the c major scale/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /begin practice/i })).toBeVisible();
-  await expect(page.getByText(/timer only/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /hi ada — seven stops/i })).toBeVisible();
+  await expect(page.getByText("Today's path")).toBeVisible();
+  await expect(page.getByRole("button", { name: /start playing/i })).toBeVisible();
+  await expect(page.getByText(/timer only/i).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test("a timer-only session walks all six blocks into the record", async ({ page }) => {
+test("a timer-only session walks all seven stops into the record", async ({ page }) => {
   const errors = watchErrors(page);
   await completeOnboarding(page);
-  await page.getByRole("button", { name: /begin practice/i }).click();
+  await page.getByRole("button", { name: /not now/i }).click();
+  await page.getByRole("button", { name: /start playing/i }).click();
   await expect(page).toHaveURL(/\/session/);
 
-  // 01 Technique → 02 Timing → 03 Sight reading (E2 timer-only page) → 04 Harmony → 05 Pieces → 06 Your own.
-  await expect(page.getByText("Technique", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /next — timing/i }).click();
-  await expect(page.getByText("Timing", { exact: true })).toBeVisible();
+  // Technique → Timing → Ear (needs a keyboard, so it waits) → Sight reading → Harmony → Pieces → Your own.
+  await expect(page.getByText("Technique", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: /next stop/i }).click();
+  await expect(page.getByText("Timing", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: /next stop/i }).click();
+  await expect(page.getByText("Ear", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/plug the keyboard in, or use the microphone/i)).toBeVisible();
   await page.getByRole("button", { name: /next — sight reading/i }).click();
-  await expect(page.getByText("Sight reading", { exact: true })).toBeVisible();
+  await expect(page.getByText("Sight reading", { exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: /i played it through/i }).click();
-  await page.getByRole("button", { name: /next — harmony/i }).click();
-  await expect(page.getByText("Harmony", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /next stop/i }).click();
+  await expect(page.getByText("Harmony", { exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: /next — pieces/i }).click();
-  await expect(page.getByText("Pieces", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /next — your own/i }).click();
-  await expect(page.getByText("Your own", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /^finish$/i }).click();
+  await expect(page.getByText("Pieces", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: /next stop/i }).click();
+  await expect(page.getByText("Your own", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: /done for today/i }).click();
 
-  // C3 Session done.
-  await expect(page.getByText(/session done/i)).toBeVisible();
-  await expect(page.getByText(/six of six blocks/i).first()).toBeVisible();
-  await expect(page.getByText("BLOCK BY BLOCK")).toBeVisible();
-  await page.getByRole("button", { name: /^done$/i }).click();
+  // D8 Session done.
+  await expect(page.getByRole("heading", { name: /all seven stops/i })).toBeVisible();
+  await expect(page.getByText(/seven of seven stops/i).first()).toBeVisible();
+  await page.getByRole("button", { name: /save and finish/i }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: /done for today/i })).toBeVisible();
 
   // The record shows the session.
   await page.goto("/progress");
-  await expect(page.getByText(/recent sessions/i)).toBeVisible();
-  await expect(page.getByText("6/6")).toBeVisible();
+  await expect(page.getByText(/scrapbook, not a score/i)).toBeVisible();
+  await expect(page.getByText(/first session/i).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -77,14 +81,14 @@ test("every screen renders without errors", async ({ page }) => {
   const errors = watchErrors(page);
   await completeOnboarding(page);
   const screens: [string, RegExp][] = [
-    ["/progress", /a record of what happened/i],
+    ["/progress", /scrapbook, not a score/i],
     ["/library", /nothing is locked/i],
     ["/piece?id=twinkle", /lead sheet/i],
-    ["/settings", /every setting here can be changed back/i],
+    ["/settings", /what the app listens to/i],
     ["/household", /behind the code/i],
     ["/household/teacher", /teacher/i],
     ["/teacher", /teacher/i],
-    ["/skill-check", /skill check/i],
+    ["/skill-check", /ear/i],
   ];
   for (const [path, marker] of screens) {
     await page.goto(path);
@@ -95,8 +99,11 @@ test("every screen renders without errors", async ({ page }) => {
 
 test("own plan shows the editable queue", async ({ page }) => {
   await completeOnboarding(page);
-  await page.getByRole("button", { name: /switch to own plan/i }).click();
-  await expect(page.getByText(/add to today/i)).toBeVisible();
-  await expect(page.getByText(/warm-up — c major/i)).toBeVisible();
-  await expect(page.getByText(/play something of your own/i)).toBeVisible();
+  await page.getByRole("button", { name: /not now/i }).click();
+  await page.getByRole("button", { name: /change the plan/i }).click();
+  await expect(page.getByRole("heading", { name: /twenty minutes in c major/i })).toBeVisible();
+  await expect(page.getByText("Technique", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ear", { exact: true })).toBeVisible();
+  await expect(page.getByText("Your own", { exact: true })).toBeVisible();
+  await expect(page.getByText(/of 20 planned/i)).toBeVisible();
 });

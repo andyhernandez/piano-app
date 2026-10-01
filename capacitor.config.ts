@@ -6,9 +6,9 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 const config: CapacitorConfig = {
   appId: "com.andyhernandez.keycadence",
-  appName: "KeyCadence",
+  appName: "EasyKeys",
   webDir: "out",
-  backgroundColor: "#101326",
+  backgroundColor: "#fbf7ef",
   ios: {
     contentInset: "never",
     preferredContentMode: "mobile",
