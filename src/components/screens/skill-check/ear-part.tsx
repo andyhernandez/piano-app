@@ -65,7 +65,7 @@ function stripBlackIndex(midi: number): number | null {
  * shape but misses the notes still counts for something.
  */
 export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult> & { scale: ScaleId }) {
-  const { audio, unlock } = useAudio();
+  const { audio, ready, unlock } = useAudio();
   const scale = React.useMemo(() => buildScale(scaleId), [scaleId]);
   const pool = scale.midiOneOctave;
   const flats = prefersFlats(scaleId);
@@ -118,18 +118,28 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
     },
   });
 
+  // An answer in progress: notes are down, the try is not complete, the phrase is not settled.
+  const midAttempt = captured.length > 0 && captured.length < n && !done;
+
   const play = async () => {
-    if (paused || phase === "playing") return;
+    if (paused || phase === "playing" || midAttempt) return;
     await unlock();
     const total = audio.playSequence(phrase, GAP_SEC, 0.5, 0.8) || n * GAP_SEC;
     setPhase("playing");
     setHeard((h) => h + 1);
-    capturedRef.current = [];
-    setCaptured([]);
-    setAttemptDone(false);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setPhase("answer"), total * 1000 + 250);
   };
+  const playRef = React.useRef(play);
+  React.useEffect(() => { playRef.current = play; });
+
+  // Each phrase plays itself on arrival once audio is unlocked (the tap that opened the check does that on iOS).
+  const autoPlayed = React.useRef(-1);
+  React.useEffect(() => {
+    if (phase !== "idle" || paused || !ready || autoPlayed.current === index) return;
+    autoPlayed.current = index;
+    void playRef.current();
+  }, [phase, paused, ready, index]);
 
   const next = () => {
     if (phase === "playing") return;

@@ -14,6 +14,7 @@ import { blockHeadline } from "../session/words";
 import { AppHeader } from "./app-header";
 import { QueueEditor, rowStates } from "./queue-editor";
 import { TodayRail } from "./today-rail";
+import { openSkillCheck } from "../skill-check/open";
 import { useProfileData } from "./today-data";
 import { weightingReason } from "./today-copy";
 import { words, capitalize } from "./words";

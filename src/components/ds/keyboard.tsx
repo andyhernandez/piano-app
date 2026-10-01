@@ -45,12 +45,12 @@ export function Keyboard({ from = 60, to = 72, tones = {}, height = 132, onNoteO
   const whiteW = 100 / whites.length;
   return (
     <div style={{ width: "100%", height, background: "var(--kc-raised)", border: "1px solid var(--kc-border)", borderRadius: "var(--kc-radius-control)", display: "flex", gap: 3, padding: 5, boxSizing: "border-box", position: "relative", touchAction: "none", userSelect: "none", ...style }} onPointerLeave={() => { for (const id of Array.from(pressed.current.keys())) release(id); }} role="group" aria-label="Keyboard">
-      {whites.map((m) => <div key={m} {...handlers(m)} style={{ flex: 1, background: fill(m, false), borderRadius: "0 0 4px 4px", cursor: disabled ? "default" : "pointer" }} />)}
+      {whites.map((m) => <div key={m} data-midi={m} {...handlers(m)} style={{ flex: 1, background: fill(m, false), borderRadius: "0 0 4px 4px", cursor: disabled ? "default" : "pointer" }} />)}
       <div style={{ position: "absolute", left: 5, right: 5, top: 5, height: blackH, pointerEvents: "none" }}>
         {whites.map((m, i) => {
           const b = m + 1;
           if (b > to || !isBlackKey(b)) return null;
-          return <div key={b} {...handlers(b)} style={{ position: "absolute", left: `calc(${(i + 1) * whiteW}% - 2.2%)`, width: "4.4%", height: "100%", background: fill(b, true), borderRadius: "0 0 4px 4px", pointerEvents: disabled ? "none" : "auto", cursor: "pointer" }} />;
+          return <div key={b} data-midi={b} {...handlers(b)} style={{ position: "absolute", left: `calc(${(i + 1) * whiteW}% - 2.2%)`, width: "4.4%", height: "100%", background: fill(b, true), borderRadius: "0 0 4px 4px", pointerEvents: disabled ? "none" : "auto", cursor: "pointer" }} />;
         })}
       </div>
     </div>
