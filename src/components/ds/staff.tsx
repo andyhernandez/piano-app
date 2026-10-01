@@ -118,7 +118,7 @@ export function Staff({ systems = [{ clef: "treble" }], notes = [], rests = [], 
     ? Array.from({ length: layout.bars - 1 }, (_, i) => i + 1).flatMap((b) => laid.map((_, si) => ({ x: leftPad + b * barWidth, system: si }))).concat(laid.map((_, si) => ({ x: width - 0.358 * em, system: si, type: "final" as const })))
     : [];
   const allBarlines = [...autoBars, ...barlines];
-  const ink = (state: NoteState) => (state === "missed" ? "var(--kc-clay)" : state === "current" ? "var(--kc-mint)" : state === "upcoming" ? "var(--kc-paper-ink-dim)" : "var(--kc-paper-ink)");
+  const ink = (state: NoteState) => (state === "missed" ? "var(--kc-indigo)" : state === "current" ? "var(--kc-indigo)" : state === "upcoming" ? "var(--kc-paper-ink-dim)" : "var(--kc-paper-ink)");
   const placed = notes.map((n) => {
     const sys = laid[n.system ?? 0];
     const value: NoteValue = n.value || "quarter";

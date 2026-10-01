@@ -1,6 +1,6 @@
 import * as React from "react";
 
-/** A 46×26 switch. Mint when on. */
+/** A 56×34 switch. Indigo when on, with a white knob that carries a small hard shadow. */
 export function Toggle({ checked = false, onChange, label, disabled, style }: { checked?: boolean; onChange?: (v: boolean) => void; label: string; disabled?: boolean; style?: React.CSSProperties }) {
   return (
     <button
@@ -10,14 +10,14 @@ export function Toggle({ checked = false, onChange, label, disabled, style }: { 
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange && onChange(!checked)}
+      className="kc-press"
       style={{
-        width: 46, height: 26, flex: "none", borderRadius: 13, boxSizing: "border-box", display: "inline-flex", alignItems: "center",
-        justifyContent: checked ? "flex-end" : "flex-start", padding: checked ? "0 4px" : "0 3px",
-        background: checked ? "var(--kc-mint)" : "var(--kc-base)", border: checked ? "none" : "1px solid var(--kc-border-active)",
-        cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.4 : 1, transition: "background 140ms ease-out", ...style,
+        width: 56, height: 34, flex: "none", borderRadius: 999, boxSizing: "border-box", position: "relative", display: "inline-block", padding: 0,
+        background: checked ? "var(--kc-indigo)" : "var(--kc-toggle-off)", border: "none",
+        cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.45 : 1, ...style,
       }}
     >
-      <span style={{ width: 18, height: 18, borderRadius: "50%", background: checked ? "var(--kc-mint-ink)" : "var(--kc-ink-muted)" }} />
+      <span style={{ position: "absolute", top: 5, left: checked ? 27 : 5, width: 24, height: 24, borderRadius: "50%", background: "#ffffff", boxShadow: "0 2px 0 0 rgba(31,33,64,.18)", transition: "left 120ms ease-out" }} />
     </button>
   );
 }

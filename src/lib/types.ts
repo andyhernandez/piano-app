@@ -76,13 +76,15 @@ export interface SkillProfile {
   assessedAt: string; // ISO datetime
 }
 
-export type BlockType = "scales" | "rhythm" | "reading" | "theory" | "repertoire" | "improv";
+export type BlockType = "scales" | "rhythm" | "ear" | "reading" | "theory" | "repertoire" | "improv";
 
-export const BLOCK_ORDER: BlockType[] = ["scales", "rhythm", "reading", "theory", "repertoire", "improv"];
+/** The seven stops of a session, in order. */
+export const BLOCK_ORDER: BlockType[] = ["scales", "rhythm", "ear", "reading", "theory", "repertoire", "improv"];
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   scales: "Warm-up & Scale Gym",
   rhythm: "Rhythm Lab",
+  ear: "Ear",
   reading: "Sight Reading Launchpad",
   theory: "Theory & Chord Lab",
   repertoire: "Repertoire & Lead Sheets",
@@ -115,6 +117,8 @@ export interface MapProgress {
   chestOpened: boolean;
 }
 
+export type Experience = "starting" | "under-year" | "one-to-three" | "more-than-three" | "returning";
+
 export interface ChildSettings {
   sessionMinutes: number; // 15-60
   practiceDaysPerWeek: number; // default 5
@@ -137,6 +141,8 @@ export interface ChildSettings {
   restDays: number[];
   /** Two bars of click before an exercise that measures timing. */
   countIn: boolean;
+  /** How long the player has played, from setup. Sets where the skill check's reading ladder starts. */
+  experience?: Experience;
   /**
    * Own-plan queue order, persisted from the Today screen. The full ordered list of today's blocks; a type may
    * appear twice (a second Pieces block) or be missing (skipped). Undefined = BLOCK_ORDER.

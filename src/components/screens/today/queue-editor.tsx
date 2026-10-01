@@ -2,7 +2,7 @@
 import * as React from "react";
 import { QueueRow, IconButton, Button, SectionLabel } from "@/components/ds";
 import type { QueueState } from "@/components/ds";
-import type { BlockType, Child, Session } from "@/lib/types";
+import type { BlockWeights, BlockType, Child, Session } from "@/lib/types";
 import { BLOCK_ORDER } from "@/lib/types";
 import { useAppStore } from "@/lib/store/app-store";
 import type { SessionPlan } from "@/lib/store/app-store";
@@ -57,7 +57,7 @@ export function QueueEditor({ child, plan, session }: { child: Child; plan: Sess
     const seconds = { ...plan.blockSeconds };
     seconds[t] = Math.max(60, seconds[t] + delta);
     const total = BLOCK_ORDER.reduce((a, b) => a + seconds[b], 0);
-    const weights = normalize({ scales: seconds.scales / total, rhythm: seconds.rhythm / total, reading: seconds.reading / total, theory: seconds.theory / total, repertoire: seconds.repertoire / total, improv: seconds.improv / total });
+    const weights = normalize(Object.fromEntries(BLOCK_ORDER.map((b) => [b, seconds[b] / total])) as BlockWeights);
     void updateSettings(child.id, { weightsOverride: weights, sessionMinutes: Math.max(5, Math.round(total / 60)) });
   };
 

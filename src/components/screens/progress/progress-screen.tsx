@@ -15,7 +15,7 @@ import { TempoChart } from "./tempo-chart";
 import { progressHeadline, tempoCaption } from "./words";
 
 /** Discipline names as the Progress panel writes them (the kit's labels). */
-const DISCIPLINE_LABEL: Record<BlockType, string> = { reading: "Reading", rhythm: "Timing", scales: "Technique", repertoire: "Pieces", theory: "Harmony", improv: "Own playing" };
+const DISCIPLINE_LABEL: Record<BlockType, string> = { reading: "Reading", rhythm: "Timing", ear: "Ear", scales: "Technique", repertoire: "Pieces", theory: "Harmony", improv: "Own playing" };
 
 const H3: React.CSSProperties = { margin: 0, fontSize: 17, fontWeight: 600 };
 const EMPTY: React.CSSProperties = { margin: 0, fontSize: 14, lineHeight: 1.5, color: "var(--kc-ink-dim)" };

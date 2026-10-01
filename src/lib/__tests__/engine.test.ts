@@ -18,8 +18,15 @@ describe("weights", () => {
     expect(w.reading).toBeGreaterThan(w.rhythm);
     expect(w.rhythm).toBeGreaterThan(w.theory);
   });
+  it("weak ear gets more ear time, and all seven stops share the session", () => {
+    const w = deriveWeights({ ear: 20, eye: 85, pulse: 85, assessedAt: "" });
+    expect(sum(w)).toBeCloseTo(1);
+    expect(Object.keys(w)).toHaveLength(7);
+    expect(w.ear).toBeGreaterThan(deriveWeights({ ear: 90, eye: 85, pulse: 85, assessedAt: "" }).ear);
+    expect(w.ear).toBeGreaterThan(w.reading);
+  });
   it("normalizes and floors", () => {
-    const w = normalize({ scales: 1, rhythm: 0, reading: 0, theory: 0, repertoire: 0, improv: 0 });
+    const w = normalize({ scales: 1, rhythm: 0, ear: 0, reading: 0, theory: 0, repertoire: 0, improv: 0 });
     expect(sum(w)).toBeCloseTo(1);
     for (const b of BLOCK_ORDER) expect(w[b]).toBeGreaterThan(0.05);
   });

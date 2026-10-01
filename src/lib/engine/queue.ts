@@ -46,6 +46,7 @@ export function buildQueue(child: Child, plan: SessionPlan, scaleId?: ScaleId): 
   const rhythm = RHYTHM_LEVELS[Math.max(0, Math.min(9, s.rhythmLevel - 1))];
   const rows: Record<BlockType, Omit<QueueItem, "index" | "duration" | "seconds" | "type">> = {
     scales: { title: `Warm-up — ${keyName}, two octaves`, detail: "Hands separately, then together", settings: ["72BPM"] },
+    ear: { title: "Ear — hear it, play it back, find it on the staff", detail: `Three to five notes in ${keyName.replace(/ (major|minor|harmonic minor)$/, "")}`, settings: [] },
     rhythm: { title: `Timing — ${rhythm.title.toLowerCase()}`, detail: `Level ${s.rhythmLevel} · tap or play`, settings: [`${rhythm.bpm}BPM`, `L${s.rhythmLevel}`] },
     reading: { title: `Sight reading — level ${s.readingLevel}`, detail: `${reading.hands === "together" ? "Hands together" : reading.hands === "alternating" ? "Alternating hands" : reading.hands === "LH" ? "Left hand" : "Right hand"} · ${Math.max(1, READING_PROMOTE_AT - s.noStopStreak)} clean run${READING_PROMOTE_AT - s.noStopStreak === 1 ? "" : "s"} from promotion`, settings: [`${reading.tempo}BPM`, `${reading.bars} BARS`] },
     theory: { title: "Harmony — hear it, then find it", detail: `I, IV, V and vi in ${keyName.replace(/ (major|minor|harmonic minor)$/, "")}`, settings: [`L${s.theoryLevel}`] },

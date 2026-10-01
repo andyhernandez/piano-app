@@ -2,6 +2,7 @@ import type { BlockType } from "@/lib/types";
 import type { BlockComponent } from "./types";
 import { TechniqueBlock } from "./technique";
 import { TimingBlock } from "./timing";
+import { EarBlock } from "./ear";
 import { ReadingBlock } from "./reading";
 import { HarmonyBlock } from "./harmony";
 import { PiecesBlock } from "./pieces";
@@ -12,6 +13,7 @@ export * from "./types";
 export const BLOCK_COMPONENTS: Record<BlockType, BlockComponent> = {
   scales: TechniqueBlock,
   rhythm: TimingBlock,
+  ear: EarBlock,
   reading: ReadingBlock,
   theory: HarmonyBlock,
   repertoire: PiecesBlock,

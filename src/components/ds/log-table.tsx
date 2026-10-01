@@ -2,15 +2,18 @@ import * as React from "react";
 
 export interface LogRow { cells: React.ReactNode[]; marked?: boolean }
 
-/** The mono session log. Columns are spaced by justify-content, not fixed widths. */
+/** The session log. First column is a fixed 72px, the last sits right; rows are divided by a 2px hairline. */
 export function LogTable({ rows, emphasize = 1, style }: { rows: LogRow[]; emphasize?: number; style?: React.CSSProperties }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 7, fontFamily: "var(--kc-font-mono)", fontSize: 12, color: "var(--kc-ink-dim)", textTransform: "uppercase", ...style }}>
+    <div style={{ display: "flex", flexDirection: "column", ...style }}>
       {rows.map((row, r) => (
-        <div key={r} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid var(--kc-border)", paddingBottom: 6 }}>
-          {row.cells.map((cell, c) => (
-            <span key={c} style={{ color: row.marked && c === row.cells.length - 1 ? "var(--kc-mint)" : c === emphasize ? "var(--kc-ink)" : "inherit", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cell}</span>
-          ))}
+        <div key={r} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "2px solid var(--kc-hairline)" }}>
+          {row.cells.map((cell, c) => {
+            const last = c === row.cells.length - 1;
+            return (
+              <span key={c} style={{ width: c === 0 ? 72 : undefined, flex: c === 0 || last ? "none" : 1, marginLeft: last ? "auto" : undefined, textAlign: last ? "right" : "left", fontSize: c === 1 ? 16 : 14, fontWeight: c === 1 ? 800 : 700, color: c === emphasize || row.marked ? "var(--kc-ink)" : "var(--kc-ink-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cell}</span>
+            );
+          })}
         </div>
       ))}
     </div>
