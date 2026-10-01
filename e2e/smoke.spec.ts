@@ -119,19 +119,19 @@ test("the ear check plays each phrase itself and locks replay mid-answer", async
   await expect(page).toHaveURL(/\/skill-check/);
 
   // The first phrase plays on arrival; nobody has to find a play button.
-  await expect(page.getByText("Heard 1×")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/first hearing/i)).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText(/now play it back/i)).toBeVisible({ timeout: 10_000 });
   const replay = page.getByRole("button", { name: /hear it again/i });
   await expect(replay).toBeEnabled();
 
   // One note down: the answer is in progress, so the phrase cannot be replayed until it is finished.
   await page.locator('[data-midi="60"]').click();
-  await expect(page.getByText(/one more note to finish this try/i)).toBeVisible();
+  await expect(page.getByText(/to finish this try/i)).toBeVisible();
   await expect(replay).toBeDisabled();
-  await expect(page.getByRole("button", { name: /skip this phrase/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /skip this one/i })).toBeVisible();
 
   // The second note completes the try; hearing it again is allowed between tries.
   await page.locator('[data-midi="62"]').click();
-  await expect(page.getByText(/you played/i)).toBeVisible();
+  await expect(page.getByText(/that's it|not quite the tune|it was/i)).toBeVisible();
   await expect(replay).toBeEnabled();
 });

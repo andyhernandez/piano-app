@@ -142,7 +142,7 @@ export function TodayScreen() {
             <Button icon="play_arrow" onClick={() => void begin()} disabled={starting || (!next && !inProgress)}>{primaryLabel}</Button>
             {offerCheck && !inProgress ? (
               <>
-                <Button variant="secondary" size="control" onClick={() => router.push("/skill-check")}>Take the skill check</Button>
+                <Button variant="secondary" size="control" onClick={() => openSkillCheck(router.push)}>Take the skill check</Button>
                 <Button variant="quiet" size="control" onClick={() => void notNow()}>Not now</Button>
               </>
             ) : (

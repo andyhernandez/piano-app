@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { openSkillCheck } from "../skill-check/open";
 import { Screen, Panel, SectionLabel, Row, Choice, Toggle, Button, WeekKeys, Avatar, Pill, Rail, RailSection, Small } from "@/components/ds";
 import { useAppStore, useActiveChild } from "@/lib/store/app-store";
 import { useAudio } from "@/lib/hooks/use-audio";
@@ -113,7 +114,7 @@ export function SettingsScreen() {
             ? `Last taken ${dayMonth(child.skillProfile.assessedAt)}. ${profileAge != null && profileAge >= RETAKE_DAYS ? "A new one is due" : `Next one is due ${dayMonth(retakeDue)}`} — or take it now.`
             : "Not taken yet. Five short parts set where every stop starts."}
         </Small>
-        <div><Button variant="secondary" size="pill" icon="replay" onClick={() => router.push("/skill-check")}>{child.skillProfile ? "Take it again" : "Take the skill check"}</Button></div>
+        <div><Button variant="secondary" size="pill" icon="replay" onClick={() => openSkillCheck(router.push)}>{child.skillProfile ? "Take it again" : "Take the skill check"}</Button></div>
       </Panel>
       <SyncPanel />
       <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>

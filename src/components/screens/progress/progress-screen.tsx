@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { openSkillCheck } from "../skill-check/open";
 import { Screen, Panel, Headline, SectionLabel, MeterRow, LogTable, SegmentBar, Button, Icon, Small, keyLabel } from "@/components/ds";
 import type { LogRow } from "@/components/ds";
 import { AppHeader } from "@/components/screens/today/app-header";
@@ -214,12 +215,12 @@ export function ProgressScreen() {
                   <MeterRow label="Timing" value={profile.pulse} suffix={skillWord(profile.pulse)} />
                 </div>
                 <Small>Three figures from the check. They set how the session is weighted; they do not change on their own.</Small>
-                <div><Button variant="secondary" size="pill" onClick={() => router.push("/skill-check")}>Check again</Button></div>
+                <div><Button variant="secondary" size="pill" onClick={() => openSkillCheck(router.push)}>Check again</Button></div>
               </>
             ) : (
               <>
                 <p style={EMPTY}>The skill check takes about four minutes and sets how the session is weighted.</p>
-                <div><Button variant="secondary" size="pill" onClick={() => router.push("/skill-check")}>Take the skill check</Button></div>
+                <div><Button variant="secondary" size="pill" onClick={() => openSkillCheck(router.push)}>Take the skill check</Button></div>
               </>
             )}
           </Panel>

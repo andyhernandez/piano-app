@@ -187,6 +187,7 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
     : done && rows[index].credit >= 0.7 ? `That's it — ${phrase.map(name).join(", ")}.`
     : done ? `It was ${phrase.map(name).join(", ")}. Moving on — that one is a fact, not a problem.`
     : attemptDone ? "Not quite the tune yet. Hear it again if you like, then one more go."
+    : captured.length > 0 && captured.length < n ? `${n - captured.length === 1 ? "One more note" : `${numberWord(n - captured.length).charAt(0).toUpperCase() + numberWord(n - captured.length).slice(1)} more notes`} to finish this try.`
     : heard === 0 ? "I'll play a short tune. Play it back — no page this time. Two goes at each, and there's no wrong answer."
     : `Now play it back. ${n === 2 ? "Two" : numberWord(n).charAt(0).toUpperCase() + numberWord(n).slice(1)} notes.`;
 
@@ -238,7 +239,7 @@ export function EarPart({ scale: scaleId, paused, onDone }: PartProps<EarResult>
       </div>
       <PartBar actions={
         <>
-          {!done && <Button variant="secondary" size="control" icon="replay" disabled={paused || phase === "playing"} onClick={() => void play()}>{heard ? "Hear it again" : "Hear it"}</Button>}
+          {!done && <Button variant="secondary" size="control" icon="replay" disabled={paused || phase === "playing" || midAttempt} onClick={() => void play()}>{heard ? "Hear it again" : "Hear it"}</Button>}
           {done
             ? <Button size="control" iconAfter icon="arrow_forward" disabled={paused} onClick={next}>{last ? "Next — reading" : "Next phrase"}</Button>
             : <Button variant="secondary" size="control" icon="skip_next" disabled={paused || phase === "playing"} onClick={next}>Skip this one</Button>}
