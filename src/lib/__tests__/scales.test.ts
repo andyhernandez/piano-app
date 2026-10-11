@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildScale, degreeOf, degreeToMidi, invertTriad, isInScale, primaryTriads, scaleRunMidi, scaleSlug, parseScaleSlug, spellInScale } from "../music/scales";
 import { DEFAULT_ROADMAP } from "../music/roadmap";
+import { techniqueExercise, hanonForDate } from "../music/exercises";
 import { midiToName, nameToMidi, midiToFreq, freqToNearest } from "../music/notes";
 
 describe("notes", () => {
@@ -86,5 +87,44 @@ describe("scales", () => {
   it("slugs", () => {
     expect(scaleSlug({ key: "Bb", mode: "major" })).toBe("Bb-major");
     expect(parseScaleSlug("A-natural-minor")).toEqual({ key: "A", mode: "natural-minor" });
+  });
+});
+
+describe("technique exercises", () => {
+  const C = buildScale({ key: "C", mode: "major" });
+  const G = buildScale({ key: "G", mode: "major" });
+  it("the scale exercise is the two-octave run with the book fingering", () => {
+    const ex = techniqueExercise("scale", C, "RH");
+    expect(ex.notes).toEqual(scaleRunMidi(C, 4, 2));
+    expect(ex.fingers).toHaveLength(29);
+    expect(ex.pages.map((p) => p.start)).toEqual([0, 14]);
+  });
+  it("Hanon 1 in C opens C E F G A G F E and turns at G5", () => {
+    const ex = techniqueExercise("hanon1", C, "RH");
+    expect(ex.notes.slice(0, 8).map((m) => midiToName(m))).toEqual(["C4", "E4", "F4", "G4", "A4", "G4", "F4", "E4"]);
+    expect(ex.notes.slice(8, 16).map((m) => midiToName(m))).toEqual(["D4", "F4", "G4", "A4", "B4", "A4", "G4", "F4"]);
+    expect(ex.notes.slice(56, 64).map((m) => midiToName(m))).toEqual(["G5", "E5", "D5", "C5", "B4", "C5", "D5", "E5"]);
+    expect(ex.notes[ex.notes.length - 1]).toBe(60);
+    expect(ex.notes).toHaveLength(113);
+    expect(ex.fingers.slice(0, 8)).toEqual([1, 2, 3, 4, 5, 4, 3, 2]);
+    expect(ex.fingers.slice(56, 64)).toEqual([5, 4, 3, 2, 1, 2, 3, 4]);
+    expect(ex.pages[ex.pages.length - 1]).toEqual({ start: 112, count: 1, label: "BACK", value: "whole" });
+  });
+  it("Hanon 2 keeps the book's fingers and the left hand mirrors them", () => {
+    const rh = techniqueExercise("hanon2", C, "RH");
+    expect(rh.notes.slice(0, 8).map((m) => midiToName(m))).toEqual(["C4", "E4", "A4", "G4", "F4", "G4", "F4", "E4"]);
+    expect(rh.fingers.slice(0, 8)).toEqual([1, 2, 5, 4, 3, 4, 3, 2]);
+    const lh = techniqueExercise("hanon2", C, "LH");
+    expect(lh.fingers.slice(0, 8)).toEqual([5, 4, 1, 2, 3, 2, 3, 4]);
+    expect(lh.notes[0]).toBe(36);
+  });
+  it("Hanon in G major uses F sharp", () => {
+    const ex = techniqueExercise("hanon1", G, "RH");
+    expect(ex.notes.slice(0, 5).map((m) => midiToName(m))).toEqual(["G4", "B4", "C5", "D5", "E5"]);
+    expect(ex.notes).toContain(78); // F#5 from the group that starts on A
+  });
+  it("the two Hanon figures alternate by day", () => {
+    expect(hanonForDate("2026-10-11")).not.toBe(hanonForDate("2026-10-12"));
+    expect(hanonForDate("2026-10-11")).toBe(hanonForDate("2026-10-13"));
   });
 });

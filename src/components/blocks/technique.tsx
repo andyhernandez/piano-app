@@ -6,7 +6,8 @@ import type { NoteState, StaffNote, StaffRest } from "@/components/ds";
 import { BottomBar, Button, Icon, Instruction, Pill, SheetPanel, Staff, StatChip, Tempo, keyLabel, keySignatureFor, midiToStep } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
-import { prefersFlats, scaleRunMidi } from "@/lib/music/scales";
+import { prefersFlats } from "@/lib/music/scales";
+import { EXERCISE_ORDER, EXERCISE_TITLES, hanonForDate, techniqueExercise, type ExerciseId, type Hand } from "@/lib/music/exercises";
 import { midiToName } from "@/lib/music/notes";
 import { scoreScaleRun } from "@/lib/engine/scoring";
 import { startBeatClock, meanSd } from "./shared/beat-clock";
@@ -14,16 +15,22 @@ import { CARD, CardTitle, MetronomeDots, NOTE, NextStopButton, PAGE, RecordContr
 import { PlayStrip, type StripTone } from "./shared/play-strip";
 
 /*
- * Technique (D1). The scale of the week, two octaves up and back, one run at a time: right hand, left hand,
- * then hands together. The click counts in when asked; the staff shows the run with fingerings. Each run is
- * measured for evenness (the interval between keys), the tempo that was actually held, and whether it was
- * clean — the figure the Progress chart plots. The finger chart shows which finger lands heavier.
+ * Technique (D1). The scale of the week, two octaves up and back, then a Hanon figure in the same key, one run
+ * at a time: right hand, left hand, then hands together. The click counts in when asked; the staff shows the
+ * run with fingerings. Each run is measured for evenness (the interval between keys), the tempo that was
+ * actually held, and whether it was clean — the figure the Progress chart plots. The finger chart shows which
+ * finger lands heavier. The stop's card switches between the scale and the two Hanon figures at any time.
  */
 
-type HandChoice = "RH" | "LH" | "both";
+type HandChoice = Hand;
 type Phase = "idle" | "countin" | "run";
 type Report = "clean" | "mostly" | "stumbled";
-const PLAN: HandChoice[] = ["RH", "LH", "both", "both"];
+interface Step { exercise: ExerciseId; hand: HandChoice }
+/** The scale hands apart then together, then the day's Hanon figure the same way. */
+function planFor(hanon: ExerciseId): Step[] {
+  return [{ exercise: "scale", hand: "RH" }, { exercise: "scale", hand: "LH" }, { exercise: "scale", hand: "both" }, { exercise: hanon, hand: "RH" }, { exercise: hanon, hand: "LH" }, { exercise: hanon, hand: "both" }];
+}
+const SLOTS = 16;
 const COUNT_IN_BEATS = 8;
 const STAFF_W = 1040;
 const LAYOUT = { bars: 2, beatsPerBar: 4, left: 190, right: 40 };
@@ -31,6 +38,7 @@ const FLASH_MS = 400;
 const ORDINAL = ["first", "second", "third", "fourth", "fifth"];
 
 interface RunLog {
+  exercise: ExerciseId;
   hand: HandChoice;
   bpm: number;
   score: MidiScore | null;
@@ -45,18 +53,6 @@ interface RunLog {
 }
 
 const handWord = (h: HandChoice) => (h === "RH" ? "right hand" : h === "LH" ? "left hand" : "hands together");
-const handTitle = (h: HandChoice) => (h === "RH" ? "Right hand" : h === "LH" ? "Left hand" : "Hands together");
-
-/** The 29 notes of the run for a hand. Hands together is measured on the right hand; the left is heard, not scored. */
-function runFor(scale: BlockProps["scale"], hand: HandChoice): number[] {
-  return scaleRunMidi(scale, hand === "LH" ? 2 : 4, 2);
-}
-
-/** Finger for each note of the run: the two-octave fingering up, then back down. */
-function fingersFor(scale: BlockProps["scale"], hand: HandChoice): number[] {
-  const f = hand === "LH" ? scale.fingeringLH : scale.fingeringRH;
-  return [...f, ...f.slice(0, -1).reverse()];
-}
 
 export function TechniqueBlock({ child, session, scale, inputMode, timeUp, paused, nextTitle, onDone, setMeta, setRecording }: BlockProps) {
   const { audio, unlock } = useAudio();
@@ -64,8 +60,10 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
   const key = keyLabel(scale.key, scale.mode);
   const measured = inputMode !== "timer";
 
+  const plan = React.useMemo(() => planFor(hanonForDate(session.date)), [session.date]);
   const [runs, setRuns] = React.useState<RunLog[]>([]);
-  const [hand, setHand] = React.useState<HandChoice>(PLAN[0]);
+  const [exerciseId, setExerciseId] = React.useState<ExerciseId>(plan[0].exercise);
+  const [hand, setHand] = React.useState<HandChoice>(plan[0].hand);
   const [bpm, setBpm] = React.useState(72);
   const [phase, setPhase] = React.useState<Phase>("idle");
   const [beat, setBeat] = React.useState<number | null>(null);
@@ -74,9 +72,11 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
   const [states, setStates] = React.useState<Map<number, NoteState>>(() => new Map());
   const [flash, setFlash] = React.useState<Partial<Record<number, StripTone>>>({});
   const [wrong, setWrong] = React.useState(0);
+  const rowsRef = React.useRef<HTMLDivElement>(null);
 
-  const run = React.useMemo(() => runFor(scale, hand), [scale, hand]);
-  const fingers = React.useMemo(() => fingersFor(scale, hand), [scale, hand]);
+  const exercise = React.useMemo(() => techniqueExercise(exerciseId, scale, hand), [exerciseId, scale, hand]);
+  const run = exercise.notes;
+  const fingers = exercise.fingers;
   const clef: "treble" | "bass" = hand === "LH" ? "bass" : "treble";
 
   // Mutable round state, never read during render.
@@ -87,19 +87,23 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
   const beatsRef = React.useRef(0);
   const timeouts = React.useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const runRef = React.useRef(run);
+  const exerciseRef = React.useRef(exercise);
   const bpmRef = React.useRef(bpm);
-  React.useEffect(() => { runRef.current = run; bpmRef.current = bpm; });
+  React.useEffect(() => { runRef.current = run; exerciseRef.current = exercise; bpmRef.current = bpm; });
   React.useEffect(() => {
     const set = timeouts.current;
     return () => { for (const id of set) clearTimeout(id); set.clear(); stopClockRef.current?.(); };
   }, []);
 
   React.useEffect(() => {
-    setMeta?.(<>{key} · two octaves · {handWord(hand)} · <Tempo bpm={bpm} /></>);
+    setMeta?.(<>{key} · {exercise.title === "Scale" ? exercise.meta : `${exercise.title} · ${exercise.meta}`} · {handWord(hand)} · <Tempo bpm={bpm} /></>);
     return () => setMeta?.(null);
-  }, [setMeta, key, hand, bpm]);
+  }, [setMeta, key, hand, bpm, exercise]);
 
-  const recorder = useBlockRecorder({ child, session, type: "scales", title: `${key} scale`, setRecording });
+  // Keep the run that is up next in view as the list grows past the card.
+  React.useEffect(() => { rowsRef.current?.querySelector("[data-now]")?.scrollIntoView({ block: "nearest" }); }, [runs.length, phase]);
+
+  const recorder = useBlockRecorder({ child, session, type: "scales", title: exerciseId === "scale" ? `${key} scale` : `${key} · ${exercise.title}`, setRecording });
 
   const later = React.useCallback((fn: () => void, ms: number) => {
     const id = setTimeout(() => { timeouts.current.delete(id); fn(); }, ms);
@@ -132,13 +136,14 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
   const finishRun = React.useCallback((report: Report | null) => {
     stopClock();
     setPhaseBoth("idle");
-    const expected = runRef.current;
+    const ex = exerciseRef.current;
+    const expected = ex.notes;
     const tempo = bpmRef.current;
     const ons = eventsRef.current.filter((e) => e.kind === "on");
-    const fingersNow = fingersFor(scale, hand);
+    const fingersNow = ex.fingers;
     let log: RunLog;
     if (!measured || ons.length < 2) {
-      log = { hand, bpm: tempo, score: null, even: 0, total: expected.length, keyToKeyMs: null, tempoHeld: null, clean: report === "clean", fingers: Array(10).fill(NaN), report };
+      log = { exercise: ex.id, hand, bpm: tempo, score: null, even: 0, total: expected.length, keyToKeyMs: null, tempoHeld: null, clean: report === "clean", fingers: Array(10).fill(NaN), report };
     } else {
       const score = scoreScaleRun(expected, ons, tempo * 2, inputMode);
       const target = 30_000 / tempo; // eighths at the click
@@ -153,18 +158,20 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
         const hop = [0, 1].find((k) => expected[p + k] === ons[i].midi);
         if (hop === undefined) continue;
         p += hop;
-        const octave = p < 15 ? (p < 8 ? 0 : 1) : p < 22 ? 1 : 0;
+        const half = ex.bucket(p);
         const finger = fingersNow[p];
-        if (finger >= 1 && finger <= 5) buckets[octave * 5 + finger - 1].push(intervals[i - 1] - target);
+        if (finger >= 1 && finger <= 5) buckets[half * 5 + finger - 1].push(intervals[i - 1] - target);
         p++;
       }
       const fingerMeans = buckets.map((b) => (b.length ? b.reduce((a, v) => a + v, 0) / b.length : NaN));
-      log = { hand, bpm: tempo, score, even: Math.min(expected.length, even), total: expected.length, keyToKeyMs: Math.round(sd), tempoHeld: mean > 0 ? Math.round(30_000 / mean) : null, clean: score.badge === "clean-scale", fingers: fingerMeans, report };
+      log = { exercise: ex.id, hand, bpm: tempo, score, even: Math.min(expected.length, even), total: expected.length, keyToKeyMs: Math.round(sd), tempoHeld: mean > 0 ? Math.round(30_000 / mean) : null, clean: score.badge === "clean-scale", fingers: fingerMeans, report };
     }
     setRuns((r) => [...r, log]);
     resetRun();
-    setHand(PLAN[Math.min(PLAN.length - 1, runs.length + 1)]);
-  }, [stopClock, setPhaseBoth, scale, hand, measured, inputMode, resetRun, runs.length]);
+    const step = plan[Math.min(plan.length - 1, runs.length + 1)];
+    setHand(step.hand);
+    setExerciseId(step.exercise);
+  }, [stopClock, setPhaseBoth, hand, measured, inputMode, resetRun, runs.length, plan]);
 
   const finishRef = React.useRef(finishRun);
   React.useEffect(() => { finishRef.current = finishRun; });
@@ -226,6 +233,13 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
     resetRun();
   };
 
+  const nextExercise = EXERCISE_ORDER[(EXERCISE_ORDER.indexOf(exerciseId) + 1) % EXERCISE_ORDER.length];
+  const cycleExercise = () => {
+    if (phase !== "idle") return;
+    setExerciseId(nextExercise);
+    resetRun();
+  };
+
   const onKeyOn = (midi: number) => { audio.playNote(midi, 0.5, 0.8); tap.note(midi, "on"); };
   const onKeyOff = (midi: number) => tap.note(midi, "off");
 
@@ -248,6 +262,7 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
         tempoBest,
         runs: runs.length,
         hands: runs.map((r) => r.hand),
+        exercises: runs.map((r) => r.exercise),
         reports: runs.map((r) => r.report),
         unevenFinger: worst?.finger ?? null,
       },
@@ -256,20 +271,26 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
 
   // ---- derived view ----
   const runIdx = runs.length;
-  const upPage = progress < 15;
-  const pageStart = upPage ? 0 : 14;
+  // The page of the run the staff shows: the one the next note falls on, or the last once the run is done.
+  const pageFound = exercise.pages.findIndex((pg) => progress < pg.start + pg.count);
+  const page = exercise.pages[pageFound < 0 ? exercise.pages.length - 1 : pageFound];
+  const pageStart = page.start;
+  const held = page.value === "whole";
   const notes: StaffNote[] = [];
-  for (let k = 0; k < 15; k++) {
+  for (let k = 0; k < page.count; k++) {
     const i = pageStart + k;
     const midi = run[i];
     const st: NoteState = states.get(i) ?? (phase === "run" && i === progress ? "current" : i < progress ? "played" : "upcoming");
-    notes.push({ bar: Math.floor(k / 8), beat: (k % 8) / 2, step: midiToStep(midi, clef, flats), value: "eighth", beam: `b${Math.floor(k / 2)}`, state: phase === "idle" && runIdx === 0 && !states.size ? undefined : st });
+    notes.push({ bar: Math.floor(k / 8), beat: (k % 8) / 2, step: midiToStep(midi, clef, flats), value: page.value, beam: held ? undefined : `b${Math.floor(k / 2)}`, state: phase === "idle" && runIdx === 0 && !states.size ? undefined : st });
   }
-  const rests: StaffRest[] = [{ bar: 1, beat: 3.5, value: "eighth" }];
+  // Rests fill the slots after the last note of the page.
+  const rests: StaffRest[] = held
+    ? [{ bar: 1, beat: 0, value: "whole" }]
+    : Array.from({ length: SLOTS - page.count }, (_, j) => { const k = page.count + j; return { bar: Math.floor(k / 8), beat: (k % 8) / 2, value: "eighth" as const }; });
   const barW = (STAFF_W - LAYOUT.left - LAYOUT.right) / LAYOUT.bars;
   const cur = Math.min(run.length - 1, progress) - pageStart;
-  const region = phase !== "idle" && cur >= 0 && cur < 15 ? [{ bar: Math.floor(cur / 8), beat: (cur % 8) / 2, width: 54 }] : [];
-  const fingerLabels = Array.from({ length: 15 }, (_, k) => ({ x: LAYOUT.left + (Math.floor(k / 8) + ((k % 8) / 2) / 4) * barW + 13, f: fingers[pageStart + k] }));
+  const region = phase !== "idle" && cur >= 0 && cur < page.count ? [{ bar: Math.floor(cur / 8), beat: (cur % 8) / 2, width: 54 }] : [];
+  const fingerLabels = Array.from({ length: page.count }, (_, k) => ({ x: LAYOUT.left + (Math.floor(k / 8) + ((k % 8) / 2) / 4) * barW + 13, f: fingers[pageStart + k] }));
 
   const tones: Partial<Record<number, StripTone>> = {};
   for (const m of run) tones[m] = "wash";
@@ -289,26 +310,27 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
     : phase === "countin"
       ? `Count-in — ${Math.ceil(countLeft / 4)} bar${Math.ceil(countLeft / 4) === 1 ? "" : "s"} of click, then the ${handWord(hand)}.`
       : phase === "run"
-        ? `${handTitle(hand)}, up and back. Next note ${midiToName(run[Math.min(progress, run.length - 1)], flats)}.`
+        ? `${exercise.title}, ${handWord(hand)}. Next note ${midiToName(run[Math.min(progress, run.length - 1)], flats)}.`
         : timeUp
           ? `Time. Finish this run if you're in one, then on to ${nextTitle ?? "the summary"}.`
           : runIdx === 0
-            ? `${handTitle(hand)}, up and back. Listen for one note louder than the rest.`
+            ? `${exercise.title}, ${handWord(hand)}, up and back. Listen for one note louder than the rest.`
             : worst
-              ? `${handTitle(hand)}, up and back. Listen for one note later than the rest — that's the ${ORDINAL[worst.finger - 1]} finger.`
-              : `${handTitle(hand)}, up and back. Same tempo as the last run.`;
+              ? `${exercise.title}, ${handWord(hand)}, up and back. Listen for one note later than the rest — that's the ${ORDINAL[worst.finger - 1]} finger.`
+              : `${exercise.title}, ${handWord(hand)}, up and back. Same tempo as the last run.`;
 
-  const rowCount = Math.max(PLAN.length, runs.length + (phase !== "idle" ? 1 : 0));
+  const rowCount = Math.max(plan.length, runs.length + (phase !== "idle" ? 1 : 0));
   const rows = Array.from({ length: rowCount }, (_, i) => {
     const r = runs[i];
+    const planned = i === runIdx ? exercise.title : EXERCISE_TITLES[plan[Math.min(plan.length - 1, i)].exercise];
     if (r) {
       const text = r.report ? r.report[0].toUpperCase() + r.report.slice(1) : r.score ? `${r.even} of ${r.total} even` : "not measured";
       const best = !!evenBest && evenBest.i === i;
-      return { label: `Run ${i + 1}`, text, best, state: best ? "best" : "done" as const };
+      return { label: `Run ${i + 1}`, ex: EXERCISE_TITLES[r.exercise], text, best, state: best ? "best" : "done" as const };
     }
-    if (i === runIdx && phase !== "idle") return { label: `Run ${i + 1}`, text: "playing", best: false, state: "playing" as const };
-    if (i === runIdx) return { label: `Run ${i + 1}`, text: "next", best: false, state: "next" as const };
-    return { label: `Run ${i + 1}`, text: "—", best: false, state: "later" as const };
+    if (i === runIdx && phase !== "idle") return { label: `Run ${i + 1}`, ex: planned, text: "playing", best: false, state: "playing" as const };
+    if (i === runIdx) return { label: `Run ${i + 1}`, ex: planned, text: "next", best: false, state: "next" as const };
+    return { label: `Run ${i + 1}`, ex: planned, text: "—", best: false, state: "later" as const };
   });
 
   const advice = runs.length === 0
@@ -335,7 +357,7 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
       <div style={PAGE}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Instruction style={{ flex: 1, minWidth: 0 }}>{instruction}</Instruction>
-          <Pill tone={phase === "run" ? "mint" : "neutral"}>{phase === "countin" ? `Count ${countLeft}` : `Run ${Math.min(runIdx + 1, 99)} of ${Math.max(PLAN.length, runIdx + 1)}`}</Pill>
+          <Pill tone={phase === "run" ? "mint" : "neutral"}>{phase === "countin" ? `Count ${countLeft}` : `Run ${Math.min(runIdx + 1, 99)} of ${Math.max(plan.length, runIdx + 1)}`}</Pill>
           <MetronomeDots beat={beat} />
           <TempoControls bpm={bpm} onChange={setBpm} disabled={phase !== "idle"} />
           <RecordControl recording={recorder.recording} supported={recorder.supported} onToggle={() => void recorder.toggle()} />
@@ -357,7 +379,7 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
             {fingerLabels.map((l, i) => (
               <span key={i} style={{ position: "absolute", left: l.x, top: 174, transform: "translateX(-50%)", fontFamily: "var(--kc-font-display)", fontSize: 13, fontWeight: 600, color: states.get(pageStart + i) === "missed" ? "var(--kc-indigo)" : "var(--kc-ink-faint)" }}>{l.f}</span>
             ))}
-            <span style={{ position: "absolute", left: 12, top: 174, fontSize: 12, fontWeight: 900, letterSpacing: "0.06em", color: "var(--kc-ink-faint)" }}>{upPage ? "UP" : "BACK"} · {hand === "LH" ? "LH" : "RH"}</span>
+            <span style={{ position: "absolute", left: 12, top: 174, fontSize: 12, fontWeight: 900, letterSpacing: "0.06em", color: "var(--kc-ink-faint)" }}>{page.label} · {hand === "LH" ? "LH" : "RH"}</span>
           </div>
         </SheetPanel>
         {!measured && <PlayStrip from={kbFrom} to={kbTo} tones={tones} height={84} onNoteOn={onKeyOn} onNoteOff={onKeyOff} disabled={paused} />}
@@ -378,8 +400,8 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
             <div style={worst ? NOTE : SMALL}>{chartCopy}</div>
           </div>
           <div style={{ ...CARD, overflow: "hidden" }}>
-            <CardTitle>This stop</CardTitle>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <CardTitle meta={<Button variant="quiet" size="pill" icon="swap_horiz" onClick={cycleExercise} disabled={phase !== "idle" || paused} style={{ height: 28, padding: "0 8px", fontSize: 14, gap: 5 }}>{EXERCISE_TITLES[nextExercise]} instead</Button>}>This stop</CardTitle>
+            <div ref={rowsRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
               {rows.map((r) => {
                 const look: React.CSSProperties = r.state === "best"
                   ? { background: "var(--kc-mint-wash)" }
@@ -387,15 +409,15 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
                   : r.state === "later" ? { background: "transparent", border: "2px dashed var(--kc-hairline)" }
                   : { background: "var(--kc-panel)", border: "2px solid var(--kc-hairline)" };
                 return (
-                  <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 14, boxSizing: "border-box", ...look }}>
+                  <div key={r.label} data-now={r.state === "next" || r.state === "playing" ? "" : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: 14, boxSizing: "border-box", flex: "none", ...look }}>
                     <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 16, fontWeight: 600, width: 60 }}>{r.label}</span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: r.state === "best" ? "var(--kc-mint-ink)" : "var(--kc-ink-muted)" }}>{r.text}</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: r.state === "best" ? "var(--kc-mint-ink)" : "var(--kc-ink-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><span style={{ color: r.state === "later" ? "var(--kc-ink-faint)" : "var(--kc-ink)" }}>{r.ex}</span> · {r.text}</span>
                     {r.best && <span style={{ marginLeft: "auto" }}><Icon name="star" size={20} color="var(--kc-mint-ink)" /></span>}
                   </div>
                 );
               })}
             </div>
-            <div style={{ ...SMALL, marginTop: "auto" }}>{advice}</div>
+            <div style={{ ...SMALL, flex: "none" }}>{advice}</div>
           </div>
         </div>
       </div>
@@ -417,7 +439,7 @@ export function TechniqueBlock({ child, session, scale, inputMode, timeUp, pause
           </>
         ) : (
           <>
-            <StatChip tone="mint" value={runIdx} unit={`/${PLAN.length}`} label={<>runs<br />played</>} />
+            <StatChip tone="mint" value={runIdx} unit={`/${plan.length}`} label={<>runs<br />played</>} />
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-ink-faint)" }}>How did that run go?</span>
               <div style={{ display: "flex", gap: 6 }}>
