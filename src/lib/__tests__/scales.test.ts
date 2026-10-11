@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildScale, degreeOf, degreeToMidi, invertTriad, isInScale, primaryTriads, scaleRunMidi, scaleSlug, parseScaleSlug, spellInScale } from "../music/scales";
 import { DEFAULT_ROADMAP } from "../music/roadmap";
-import { techniqueExercise, hanonForDate } from "../music/exercises";
+import { techniqueExercise, hanonForDate, compingBar, compingForDate } from "../music/exercises";
 import { midiToName, nameToMidi, midiToFreq, freqToNearest } from "../music/notes";
 
 describe("notes", () => {
@@ -126,5 +126,25 @@ describe("technique exercises", () => {
   it("the two Hanon figures alternate by day", () => {
     expect(hanonForDate("2026-10-11")).not.toBe(hanonForDate("2026-10-12"));
     expect(hanonForDate("2026-10-11")).toBe(hanonForDate("2026-10-13"));
+  });
+});
+
+describe("comping patterns", () => {
+  const C = buildScale({ key: "C", mode: "major" });
+  const names = (bar: number[][]) => bar.flat().map((m) => midiToName(m));
+  it("Hanon on the changes starts the figure on each chord's root", () => {
+    expect(names(compingBar("hanon", C.triads[0], C))).toEqual(["C4", "E4", "F4", "G4", "A4", "G4", "F4", "E4"]);
+    expect(names(compingBar("hanon", C.triads[3], C))).toEqual(["F4", "A4", "B4", "C5", "D5", "C5", "B4", "A4"]);
+    expect(names(compingBar("hanon", C.triads[4], C))).toEqual(["G4", "B4", "C5", "D5", "E5", "D5", "C5", "B4"]);
+  });
+  it("block, broken and arpeggio stay inside the triad", () => {
+    expect(compingBar("block", C.triads[0], C)[0]).toEqual([60, 64, 67]);
+    expect(names(compingBar("broken", C.triads[0], C))).toEqual(["C4", "G4", "E4", "G4", "C4", "G4", "E4", "G4"]);
+    expect(names(compingBar("arpeggio", C.triads[0], C))).toEqual(["C4", "E4", "G4", "C5", "G4", "E4", "C4"]);
+    for (const p of ["block", "hanon", "broken", "arpeggio"] as const) expect(compingBar(p, C.triads[0], C)).toHaveLength(8);
+  });
+  it("the pattern of the day cycles through all four", () => {
+    const seen = new Set(["2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14"].map(compingForDate));
+    expect(seen.size).toBe(4);
   });
 });

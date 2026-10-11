@@ -1,4 +1,4 @@
-import type { Scale } from "../types";
+import type { Scale, Triad } from "../types";
 import { degreeToMidi, scaleRunMidi } from "./scales";
 import { daysBetween } from "../utils/date";
 
@@ -79,4 +79,31 @@ export function techniqueExercise(id: ExerciseId, scale: Scale, hand: Hand): Tec
   for (let s = 0; s < turn * 2; s += PAGE) pages.push({ start: s, count: PAGE, label: s < turn ? "UP" : "BACK", value: "eighth" });
   pages.push({ start: turn * 2, count: 1, label: "BACK", value: "whole" });
   return { id, title: EXERCISE_TITLES[id], meta: "one octave", notes, fingers, pages, bucket: (i) => (i < turn ? 0 : 1) };
+}
+
+/*
+ * The Harmony stop's changes: what the left hand plays in each bar of the progression. Block chords on the
+ * first beat, or a bar of eighths — Hanon's first figure started on the chord's root, a broken (Alberti) chord,
+ * or the arpeggio up and back.
+ */
+
+export type CompPattern = "block" | "hanon" | "broken" | "arpeggio";
+export const COMP_ORDER: CompPattern[] = ["block", "hanon", "broken", "arpeggio"];
+export const COMP_LABELS: Record<CompPattern, string> = { block: "Block", hanon: "Hanon", broken: "Broken", arpeggio: "Arpeggio" };
+export const COMP_TITLES: Record<CompPattern, string> = { block: "Block chords", hanon: "Hanon on the changes", broken: "Broken chords", arpeggio: "Arpeggios" };
+
+/** The pattern a day opens on; the stop can switch. Block chords every fourth day, Hanon the day after. */
+export function compingForDate(dateKey: string): CompPattern {
+  return COMP_ORDER[Math.abs(daysBetween("2026-01-01", dateKey)) % COMP_ORDER.length];
+}
+
+/** One bar of eighths for a chord: the notes in each of the eight slots, an empty slot being a rest. */
+export function compingBar(pattern: CompPattern, triad: Triad, scale: Scale): number[][] {
+  const [r, t, f] = triad.midi;
+  switch (pattern) {
+    case "block": return [[r, t, f], [], [], [], [], [], [], []];
+    case "broken": return [r, f, t, f, r, f, t, f].map((m) => [m]);
+    case "arpeggio": return [[r], [t], [f], [r + 12], [f], [t], [r], []];
+    case "hanon": return HANON.hanon1.figure.map((o) => [degreeToMidi(triad.degree + o, scale, 4)]);
+  }
 }

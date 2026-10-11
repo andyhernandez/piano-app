@@ -2,11 +2,12 @@
 import * as React from "react";
 import type { BlockProps } from "./types";
 import type { Scale, Triad } from "@/lib/types";
-import { Button, Instruction, Panel, Pill } from "@/components/ds";
+import { Button, Choice, Instruction, Panel, Pill } from "@/components/ds";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useInput } from "@/lib/hooks/use-input";
 import { useAppStore } from "@/lib/store/app-store";
-import { invertTriad, primaryTriads } from "@/lib/music/scales";
+import { invertTriad, primaryTriads, spellInScale } from "@/lib/music/scales";
+import { COMP_LABELS, COMP_ORDER, COMP_TITLES, compingBar, compingForDate, type CompPattern } from "@/lib/music/exercises";
 import { chordSymbol, romanToTriad, seventhOf } from "@/lib/music/chords";
 import { pcToMidi, prettyPc } from "@/lib/music/notes";
 import { hashString, pick, seededRandom } from "@/lib/utils/random";
@@ -18,7 +19,9 @@ import { PlayStrip, type StripTone } from "./shared/play-strip";
  *   1. Hear it, then find it — the engine plays a chord from the key; the student names it on the chart or plays
  *      it (MIDI, on-screen keys, or a mic check). Naming and playing are both required for the point.
  *   2. The changes — a four-bar progression twice through with the metronome; each change scored on the first
- *      beat of its bar. Level 1 asks I, IV, V, vi; ii and iii arrive at level 2, inversions at 3, sevenths at 4.
+ *      beat of its bar. The left hand plays block chords, or a bar of eighths on each chord: Hanon's figure from
+ *      the root, a broken chord, or the arpeggio — the day picks one, the chooser under the click switches.
+ *      Level 1 asks I, IV, V, vi; ii and iii arrive at level 2, inversions at 3, sevenths at 4.
  */
 
 const ASKED = 8;
@@ -135,7 +138,7 @@ function useTimeouts() {
 }
 
 /** A cell on the chart: number top-left, chord symbol big. The symbol scales with the cell so a short page never cuts it. */
-function ChordCell({ n, chord, state, size = 34, onClick }: { n: number; chord: string; state: "done" | "current" | "upcoming" | "missed" | "revealed"; size?: number; onClick?: () => void }) {
+function ChordCell({ n, chord, sub, state, size = 34, onClick }: { n: number; chord: string; sub?: string; state: "done" | "current" | "upcoming" | "missed" | "revealed"; size?: number; onClick?: () => void }) {
   const look: React.CSSProperties = state === "current"
     ? { background: "var(--kc-indigo)", color: "#ffffff", boxShadow: "0 4px 0 0 var(--kc-indigo-shadow)" }
     : state === "done" ? { background: "var(--kc-mint-wash)" }
@@ -147,6 +150,7 @@ function ChordCell({ n, chord, state, size = 34, onClick }: { n: number; chord: 
     <Tag type={onClick ? "button" : undefined} onClick={onClick} className={onClick ? "kc-press" : undefined} style={{ borderRadius: 18, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: size >= 26 ? "10px 14px" : "6px 10px", boxSizing: "border-box", minHeight: 0, overflow: "hidden", cursor: onClick ? "pointer" : "default", font: "inherit", textAlign: "left", color: "var(--kc-ink)", ...look }}>
       <span style={{ fontSize: 12, fontWeight: 900, lineHeight: 1, color: state === "current" ? "rgba(255,255,255,.8)" : "var(--kc-ink-faint)" }}>{n}</span>
       <span style={{ fontFamily: "var(--kc-font-display)", fontSize: size, fontWeight: 600, lineHeight: 1 }}>{chord}</span>
+      {sub && <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: state === "current" ? "rgba(255,255,255,.85)" : "var(--kc-ink-muted)" }}>{sub}</span>}
     </Tag>
   );
 }
@@ -166,6 +170,9 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
   const { questions, progression } = setup;
   const pool = React.useMemo(() => poolFor(scale, level), [scale, level]);
   const chartChords = React.useMemo(() => [...progression, ...progression], [progression]);
+  const [pattern, setPattern] = React.useState<CompPattern>(() => compingForDate(session.date));
+  const bars = React.useMemo(() => chartChords.map((t) => compingBar(pattern, t, scale)), [chartChords, pattern, scale]);
+  const noteNames = React.useCallback((bar: number[][]) => bar.flat().map((m) => prettyPc(spellInScale(m, scale))).join(" "), [scale]);
   const tonic = pcToMidi(scale.key, 4);
   const kbFrom = tonic - 5;
   const kbTo = kbFrom + 24;
@@ -248,12 +255,14 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
   const barStartRef = React.useRef(0);
   const barDoneRef = React.useRef(false);
   const firstOnsetRef = React.useRef<number | null>(null);
+  /** Every pitch class played since the bar began: a pattern reaches the chord's notes one at a time. */
+  const barPcsRef = React.useRef<Set<number>>(new Set());
   const [started, setStarted] = React.useState(false);
 
   React.useEffect(() => {
-    setMeta?.(phase === "find" ? `Hear it, then find it · ${keyName} ${scale.mode === "major" ? "major" : "minor"} · level ${level}` : <>{progression.map((t) => chordSymbol(t)).join(" · ")} · left hand comps · <span style={{ fontFamily: "var(--kc-font-music)", fontSize: 13 }}>𝅘𝅥</span>{bpm}</>);
+    setMeta?.(phase === "find" ? `Hear it, then find it · ${keyName} ${scale.mode === "major" ? "major" : "minor"} · level ${level}` : <>{progression.map((t) => chordSymbol(t)).join(" · ")} · left hand · {COMP_TITLES[pattern].toLowerCase()} · <span style={{ fontFamily: "var(--kc-font-music)", fontSize: 13 }}>𝅘𝅥</span>{bpm}</>);
     return () => setMeta?.(null);
-  }, [setMeta, phase, keyName, scale.mode, level, progression, bpm]);
+  }, [setMeta, phase, keyName, scale.mode, level, progression, bpm, pattern]);
 
   const markBar = React.useCallback((i: number, late: number) => {
     barDoneRef.current = true;
@@ -280,7 +289,8 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
       const i = barRef.current;
       if (i < 0 || barDoneRef.current || !running) return;
       if (firstOnsetRef.current === null) firstOnsetRef.current = e.time;
-      if (covers(have, chartChords[i].midi)) markBar(i, Math.max(0, Math.round(firstOnsetRef.current - barStartRef.current)));
+      barPcsRef.current.add(pc(e.midi));
+      if (covers(barPcsRef.current, chartChords[i].midi)) markBar(i, Math.max(0, Math.round(firstOnsetRef.current - barStartRef.current)));
     },
   });
 
@@ -294,6 +304,7 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
       barStartRef.current = performance.now();
       barDoneRef.current = false;
       firstOnsetRef.current = null;
+      barPcsRef.current = new Set();
       setBar(nb);
       if (inputMode === "mic") {
         const midis = chartChords[nb].midi;
@@ -322,8 +333,16 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
   const hearChanges = () => {
     void unlock();
     const barSec = 240 / bpm;
+    const slotSec = barSec / 8;
     const now = audio.now();
-    progression.forEach((t, i) => audio.playChord(t.midi, barSec * 0.9, 0.7, now + i * barSec));
+    bars.slice(0, progression.length).forEach((bar, i) => bar.forEach((notes, k) => {
+      if (notes.length) audio.playChord(notes, pattern === "block" ? barSec * 0.9 : slotSec * 0.9, 0.7, now + i * barSec + k * slotSec);
+    }));
+  };
+
+  const choosePattern = (p: CompPattern) => {
+    setPattern(p);
+    if (running) { setRunning(false); setBeat(-1); }
   };
 
   const finish = () => {
@@ -336,7 +355,7 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
       completed: true,
       skipped: false,
       inputMode,
-      details: { asked, right, level, promoted, played: a.filter((x) => x.played).length, choruses, changesClean: changes.clean, changesTotal: changes.total, worstLateMs: changes.worst, bpm },
+      details: { asked, right, level, promoted, played: a.filter((x) => x.played).length, choruses, changesClean: changes.clean, changesTotal: changes.total, worstLateMs: changes.worst, bpm, pattern },
       midiScore: inputMode !== "timer" && asked > 0 ? { score: Math.round((right / asked) * 100), components: { asked, right, changesClean: changes.clean, changesTotal: changes.total }, badge: null, inputMode } : undefined,
     });
   };
@@ -349,7 +368,7 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
 
   const tones: Partial<Record<number, StripTone>> = {};
   if (phase === "find" && step === "play" && question) for (const m of foldInto(question.midis, kbFrom, kbTo)) tones[m] = "mint";
-  if (phase === "play" && running && bar >= 0) for (const m of foldInto(chartChords[bar].midi, kbFrom, kbTo)) tones[m] = "mint";
+  if (phase === "play" && running && bar >= 0) for (const m of foldInto(bars[bar].flat(), kbFrom, kbTo)) tones[m] = "mint";
   for (const m of held) tones[m] = "mint";
 
   const instruction = paused
@@ -362,7 +381,13 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
           : answers[answered - 1]?.named
             ? `That was ${question?.label}, not ${answers[answered - 1]?.named}. Play it — the keys are marked.`
             : `That was ${question?.label}. Play it — the keys are marked.`
-      : "Change on the first beat of every bar. Root and fifth is plenty.";
+      : pattern === "block"
+        ? "Change on the first beat of every bar. Root and fifth is plenty."
+        : pattern === "hanon"
+          ? "Hanon's figure from each chord's root: eight eighths to the bar, the first on the beat."
+          : pattern === "broken"
+            ? "Root, fifth, third, fifth — twice through, eighths, the first on the beat."
+            : "The chord up and back in eighths, the root on the beat.";
 
   const findNote = answered === 0
     ? `${wordCount(ASKED)} chords from ${keyName} ${scale.mode === "major" ? "major" : "minor"}. Each one counts when you name it and play it.`
@@ -377,7 +402,9 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
   const railWhere = phase === "find" ? `question ${Math.min(qIndex + 1, ASKED)} of ${ASKED}` : bar >= 0 ? `bar ${bar + 1} of ${CHART_BARS}` : running ? "count in" : "not started";
   const railText = phase === "find"
     ? revealed && question ? describe(question, scale) : "Tap the chord on the chart, or play it on the keys."
-    : bar >= 0 ? describe({ triad: chartChords[bar] }, scale) : "Twice through the four bars is one chorus. The chart marks each bar as it comes round.";
+    : bar >= 0
+      ? pattern === "block" ? describe({ triad: chartChords[bar] }, scale) : <>{COMP_TITLES[pattern]} on <b>{chordSymbol(chartChords[bar])}</b>: {noteNames(bars[bar])}. Eighth notes.</>
+      : "Twice through the four bars is one chorus. The chart marks each bar as it comes round.";
 
   const canCheck = inputMode === "mic" && phase === "find" && step === "play";
   // The chart gives way first: its rows shrink and the symbols scale, so the keys below are never cut off.
@@ -404,7 +431,7 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
                 const isAnswer = revealed && !!question && t === question.triad;
                 return <ChordCell key={i} n={i + 1} chord={label} size={chordSize} state={isAnswer ? "revealed" : "upcoming"} onClick={step === "name" ? () => { void unlock(); answer(label, false); } : undefined} />;
               })
-            : chartChords.map((t, i) => <ChordCell key={i} n={i + 1} chord={chordSymbol(t)} size={chordSize} state={cellState(i)} />)}
+            : chartChords.map((t, i) => <ChordCell key={i} n={i + 1} chord={chordSymbol(t)} sub={pattern === "block" ? undefined : noteNames(bars[i])} size={chordSize} state={cellState(i)} />)}
         </div>
         {inputMode === "timer" && <PlayStrip from={kbFrom} to={kbTo} height={96} tones={tones} onNoteOn={(m) => { void unlock(); audio.noteOn(m); tap.note(m, "on"); }} onNoteOff={(m) => { audio.noteOff(m); tap.note(m, "off"); }} />}
       </div>
@@ -441,6 +468,7 @@ export function HarmonyBlock({ child, session, scale, index, inputMode, nextTitl
               </div>
             </div>
           )}
+          {phase === "play" && <Choice size="compact" options={COMP_ORDER} value={pattern} labels={COMP_LABELS} onChange={choosePattern} />}
           {phase === "play" && <Button variant="quiet" size="pill" icon="volume_up" onClick={hearChanges} style={{ alignSelf: "flex-start" }}>Hear the changes</Button>}
         </div>
 
