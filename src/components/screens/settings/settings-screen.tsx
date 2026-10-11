@@ -2,13 +2,16 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { openSkillCheck } from "../skill-check/open";
-import { Screen, Panel, SectionLabel, Row, Choice, Toggle, Button, WeekKeys, Avatar, Pill, Rail, RailSection, Small } from "@/components/ds";
+import { Screen, Panel, SectionLabel, Row, Choice, Toggle, Button, WeekKeys, Avatar, Pill, Rail, RailSection, Small, keyLabel } from "@/components/ds";
 import { useAppStore, useActiveChild } from "@/lib/store/app-store";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { repo } from "@/lib/db/repo";
 import { weekCells } from "@/lib/engine/record";
 import { dateKey, daysBetween } from "@/lib/utils/date";
 import type { InputMode, Session } from "@/lib/types";
+import { PICKABLE_SCALES } from "@/lib/music/roadmap";
+import { parseScaleSlug, scaleSlug } from "@/lib/music/scales";
+import { currentScale } from "@/lib/engine/progression";
 import { AppHeader } from "../today/app-header";
 import { CodePrompt, useCodeLocked } from "../household/code-gate";
 import { Stepper } from "./stepper";
@@ -21,6 +24,8 @@ type Pref = InputMode | "auto";
 const INPUT_LABELS: Record<Pref, string> = { auto: "Auto", midi: "Keys", mic: "Mic", timer: "Timer" };
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const RETAKE_DAYS = 28;
+/** The key chooser: follow the roadmap, or pin one of the keys for this week. */
+const KEY_OPTIONS = ["roadmap", ...PICKABLE_SCALES.map(scaleSlug)];
 
 function restSentence(rest: number[]): string {
   const names = rest.slice().sort().map((i) => DAY_NAMES[i]).filter(Boolean);
@@ -35,6 +40,7 @@ export function SettingsScreen() {
   const parent = useAppStore((s) => s.parent);
   const children = useAppStore((s) => s.children);
   const updateSettings = useAppStore((s) => s.updateSettings);
+  const updateChild = useAppStore((s) => s.updateChild);
   const locked = useCodeLocked("settings");
   const { audio } = useAudio();
   const [today] = React.useState(() => dateKey());
@@ -77,6 +83,10 @@ export function SettingsScreen() {
   };
   const setVolume = (v: number) => { audio.setVolume(v); setSound((o) => ({ volume: v, accent: o?.accent ?? true })); void repo.setKV("sound.volume", v); };
   const setAccent = (a: boolean) => { setSound((o) => ({ volume: o?.volume ?? 0.8, accent: a })); void repo.setKV("sound.accent", a); };
+  const roadmapScale = currentScale({ ...child, scaleOverride: null });
+  const pinned = child.scaleOverride;
+  const keyLabels: Record<string, string> = Object.fromEntries([["roadmap", `Roadmap · ${keyLabel(roadmapScale.key, roadmapScale.mode)}`], ...PICKABLE_SCALES.map((k) => [scaleSlug(k), keyLabel(k.key, k.mode)])]);
+  const pickKey = (v: string) => void updateChild(child.id, { scaleOverride: v === "roadmap" ? null : parseScaleSlug(v) });
   const profileAge = child.skillProfile ? daysBetween(dateKey(new Date(child.skillProfile.assessedAt)), today) : null;
   const retakeDue = child.skillProfile ? new Date(new Date(child.skillProfile.assessedAt).getTime() + RETAKE_DAYS * 86_400_000).toISOString() : null;
 
@@ -193,9 +203,11 @@ export function SettingsScreen() {
                 <Row title="Timing" detail="Quarters to dotted figures.">
                   <Stepper value={s.rhythmLevel} min={1} max={10} onChange={(v) => set({ rhythmLevel: v })} label="Timing level" />
                 </Row>
-                <Row title="Harmony" detail="Primary triads first." last>
+                <Row title="Harmony" detail="Primary triads first.">
                   <Stepper value={s.theoryLevel} min={1} max={5} onChange={(v) => set({ theoryLevel: v })} label="Harmony level" />
                 </Row>
+                <Row title="This week's key" detail={pinned ? `${keyLabel(pinned.key, pinned.mode)} for this week. Once the week's Key is earned, the roadmap picks up from there.` : `${keyLabel(roadmapScale.key, roadmapScale.mode)} from the roadmap. Pin another to work on it this week.`} last />
+                <Choice size="compact" options={KEY_OPTIONS} value={pinned ? scaleSlug(pinned) : "roadmap"} onChange={pickKey} labels={keyLabels} style={{ marginBottom: 6 }} />
               </>
             ))}
             {card("Sound", (

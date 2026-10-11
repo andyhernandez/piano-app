@@ -2,6 +2,7 @@ import type { Child, MapProgress, ScaleId, Session, BadgeId, BadgeAward } from "
 import { DEFAULT_ROADMAP } from "../music/roadmap";
 import { scaleSlug } from "../music/scales";
 import { songsForRegion } from "../music/songs";
+import { weekKey } from "../utils/date";
 
 export function currentScale(child: Child): ScaleId {
   if (child.scaleOverride) return child.scaleOverride;
@@ -40,10 +41,14 @@ export function canCompleteRegion(child: Child): boolean {
 /**
  * Spend a key to complete the current region and unlock the next.
  * Unlocks 2-3 songs from the finished region. Returns mutated copy.
+ *
+ * A pinned key (the household's, or the skill check's starting key) lasts one week: spending the Key releases
+ * it. If it sits on the roadmap the roadmap moves on past it; a detour off the roadmap resumes where it was.
  */
 export function spendKeyAndAdvance(child: Child): { child: Child; unlockedSongs: string[]; nextRegion: string | null } {
   if (child.keys <= 0) return { child, unlockedSongs: [], nextRegion: null };
-  const regionId = currentRegionId(child);
+  const finished = currentScale(child);
+  const regionId = scaleSlug(finished);
   const now = new Date().toISOString();
   const map = child.mapProgress.map((r) => (r.regionId === regionId ? { ...r, status: "complete" as const, completedAt: now } : r));
   const idx = map.findIndex((r) => r.regionId === regionId);
@@ -54,11 +59,13 @@ export function spendKeyAndAdvance(child: Child): { child: Child; unlockedSongs:
   }
   const newSongs = songsForRegion(regionId).map((s) => s.id).filter((id) => !child.unlocks.songs.includes(id)).slice(0, 3);
   const roadmap = child.roadmap.length ? child.roadmap : DEFAULT_ROADMAP;
+  const onRoadmap = roadmap.findIndex((s) => s.key === finished.key && s.mode === finished.mode);
   const next: Child = {
     ...child,
     keys: child.keys - 1,
     mapProgress: map,
-    roadmapIndex: child.scaleOverride ? child.roadmapIndex : Math.min(child.roadmapIndex + 1, roadmap.length - 1),
+    roadmapIndex: onRoadmap >= 0 ? Math.min(onRoadmap + 1, roadmap.length - 1) : child.roadmapIndex,
+    scaleOverride: null,
     unlocks: {
       ...child.unlocks,
       songs: [...child.unlocks.songs, ...newSongs],
@@ -72,6 +79,18 @@ export function spendKeyAndAdvance(child: Child): { child: Child; unlockedSongs:
 }
 
 const GROOVE_UNLOCK_ORDER = ["pop", "waltz", "blues", "lofi"];
+
+/**
+ * Keys earned in earlier weeks are spent now, each moving the roadmap on a key. A Key earned this week waits
+ * for Monday, so the key signature changes with the calendar week, not mid-week. Returns the child unchanged
+ * when there is nothing to spend.
+ */
+export function settleKeys(child: Child, today: string): Child {
+  const held = child.completedWeeks.includes(weekKey(today)) ? 1 : 0;
+  let c = child;
+  while (c.keys > held) c = spendKeyAndAdvance(c).child;
+  return c;
+}
 
 export function hasBadge(child: Child, id: BadgeId): boolean {
   return child.unlocks.badges.some((b) => b.id === id);

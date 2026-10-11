@@ -4,7 +4,7 @@ import { SectionLabel, FormatBadge, Button, Icon, MeterRow, Small, keyLabel } fr
 import type { Assignment, BlockType, BlockWeights, Child, ScaleId, SkillProfile } from "@/lib/types";
 import { BLOCK_ORDER } from "@/lib/types";
 import { SONGS, songById } from "@/lib/music/songs";
-import { DEFAULT_ROADMAP } from "@/lib/music/roadmap";
+import { PICKABLE_SCALES } from "@/lib/music/roadmap";
 import { currentScale } from "@/lib/engine/progression";
 import { deriveWeights, normalize, weightsToPercent } from "@/lib/engine/weights";
 import { DISCIPLINE } from "@/lib/engine/record";
@@ -17,7 +17,6 @@ export interface Draft {
   weightsOverride: BlockWeights | null;
 }
 
-const SCALE_OPTIONS: ScaleId[] = [...DEFAULT_ROADMAP, { key: "A", mode: "harmonic-minor" }, { key: "E", mode: "harmonic-minor" }];
 const same = (a: ScaleId | null, b: ScaleId | null) => !!a && !!b && a.key === b.key && a.mode === b.mode;
 
 export function draftFrom(a: Assignment | null): Draft {
@@ -82,7 +81,7 @@ export function AssignmentEditor({ child, draft, onChange, profile, showProfile 
         {pickingKey && (
           <div style={chooser}>
             <button type="button" style={choice(!draft.scaleOverride)} onClick={() => { set({ scaleOverride: null }); setPickingKey(false); }}>Follow the roadmap ({keyLabel(roadmapScale.key, roadmapScale.mode)})</button>
-            {SCALE_OPTIONS.map((s) => (
+            {PICKABLE_SCALES.map((s) => (
               <button key={`${s.key}-${s.mode}`} type="button" style={choice(same(draft.scaleOverride, s))} onClick={() => { set({ scaleOverride: s }); setPickingKey(false); }}>{keyLabel(s.key, s.mode)}</button>
             ))}
           </div>

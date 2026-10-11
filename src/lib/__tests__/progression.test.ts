@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialMapProgress, spendKeyAndAdvance, currentScale, awardBadge, hasBadge } from "../engine/progression";
+import { initialMapProgress, spendKeyAndAdvance, currentScale, awardBadge, hasBadge, settleKeys } from "../engine/progression";
 import { DEFAULT_ROADMAP } from "../music/roadmap";
 import { emptyStreak } from "../engine/streak";
 import { defaultSettings } from "../store/app-store";
@@ -68,5 +68,38 @@ describe("songs", () => {
     }
     expect(chordSymbol(romanToTriad("V", buildScale({ key: "C", mode: "major" }))!)).toBe("G");
     expect(chordSymbol(romanToTriad("vi", buildScale({ key: "C", mode: "major" }))!)).toBe("Am");
+  });
+});
+
+describe("pinned keys and the weekly settle", () => {
+  const base = () => {
+    const c: Child = {
+      id: "k", parentId: "p", name: "Ada", avatar: "🦊", companion: { species: "clef-cat", name: "Mo", level: 1, outfit: "default" },
+      skillProfile: null, xp: 0, stars: 0, keys: 1, streak: emptyStreak(), roadmapIndex: 1, scaleOverride: null, roadmap: DEFAULT_ROADMAP,
+      mapProgress: initialMapProgress(DEFAULT_ROADMAP), unlocks: { songs: [], outfits: ["default"], mapThemes: ["parchment"], grooves: ["pop"], keyboardSkins: ["classic"], badges: [] },
+      settings: defaultSettings(), createdAt: "", completedWeeks: [], weeklyChallenges: {},
+    };
+    return c;
+  };
+  it("a pinned roadmap key moves the roadmap past it and lets go of the pin", () => {
+    const { child } = spendKeyAndAdvance({ ...base(), scaleOverride: { key: "A", mode: "major" } });
+    expect(child.scaleOverride).toBeNull();
+    expect(currentScale(child)).toEqual({ key: "E", mode: "major" });
+  });
+  it("a pinned detour off the roadmap resumes the roadmap where it was", () => {
+    const { child } = spendKeyAndAdvance({ ...base(), scaleOverride: { key: "A", mode: "harmonic-minor" } });
+    expect(child.scaleOverride).toBeNull();
+    expect(currentScale(child)).toEqual({ key: "G", mode: "major" });
+  });
+  it("settling spends last week's Key and holds this week's", () => {
+    const c = base(); // Monday 2026-10-05 week; today is in the week after
+    const held = settleKeys({ ...c, completedWeeks: ["2026-W42"], keys: 1 }, "2026-10-14");
+    expect(held.keys).toBe(1);
+    expect(currentScale(held)).toEqual({ key: "G", mode: "major" });
+    const spent = settleKeys({ ...c, completedWeeks: ["2026-W41"], keys: 1 }, "2026-10-14");
+    expect(spent.keys).toBe(0);
+    expect(currentScale(spent)).toEqual({ key: "D", mode: "major" });
+    const idle = { ...c, keys: 0 };
+    expect(settleKeys(idle, "2026-10-14")).toBe(idle);
   });
 });

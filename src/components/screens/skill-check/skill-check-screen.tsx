@@ -8,7 +8,7 @@ import { useAudio } from "@/lib/hooks/use-audio";
 import { getInput } from "@/lib/input/manager";
 import { currentScale } from "@/lib/engine/progression";
 import type { ScaleId, SkillProfile } from "@/lib/types";
-import { CheckChrome, PausedPanel, type ChordsResult, type EarResult, type PartId, type PulseResult, type ReadingResult, type ScalesResult } from "./shared";
+import { CheckChrome, PausedPanel, PARTS, type ChordsResult, type EarResult, type PartId, type PulseResult, type ReadingResult, type ScalesResult } from "./shared";
 import { EarPart } from "./ear-part";
 import { ReadingPart } from "./reading-part";
 import { PulsePart } from "./pulse-part";
@@ -81,6 +81,19 @@ export function SkillCheckScreen() {
 
   const leave = () => { getInput().stop(); audio.stopMetronome(); router.push("/"); };
 
+  // Back to an earlier part, from its top. Its result and everything after it are forgotten; the clock keeps going.
+  const goBack = (to: PartId) => {
+    const i = PARTS.indexOf(to);
+    if (i <= 0) setEar(null);
+    if (i <= 1) setReading(null);
+    if (i <= 2) setPulse(null);
+    if (i <= 3) setScales(null);
+    setChords(null);
+    audio.stopMetronome();
+    setPaused(false);
+    setPart(to);
+  };
+
   if (!child) return null;
   const scale = startingScale ?? currentScale(child);
   const start = readingStartFor(child.settings.experience);
@@ -91,7 +104,7 @@ export function SkillCheckScreen() {
         <ResultScreen name={child.name} profile={profile} minutes={child.settings.sessionMinutes} scale={scale} seconds={tookSec} ear={ear} reading={reading} pulse={pulse} scales={scales} chords={chords} onToday={() => router.push("/")} />
       ) : (
         <>
-          <CheckChrome part={part as PartId} seconds={seconds} paused={paused} onPause={() => setPaused((p) => !p)} onClose={leave} />
+          <CheckChrome part={part as PartId} seconds={seconds} paused={paused} onPause={() => setPaused((p) => !p)} onClose={leave} onBack={goBack} />
           {paused ? (
             <PausedPanel hasProfile={!!child.skillProfile} onResume={() => setPaused(false)} onLeave={leave} />
           ) : part === "ear" ? (

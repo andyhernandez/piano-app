@@ -23,25 +23,27 @@ export interface ChordsResult extends ChordsHeard { theoryLevel: number }
 export interface PartProps<T> { paused: boolean; onDone: (r: T) => void }
 
 /**
- * The 78px header of a check part: a round close button, "Skill check", the five part pills (done mint with a
- * check, current indigo, the rest plain), then the clock and a round indigo pause.
+ * The 78px header of a check part: a round close button, a round back button once a part is behind you,
+ * "Skill check", the five part pills (done mint with a check, current indigo, the rest plain), then the clock
+ * and a round indigo pause. A done pill is a button too: tap it to redo that part from the top.
  */
-export function CheckChrome({ part, seconds, paused, onPause, onClose }: { part: PartId; seconds: number; paused: boolean; onPause: () => void; onClose: () => void }) {
+export function CheckChrome({ part, seconds, paused, onPause, onClose, onBack }: { part: PartId; seconds: number; paused: boolean; onPause: () => void; onClose: () => void; onBack?: (to: PartId) => void }) {
   const idx = PARTS.indexOf(part);
+  const prev = idx > 0 ? PARTS[idx - 1] : null;
   const m = Math.floor(seconds / 60), s = Math.floor(seconds % 60);
   return (
     <div style={{ height: 78, flex: "none", display: "flex", alignItems: "center", gap: 18, padding: "0 30px", borderBottom: "2px solid var(--kc-hairline)", background: "var(--kc-panel)" }}>
       <IconButton icon="close" label="Leave the skill check" onClick={onClose} />
+      {prev && onBack && <IconButton icon="arrow_back" label={`Back to ${PART_LABELS[prev]}`} onClick={() => onBack(prev)} />}
       <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 22, fontWeight: 600 }}>Skill check</span>
       <div style={{ display: "flex", gap: 6 }}>
         {PARTS.map((p, i) => {
           const done = i < idx, now = i === idx;
-          return (
-            <span key={p} style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 38, padding: "0 14px", borderRadius: 999, fontSize: 14, fontWeight: 800, background: done ? "var(--kc-mint-wash)" : now ? "var(--kc-indigo)" : "var(--kc-plain-chip)", color: done ? "var(--kc-mint-ink)" : now ? "#ffffff" : "var(--kc-ink-muted)" }}>
-              {done ? <Icon name="check" size={18} /> : <span>{i + 1}</span>}
-              {PART_LABELS[p]}
-            </span>
-          );
+          const style: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, height: 38, padding: "0 14px", borderRadius: 999, fontSize: 14, fontWeight: 800, fontFamily: "inherit", border: "none", background: done ? "var(--kc-mint-wash)" : now ? "var(--kc-indigo)" : "var(--kc-plain-chip)", color: done ? "var(--kc-mint-ink)" : now ? "#ffffff" : "var(--kc-ink-muted)" };
+          const inner = <>{done ? <Icon name="check" size={18} /> : <span>{i + 1}</span>}{PART_LABELS[p]}</>;
+          return done && onBack
+            ? <button key={p} type="button" className="kc-press" title={`Redo ${PART_LABELS[p]}`} onClick={() => onBack(p)} style={{ ...style, cursor: "pointer" }}>{inner}</button>
+            : <span key={p} style={style}>{inner}</span>;
         })}
       </div>
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
