@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "supabase/**",
+    // Design canvas exports from Claude Design, and the Capacitor copy of the static build.
+    "design/**",
+    "ios/**",
   ]),
 ]);
 
