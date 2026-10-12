@@ -22,6 +22,7 @@ export const silentEngine: AudioEngine = {
   grooveRunning: false,
   async unlock() {},
   now: () => (typeof performance !== "undefined" ? performance.now() / 1000 : 0),
+  outputLatencyMs: () => 0,
   playNote() {}, noteOn() {}, noteOff() {}, playChord() {}, playSequence: () => 0,
   click() {}, bell() {}, stinger() {},
   startMetronome() {}, stopMetronome() {}, setMetronomeBpm() {},

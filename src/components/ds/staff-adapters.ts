@@ -72,16 +72,17 @@ export interface StaffLine { systems: StaffSystem[]; notes: StaffNote[]; rests: 
  * Split an exercise into staff lines of `barsPerLine` bars. Each line is one Staff render.
  * `states` maps note index (into exercise.notes) to a display state.
  */
-export function exerciseToLines(ex: Exercise, scale: Scale, opts: { barsPerLine?: number; states?: Map<number, NoteState>; lhChord?: boolean } = {}): StaffLine[] {
+export function exerciseToLines(ex: Exercise, scale: Scale, opts: { barsPerLine?: number; states?: Map<number, NoteState>; lhChord?: boolean; tops?: { treble: number; bass: number } } = {}): StaffLine[] {
   const barsPerLine = opts.barsPerLine ?? 4;
+  const tops = opts.tops ?? { treble: 44, bass: 180 };
   const flats = prefersFlats(scale);
   const grand = ex.hands === "together" || ex.hands === "alternating";
   const lines: StaffLine[] = [];
   const beamCounter = { n: 0 };
   for (let first = 0; first < ex.bars; first += barsPerLine) {
     const bars = Math.min(barsPerLine, ex.bars - first);
-    const trebleSys: StaffSystem = { clef: ex.hands === "LH" ? "bass" : "treble", top: 44, keySignature: keySignatureFor(scale, ex.hands === "LH" ? "bass" : "treble"), timeSignature: first === 0 ? [ex.timeSig[0], ex.timeSig[1]] : undefined, timeLeft: 132 };
-    const systems: StaffSystem[] = grand ? [trebleSys, { clef: "bass", top: 180, keySignature: keySignatureFor(scale, "bass"), timeSignature: first === 0 ? [ex.timeSig[0], ex.timeSig[1]] : undefined, timeLeft: 132 }] : [trebleSys];
+    const trebleSys: StaffSystem = { clef: ex.hands === "LH" ? "bass" : "treble", top: tops.treble, keySignature: keySignatureFor(scale, ex.hands === "LH" ? "bass" : "treble"), timeSignature: first === 0 ? [ex.timeSig[0], ex.timeSig[1]] : undefined, timeLeft: 132 };
+    const systems: StaffSystem[] = grand ? [trebleSys, { clef: "bass", top: tops.bass, keySignature: keySignatureFor(scale, "bass"), timeSignature: first === 0 ? [ex.timeSig[0], ex.timeSig[1]] : undefined, timeLeft: 132 }] : [trebleSys];
     const notes: StaffNote[] = [];
     const rests: StaffRest[] = [];
     // Beam eighths that fall within the same beat pair.

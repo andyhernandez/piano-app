@@ -9,7 +9,7 @@ describe("repo", () => {
   it("stores and queries sessions by date", async () => {
     const mk = (id: string, date: string, completed = true): Session => ({
       id, childId: "k1", date, startedAt: `${date}T10:00:00Z`, endedAt: null, scale: { key: "C", mode: "major" },
-      weights: { scales: 0.2, rhythm: 0.15, reading: 0.2, theory: 0.15, repertoire: 0.2, improv: 0.1 }, plannedMinutes: 20, inputMode: "timer",
+      weights: { scales: 0.18, rhythm: 0.14, ear: 0.1, reading: 0.18, theory: 0.13, repertoire: 0.17, improv: 0.1 }, plannedMinutes: 20, inputMode: "timer",
       blocks: [], durationSec: 1200, completed, xpEarned: 0, starsEarned: 0,
     });
     await repo.putSession(mk("a", "2026-03-02"));

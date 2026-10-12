@@ -6,13 +6,14 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 const config: CapacitorConfig = {
   appId: "com.andyhernandez.keycadence",
-  appName: "KeyCadence",
+  appName: "EasyKeys",
   webDir: "out",
-  backgroundColor: "#101326",
+  backgroundColor: "#fbf7ef",
   ios: {
     contentInset: "never",
     preferredContentMode: "mobile",
-    // The app is landscape-first; the status bar sits over the 72px header like the PWA.
+    // The app is landscape-first and hides the iOS status bar (Info.plist UIStatusBarHidden) so the clock and
+    // battery never sit on top of the 72px header's buttons.
     scrollEnabled: false,
     allowsLinkPreview: false,
   },

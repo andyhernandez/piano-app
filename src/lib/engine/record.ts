@@ -2,10 +2,11 @@ import type { BlockType, Child, ScaleId, Session } from "../types";
 import { BLOCK_ORDER } from "../types";
 import { dateKey, weekDays, weekKey, addDays, parseDateKey, daysBetween } from "../utils/date";
 
-/** The six disciplines in the design's language. */
+/** The seven disciplines in the design's language. */
 export const DISCIPLINE: Record<BlockType, { title: string; short: string; label: string }> = {
   scales: { title: "Technique", short: "Warm up", label: "TECHNIQUE" },
   rhythm: { title: "Timing", short: "Timing", label: "TIMING" },
+  ear: { title: "Ear", short: "Ear", label: "EAR" },
   reading: { title: "Sight reading", short: "Reading", label: "READING" },
   theory: { title: "Harmony", short: "Harmony", label: "HARMONY" },
   repertoire: { title: "Pieces", short: "Pieces", label: "PIECES" },

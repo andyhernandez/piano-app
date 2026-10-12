@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { deriveWeights, blockDurations, normalize, BASE_WEIGHTS } from "../engine/weights";
 import { emptyStreak, recordPractice, reconcile, grantFreeze, MAX_FREEZES } from "../engine/streak";
 import { companionLevel, xpToNextLevel } from "../engine/xp";
-import { scoreTiming, scoreScaleRun, scoreReading, lcsLength, scoreRhythm } from "../engine/scoring";
+import { scoreTiming, scoreScaleRun, scoreReading, lcsLength, scoreRhythm, alignTaps, timingWindowMs } from "../engine/scoring";
 import { generateExercise } from "../generator/sightreading";
 import { BLOCK_ORDER, type NoteEvent } from "../types";
 import { addDays } from "../utils/date";
@@ -18,8 +18,15 @@ describe("weights", () => {
     expect(w.reading).toBeGreaterThan(w.rhythm);
     expect(w.rhythm).toBeGreaterThan(w.theory);
   });
+  it("weak ear gets more ear time, and all seven stops share the session", () => {
+    const w = deriveWeights({ ear: 20, eye: 85, pulse: 85, assessedAt: "" });
+    expect(sum(w)).toBeCloseTo(1);
+    expect(Object.keys(w)).toHaveLength(7);
+    expect(w.ear).toBeGreaterThan(deriveWeights({ ear: 90, eye: 85, pulse: 85, assessedAt: "" }).ear);
+    expect(w.ear).toBeGreaterThan(w.reading);
+  });
   it("normalizes and floors", () => {
-    const w = normalize({ scales: 1, rhythm: 0, reading: 0, theory: 0, repertoire: 0, improv: 0 });
+    const w = normalize({ scales: 1, rhythm: 0, ear: 0, reading: 0, theory: 0, repertoire: 0, improv: 0 });
     expect(sum(w)).toBeCloseTo(1);
     for (const b of BLOCK_ORDER) expect(w[b]).toBeGreaterThan(0.05);
   });
@@ -105,6 +112,25 @@ describe("scoring", () => {
     expect(missing.misses).toBe(2);
     expect(missing.score).toBeLessThan(60);
     expect(scoreTiming(exp, [...exp, 250, 750, 1250]).extras).toBe(3);
+  });
+  it("alignTaps removes a constant offset but keeps the shape", () => {
+    const exp = [0, 500, 1000, 1500, 2000, 2500];
+    const late = exp.map((t) => t + 90);
+    const a = alignTaps(exp, late);
+    expect(a.offsetMs).toBeCloseTo(90);
+    expect(a.actual.map((t) => Math.round(t))).toEqual(exp);
+    expect(scoreTiming(exp, a.actual).hits).toBe(6);
+    // A single wobbly tap is not an offset.
+    const wobble = [0, 500, 1000, 1500, 2000, 2700];
+    expect(alignTaps(exp, wobble).offsetMs).toBe(0);
+    // The correction is capped so a round that is simply off the beat still reads as off.
+    expect(alignTaps(exp, exp.map((t) => t + 240)).offsetMs).toBe(150);
+    expect(alignTaps(exp, [0]).offsetMs).toBe(0);
+  });
+  it("timing window is wider for beats than for sixteenths", () => {
+    expect(timingWindowMs([0, 857, 1714])).toBe(150);
+    expect(timingWindowMs([0, 197, 394])).toBe(120);
+    expect(timingWindowMs([])).toBe(150);
   });
   it("rhythm badge only on a clean run", () => {
     const exp = [0, 500, 1000, 1500, 2000];

@@ -74,15 +74,40 @@ export interface SkillProfile {
   eye: number;
   pulse: number;
   assessedAt: string; // ISO datetime
+  /** Scales heard in the skill check's Scales part (B4), most recent last. */
+  scales?: ScaleHeard[];
+  /** Chords heard in the skill check's Chords part (B5). */
+  chords?: ChordsHeard;
 }
 
-export type BlockType = "scales" | "rhythm" | "reading" | "theory" | "repertoire" | "improv";
+/** One scale played in the skill check: what it was, which hand, how fast and how even. */
+export interface ScaleHeard {
+  key: PitchClass;
+  mode: ScaleMode;
+  hand: "RH" | "LH" | "both";
+  bpm: number;
+  /** Standard deviation of the note-to-note gap, ms. Lower is more even. */
+  evenMs: number;
+  /** Set when the player said so on the timer rather than playing it. */
+  selfReported?: boolean;
+}
 
-export const BLOCK_ORDER: BlockType[] = ["scales", "rhythm", "reading", "theory", "repertoire", "improv"];
+/** Chords heard in the skill check, as names ("C major"). */
+export interface ChordsHeard {
+  heard: string[];
+  /** Set when the answers came from the timer's three questions, not a keyboard. */
+  selfReported?: boolean;
+}
+
+export type BlockType = "scales" | "rhythm" | "ear" | "reading" | "theory" | "repertoire" | "improv";
+
+/** The seven stops of a session, in order. */
+export const BLOCK_ORDER: BlockType[] = ["scales", "rhythm", "ear", "reading", "theory", "repertoire", "improv"];
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   scales: "Warm-up & Scale Gym",
   rhythm: "Rhythm Lab",
+  ear: "Ear",
   reading: "Sight Reading Launchpad",
   theory: "Theory & Chord Lab",
   repertoire: "Repertoire & Lead Sheets",
@@ -115,6 +140,8 @@ export interface MapProgress {
   chestOpened: boolean;
 }
 
+export type Experience = "starting" | "under-year" | "one-to-three" | "more-than-three" | "returning";
+
 export interface ChildSettings {
   sessionMinutes: number; // 15-60
   practiceDaysPerWeek: number; // default 5
@@ -137,6 +164,10 @@ export interface ChildSettings {
   restDays: number[];
   /** Two bars of click before an exercise that measures timing. */
   countIn: boolean;
+  /** How long the player has played, from setup. Sets where the skill check's reading ladder starts. */
+  experience?: Experience;
+  /** Starting tempo for the technique stop, from the scale played in the skill check. */
+  techniqueTempo?: number;
   /**
    * Own-plan queue order, persisted from the Today screen. The full ordered list of today's blocks; a type may
    * appear twice (a second Pieces block) or be missing (skipped). Undefined = BLOCK_ORDER.
@@ -146,6 +177,8 @@ export interface ChildSettings {
   extraBlocks?: BlockType[];
   /** Pieces the player put into today's Pieces block from the Library ("Add to today"). */
   pinnedSongIds?: string[];
+  /** YouTube video ids the parent pasted for play-along songs in "Your own", by jam-song id. */
+  jamVideos?: Record<string, string>;
 }
 
 /** What a linked teacher receives from this profile. */

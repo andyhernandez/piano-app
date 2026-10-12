@@ -33,3 +33,10 @@ export class Emitter {
 export function nowMs(): number {
   return typeof performance !== "undefined" ? performance.now() : Date.now();
 }
+
+/** When a DOM event happened, in the performance.now() domain: its own timestamp when sane, else now. */
+export function eventTimeMs(e: { timeStamp?: number }): number {
+  const now = nowMs();
+  const t = e.timeStamp;
+  return typeof t === "number" && t > 0 && now - t >= 0 && now - t < 1000 ? t : now;
+}

@@ -18,6 +18,8 @@ export interface AudioEngine {
   readonly ready: boolean;
   /** Current time on the audio clock (seconds). */
   now(): number;
+  /** How long after its scheduled time a sound actually leaves the speaker (ms). 0 when unknown. */
+  outputLatencyMs(): number;
   /** Play a note. duration in seconds. velocity 0-1. */
   playNote(midi: number, duration?: number, velocity?: number, when?: number): void;
   noteOn(midi: number, velocity?: number): void;

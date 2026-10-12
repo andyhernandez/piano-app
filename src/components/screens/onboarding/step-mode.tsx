@@ -1,74 +1,67 @@
 "use client";
 import * as React from "react";
-import { Button, CheckItem, Headline, Pill, SectionLabel, keyLabel } from "@/components/ds";
+import { ActionNote, Button, CheckItem, Headline, Pill, keyLabel } from "@/components/ds";
 import type { ScaleId } from "@/lib/types";
 import { StepActions, capitalize, numberWord } from "./chrome";
 
 type Mode = "guided" | "own";
 
-/** A3 · Guided or own plan. Two cards, one engine. */
+/** A3 · Guided or own plan. Two big cards, one engine. The chosen one sits on the indigo wash with a 3px border. */
 export function StepMode({ mode, onMode, scale, minutes, onContinue }: { mode: Mode; onMode: (m: Mode) => void; scale: ScaleId; minutes: number; onContinue: () => void }) {
   const key = keyLabel(scale.key, scale.mode);
   const card = (m: Mode): React.CSSProperties => ({
-    background: mode === m ? "var(--kc-mint-wash)" : "var(--kc-panel)", border: mode === m ? "1.5px solid var(--kc-mint)" : "1px solid var(--kc-border)", borderRadius: 11, padding: "24px 26px",
-    display: "flex", flexDirection: "column", gap: 16, minHeight: 0, textAlign: "left", cursor: "pointer", color: "var(--kc-ink)", fontFamily: "var(--kc-font-sans)", boxSizing: "border-box",
+    borderRadius: 24, padding: "24px 26px", display: "flex", flexDirection: "column", gap: 14, minHeight: 0, textAlign: "left", cursor: "pointer", color: "var(--kc-ink)", fontFamily: "var(--kc-font-sans)", boxSizing: "border-box",
+    ...(mode === m ? { background: "var(--kc-indigo-wash)", border: "3px solid var(--kc-indigo)" } : { background: "var(--kc-panel)", border: "2px solid var(--kc-border)", boxShadow: "var(--kc-shadow-press)" }),
   });
-  const preview = (m: Mode): React.CSSProperties => ({ marginTop: "auto", background: "var(--kc-base)", border: mode === m ? "1px solid var(--kc-mint-edge)" : "1px solid var(--kc-border)", borderRadius: 10, padding: "16px 18px" });
+  const preview = (m: Mode): React.CSSProperties => ({ marginTop: "auto", background: "var(--kc-panel)", border: mode === m ? "2px solid var(--kc-lilac)" : "2px solid var(--kc-border)", borderRadius: 18, padding: "14px 18px" });
+  const label: React.CSSProperties = { fontSize: 13, fontWeight: 900, letterSpacing: ".06em", color: "var(--kc-ink-faint)" };
+  const title: React.CSSProperties = { fontFamily: "var(--kc-font-display)", fontSize: 20, fontWeight: 600, marginTop: 4 };
+  const sub: React.CSSProperties = { fontSize: 14, fontWeight: 700, lineHeight: 1.4, color: "var(--kc-ink-muted)" };
   return (
-    <div style={{ flex: 1, minHeight: 0, padding: 38, display: "flex", flexDirection: "column", gap: 26 }}>
-      <Headline title="How much should the app decide?" lede="Same engine either way — the same six disciplines, the same weighting, the same record. This only changes how much of it is on screen at once." />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, flex: 1, minHeight: 0 }}>
-        <button type="button" onClick={() => onMode("guided")} style={card("guided")}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: "-0.02em" }}>Guided</h2>
-            {mode === "guided" && <Pill tone="mint" icon="check">Chosen</Pill>}
+    <div style={{ flex: 1, minHeight: 0, padding: "30px 34px", display: "flex", flexDirection: "column", gap: 22 }}>
+      <Headline title="How much should the app decide?" lede="Same engine either way — the same seven stops, the same weighting, the same record. This only changes how much of it is on screen at once." />
+      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <button type="button" onClick={() => onMode("guided")} className="kc-press" style={card("guided")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 28, fontWeight: 600, lineHeight: 1.15 }}>Guided</div>
+            {mode === "guided" && <Pill tone="indigo-fill" icon="check">Chosen</Pill>}
           </div>
-          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>One instruction at a time. Good for practicing alone at eleven, and for an adult who wants to be told what to do for twenty minutes.</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--kc-ink-muted)", lineHeight: 1.45 }}>One instruction at a time. Good for practising alone at eleven, and for an adult who just wants to be told what to do for twenty minutes.</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             <CheckItem>The next exercise, its settings already chosen</CheckItem>
-            <CheckItem>Coaching after each attempt, naming the bar</CheckItem>
-            <CheckItem>A quiet timer and a plain progress strip</CheckItem>
+            <CheckItem>Tick coaches after each try, naming the bar</CheckItem>
+            <CheckItem>A quiet timer and the path of seven stops</CheckItem>
             <CheckItem on={false}>No reordering, no tempo dial, no raw numbers</CheckItem>
           </div>
           <div style={preview("guided")}>
-            <SectionLabel size="meta">What you see</SectionLabel>
-            <div style={{ fontSize: 19, fontWeight: 600, marginTop: 8 }}>Start with the {key} scale.</div>
-            <div style={{ fontSize: 14, color: "var(--kc-ink-dim)", marginTop: 4 }}>Two octaves, hands separately first.</div>
+            <div style={label}>WHAT YOU SEE</div>
+            <div style={title}>Start with the {key} scale.</div>
+            <div style={sub}>Two octaves, hands separately first.</div>
           </div>
         </button>
-        <button type="button" onClick={() => onMode("own")} style={card("own")}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: "-0.02em" }}>Own plan</h2>
-            {mode === "own" && <Pill tone="mint" icon="check">Chosen</Pill>}
+        <button type="button" onClick={() => onMode("own")} className="kc-press" style={card("own")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 28, fontWeight: 600, lineHeight: 1.15 }}>Own plan</div>
+            {mode === "own" && <Pill tone="indigo-fill" icon="check">Chosen</Pill>}
           </div>
-          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>The whole queue, editable, with the real numbers. For anyone who already knows what they want to work on today.</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <OwnItem>Reorder, retime, skip, save routines</OwnItem>
-            <OwnItem>Tempo, level, key, hands and loop points exposed</OwnItem>
-            <OwnItem>Accuracy, evenness and drift in milliseconds</OwnItem>
-            <OwnItem>Run past the timer when it&apos;s going well</OwnItem>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--kc-ink-muted)", lineHeight: 1.45 }}>The whole queue, editable, with the real numbers. For anyone who already knows what they want to work on today.</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            <CheckItem>Reorder, retime, skip, save routines</CheckItem>
+            <CheckItem>Tempo, level, key, hands and loop points</CheckItem>
+            <CheckItem>Accuracy, evenness and drift in milliseconds</CheckItem>
+            <CheckItem>Run past the timer when it&apos;s going well</CheckItem>
           </div>
           <div style={preview("own")}>
-            <SectionLabel size="meta">What you see</SectionLabel>
-            <div style={{ fontSize: 19, fontWeight: 600, marginTop: 8 }}>{capitalize(numberWord(minutes))} minutes, in {key}</div>
-            <div style={{ fontSize: 14, color: "var(--kc-ink-dim)", marginTop: 4 }}>Six rows, weighted toward reading. Edit anything.</div>
+            <div style={label}>WHAT YOU SEE</div>
+            <div style={title}>{capitalize(numberWord(minutes))} minutes, in {key}</div>
+            <div style={sub}>Seven rows, weighted toward reading. Edit anything.</div>
           </div>
         </button>
       </div>
       <StepActions style={{ marginTop: 0 }}>
-        <Button icon="arrow_forward" onClick={onContinue}>{mode === "guided" ? "Use guided" : "Use own plan"}</Button>
-        <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>Change it whenever — it&apos;s one setting, not a commitment.</span>
+        <Button icon="arrow_forward" iconAfter onClick={onContinue}>{mode === "guided" ? "Use guided" : "Use own plan"}</Button>
+        <ActionNote>Change it whenever — it&apos;s one setting, not a promise.</ActionNote>
       </StepActions>
-    </div>
-  );
-}
-
-/** The own-plan list uses muted ticks: the design does not colour them mint. */
-function OwnItem({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", gap: 10, fontSize: 15, color: "var(--kc-ink-muted)", lineHeight: 1.45 }}>
-      <span className="kc-icon" aria-hidden style={{ fontSize: 20, color: "var(--kc-ink-muted)" }}>check</span>
-      <span>{children}</span>
     </div>
   );
 }

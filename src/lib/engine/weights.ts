@@ -3,11 +3,12 @@ import { BLOCK_ORDER } from "../types";
 
 /** Baseline weights for a balanced profile (sum 1). */
 export const BASE_WEIGHTS: BlockWeights = {
-  scales: 0.2,
-  rhythm: 0.15,
-  reading: 0.2,
-  theory: 0.15,
-  repertoire: 0.2,
+  scales: 0.18,
+  rhythm: 0.14,
+  ear: 0.1,
+  reading: 0.18,
+  theory: 0.13,
+  repertoire: 0.17,
   improv: 0.1,
 };
 
@@ -16,19 +17,20 @@ const FLOOR = 0.08;
 
 /**
  * Derive block weights from a Skill Profile (§3). Weak skills get more time.
- * ear -> theory, eye -> reading, pulse -> rhythm. Scales and repertoire hold steady, improv is the release valve.
+ * ear -> ear and theory, eye -> reading, pulse -> rhythm. Scales and repertoire hold steady, improv is the release valve.
  */
 export function deriveWeights(profile: SkillProfile | null): BlockWeights {
   if (!profile) return { ...BASE_WEIGHTS };
   // Weakness 0..1 where 1 = score 0.
   const weak = { ear: (100 - profile.ear) / 100, eye: (100 - profile.eye) / 100, pulse: (100 - profile.pulse) / 100 };
   const raw: BlockWeights = {
-    scales: 0.15,
-    rhythm: 0.1 + 0.25 * weak.pulse,
-    reading: 0.1 + 0.3 * weak.eye,
-    theory: 0.1 + 0.25 * weak.ear,
-    repertoire: 0.15,
-    improv: 0.1,
+    scales: 0.14,
+    rhythm: 0.09 + 0.22 * weak.pulse,
+    ear: 0.07 + 0.18 * weak.ear,
+    reading: 0.09 + 0.26 * weak.eye,
+    theory: 0.08 + 0.14 * weak.ear,
+    repertoire: 0.14,
+    improv: 0.09,
   };
   return normalize(raw);
 }

@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { IconButton, Waveform, SectionLabel, Button, Icon } from "@/components/ds";
+import { IconButton, Waveform, SectionLabel, Button, Pill } from "@/components/ds";
 import type { Recording } from "@/lib/types";
 import { useAudio } from "@/lib/hooks/use-audio";
 import { useAppStore } from "@/lib/store/app-store";
@@ -17,9 +17,9 @@ function isMidi(r: Recording): boolean {
 }
 
 /**
- * YOUR OWN RECORDINGS: each take drawn as its own waveform with a play control. Audio plays through an
- * <audio> element from the blob; MIDI takes are replayed through the audio engine. Deleting sits behind the
- * household code when the household has put it there.
+ * Your recordings: each take on its own cream card with a round indigo play button and its waveform. Audio
+ * plays through an <audio> element from the blob; MIDI takes are replayed through the audio engine. Deleting
+ * sits behind the household code when the household has put it there.
  */
 export function RecordingsRail({ recordings, onDeleted }: { recordings: Recording[]; onDeleted: (id: string) => void }) {
   const { audio, unlock } = useAudio();
@@ -81,26 +81,27 @@ export function RecordingsRail({ recordings, onDeleted }: { recordings: Recordin
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <SectionLabel>YOUR OWN RECORDINGS</SectionLabel>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <SectionLabel>Your recordings</SectionLabel>
       <audio ref={audioRef} onEnded={stop} onError={stop} hidden />
       {recordings.length === 0 && (
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "var(--kc-ink-dim)" }}>Nothing yet. The Your own block keeps what you play when a keyboard or a microphone is listening.</p>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, lineHeight: 1.5, color: "var(--kc-ink-muted)" }}>Nothing yet. The Your own stop keeps what you play when a keyboard or a microphone is listening.</p>
       )}
       {recordings.map((r) => {
         const shape = shapes[r.id];
         const isPlaying = playing === r.id;
         const title = r.title?.trim() || DISCIPLINE[r.blockType].title;
-        const meta = `${shape && shape.seconds > 0 ? `${fmtSeconds(shape.seconds)} · ` : ""}${dayLabel(dateKey(new Date(r.createdAt)))}`;
+        const when = dayLabel(dateKey(new Date(r.createdAt)));
+        const meta = `${when}${shape && shape.seconds > 0 ? ` · ${fmtSeconds(shape.seconds)}` : ""}`;
         return (
-          <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-              <IconButton icon={isPlaying ? "stop" : "play_arrow"} label={`${isPlaying ? "Stop" : "Play"} ${title}`} onClick={() => void play(r)} style={isPlaying ? { border: "1px solid var(--kc-mint)", color: "var(--kc-mint)" } : undefined} />
-              <div style={{ flex: "none", width: 132, cursor: "pointer" }} onClick={() => setSelected((s) => (s === r.id ? null : r.id))} role="button" aria-expanded={selected === r.id}>
-                <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
-                <div style={{ fontFamily: "var(--kc-font-mono)", fontSize: 12, color: "var(--kc-ink-dim)" }}>{meta}</div>
-              </div>
-              <Waveform bars={shape?.bars ?? Array(WAVE_BINS).fill(8)} tone={isPlaying ? "mint" : "resting"} />
+          <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: 8, background: "var(--kc-base)", border: "2px solid var(--kc-hairline)", borderRadius: 18, padding: "12px 14px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, cursor: "pointer" }} onClick={() => setSelected((s) => (s === r.id ? null : r.id))} role="button" aria-expanded={selected === r.id}>
+              <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 16, fontWeight: 600, lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{title}</div>
+              <span style={{ marginLeft: "auto", flex: "none", fontSize: 13, fontWeight: 800, color: "var(--kc-ink-faint)" }}>{meta}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <IconButton icon={isPlaying ? "stop" : "play_arrow"} variant="primary" label={`${isPlaying ? "Stop" : "Play"} ${title}`} onClick={() => void play(r)} />
+              <Waveform bars={shape?.bars ?? Array(WAVE_BINS).fill(20)} height={30} tone={isPlaying ? "mint" : "indigo"} />
             </div>
             {selected === r.id && <DeleteRow recording={r} title={title} onDeleted={(id) => { if (playing === id) stop(); setSelected(null); onDeleted(id); }} />}
           </div>
@@ -128,20 +129,20 @@ function DeleteRow({ recording, title, onDeleted }: { recording: Recording; titl
     onDeleted(recording.id);
   };
 
-  const kind = isMidi(recording) ? "MIDI take" : "Audio take";
+  const kind = isMidi(recording) ? "A keyboard take" : "A room recording";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 0 4px 47px" }}>
-      <span style={{ fontSize: 13, color: "var(--kc-ink-dim)" }}>{kind} from the {DISCIPLINE[recording.blockType].title} block. Kept on this device{parent?.sync ? " and in the household's sync" : ""}.</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 4 }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--kc-ink-muted)", lineHeight: 1.4 }}>{kind} from the {DISCIPLINE[recording.blockType].title} stop. Kept on this device{parent?.sync ? " and in the household's sync" : ""}.</span>
       {!confirm ? (
         <div><Button variant="secondary" size="pill" icon="delete" onClick={() => setConfirm(true)}>Delete</Button></div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {gated && (
-            <TextField value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 4)); setWrong(false); }} inputMode="numeric" placeholder="Household code" aria-label="Household code" autoFocus style={{ width: 132, fontFamily: "var(--kc-font-mono)", letterSpacing: "0.2em", height: 32 }} />
+            <TextField value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 4)); setWrong(false); }} inputMode="numeric" placeholder="Household code" aria-label="Household code" autoFocus style={{ width: 150, fontFamily: "var(--kc-font-display)", letterSpacing: "0.2em" }} />
           )}
-          <Button variant="secondary" size="pill" onClick={remove} disabled={gated && code.length < 4} style={{ border: "1px solid var(--kc-clay)", color: "var(--kc-clay)" }}>Delete {title}</Button>
+          <Button variant="secondary" size="pill" onClick={remove} disabled={gated && code.length < 4} style={{ borderColor: "var(--kc-indigo)", color: "var(--kc-indigo)" }}>Delete {title}</Button>
           <Button variant="quiet" size="pill" onClick={() => { setConfirm(false); setCode(""); setWrong(false); }}>Keep</Button>
-          {wrong && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--kc-clay)" }}><Icon name="error" size={16} />Not the code.</span>}
+          {wrong && <Pill tone="clay" icon="info">Not the code</Pill>}
         </div>
       )}
     </div>

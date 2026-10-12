@@ -55,6 +55,12 @@ export function blockHeadline(r: BlockResult): { text: string; marked: boolean }
       if (r.midiScore?.badge === "steady-pulse") return { text: "STEADY", marked: true };
       break;
     }
+    case "ear": {
+      const phrases = num(d.phrases);
+      const byEar = num(d.byEarFirstTry);
+      if (phrases != null && byEar != null && phrases > 0) return { text: `${byEar} OF ${phrases} BY EAR`, marked: byEar === phrases };
+      break;
+    }
     case "reading": {
       const level = num(d.level);
       if (d.promoted && level != null) return { text: `LEVEL ${level} UP`, marked: true };

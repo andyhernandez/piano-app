@@ -53,39 +53,39 @@ export function AddPiecePanel({ onSave, onCancel }: { onSave: (song: Song) => vo
   return (
     <Panel padding="panel" state="current" style={{ flex: "none", gap: 16 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-        <span style={{ fontSize: 17, fontWeight: 600 }}>Add a piece</span>
-        <SectionLabel size="meta">YOUR OWN · {keyLabel(key, scaleMode)}</SectionLabel>
+        <SectionLabel>Add a piece</SectionLabel>
+        <SectionLabel size="meta">Your own · {keyLabel(key, scaleMode)}</SectionLabel>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 14 }}>
         <Field label="Title"><TextField value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What the piece is called" autoFocus /></Field>
         <Field label="Link to the score (optional)"><TextField value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" inputMode="url" /></Field>
       </div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 22, flexWrap: "wrap" }}>
-        <Field label="Key" style={{ width: 96 }}>
+        <Field label="Key" style={{ width: 110 }}>
           <SelectField value={key} onChange={(e) => setKey(e.target.value as PitchClass)}>
             {KEYS.map((k) => <option key={k} value={k}>{k.replace("#", "♯").replace("b", "♭")}</option>)}
           </SelectField>
         </Field>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <SectionLabel size="meta">MODE</SectionLabel>
+          <SectionLabel size="meta">Mode</SectionLabel>
           <Choice<ModeText> options={["Major", "Minor"]} value={mode} onChange={setMode} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <SectionLabel size="meta">LEVEL</SectionLabel>
+          <SectionLabel size="meta">Level</SectionLabel>
           <Choice<LevelText> options={[...LEVELS]} value={level} onChange={setLevel} />
         </div>
       </div>
       <Field label="Chords, one bar per | (optional)">
         <TextArea value={chart} onChange={(e) => setChart(e.target.value)} placeholder="I | IV | V | I  — roman numerals, lower case for minor, two chords in a bar with a space" spellCheck={false} />
       </Field>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>{bars.length ? `${bars.length} ${bars.length === 1 ? "bar" : "bars"}. With chords, the piece plays back in any key.` : "Without chords, the piece opens its link and counts in your Pieces block."}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--kc-ink-muted)" }}>{bars.length ? `${bars.length} ${bars.length === 1 ? "bar" : "bars"}. With chords, the piece plays back in any key.` : "Without chords, the piece opens its link and counts in your Pieces stop."}</span>
         {problem && (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--kc-clay)" }}><Icon name="error" size={18} />{problem}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "var(--kc-indigo-shadow)", background: "var(--kc-lilac)", borderRadius: 999, padding: "6px 12px" }}><Icon name="info" size={18} />{problem}</span>
         )}
         <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-          <Button variant="secondary" size="control" onClick={onCancel}>Cancel</Button>
-          <Button size="control" onClick={save}>Save piece</Button>
+          <Button variant="secondary" size="pill" onClick={onCancel}>Cancel</Button>
+          <Button size="pill" onClick={save}>Save piece</Button>
         </div>
       </div>
     </Panel>

@@ -5,7 +5,7 @@ import { Screen } from "@/components/ds";
 import { useAppStore, defaultSettings } from "@/lib/store/app-store";
 import { currentScale } from "@/lib/engine/progression";
 import { DEFAULT_ROADMAP } from "@/lib/music/roadmap";
-import type { ChildSettings, InputMode } from "@/lib/types";
+import type { ChildSettings, Experience, InputMode } from "@/lib/types";
 import { SetupHeader } from "./chrome";
 import { StepWho, type NewPerson } from "./step-who";
 import { StepInput } from "./step-input";
@@ -33,6 +33,7 @@ export function OnboardingScreen() {
   const [selectedId, setSelectedId] = React.useState<string | null>(() => activeChildId ?? profiles[0]?.id ?? null);
   const [adding, setAdding] = React.useState(() => profiles.length === 0);
   const [person, setPerson] = React.useState<NewPerson>({ name: "", ageBand: "child", blurb: "" });
+  const [experience, setExperience] = React.useState<Experience | null>(() => profiles.find((c) => c.id === (activeChildId ?? profiles[0]?.id))?.settings.experience ?? null);
   const [requireCode, setRequireCode] = React.useState(() => !!parent?.pin);
   const [code, setCode] = React.useState("");
   const [inputChoice, setInputChoice] = React.useState<InputMode>("timer");
@@ -50,6 +51,7 @@ export function OnboardingScreen() {
   const leaveWho = () => {
     if (selected) {
       const s = selected.settings;
+      if (!experience && s.experience) setExperience(s.experience);
       setInputChoice(s.inputModePreference === "auto" ? "timer" : s.inputModePreference);
       setMode(s.mode);
       setTarget({ days: s.practiceDaysPerWeek, minutes: s.sessionMinutes, restDays: s.restDays, hardStop: s.hardStop, countIn: s.countIn });
@@ -71,6 +73,7 @@ export function OnboardingScreen() {
         restDays: target.restDays.length ? target.restDays : restDaysFor(target.days),
         hardStop: target.hardStop,
         countIn: target.countIn,
+        ...(experience ? { experience } : {}),
       };
       const pin = requireCode ? code : null;
       if (!parent) await createParent(pin);
@@ -102,11 +105,13 @@ export function OnboardingScreen() {
         <StepWho
           profiles={profiles}
           selectedId={selectedId}
-          onSelect={(id) => { setSelectedId(id); setAdding(false); }}
+          onSelect={(id) => { setSelectedId(id); setAdding(false); setExperience(profiles.find((c) => c.id === id)?.settings.experience ?? null); }}
           adding={adding}
           onAdd={() => setAdding(true)}
           person={person}
           onPerson={setPerson}
+          experience={experience}
+          onExperience={setExperience}
           requireCode={requireCode}
           onRequireCode={setRequireCode}
           code={code}

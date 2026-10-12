@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { generateExercise, LEVELS, levelSpec, noteTimeline } from "../generator/sightreading";
-import { generateRhythm, generateEcho, expectedOnsetsMs, RHYTHM_LEVELS } from "../generator/rhythm";
+import { generateRhythm, generateEcho, generateDifferent, expectedOnsetsMs, RHYTHM_LEVELS, sameNotes } from "../generator/rhythm";
 import { isInScale, degreeOf } from "../music/scales";
 import { DEFAULT_ROADMAP } from "../music/roadmap";
 import type { ScaleId } from "../types";
@@ -95,10 +95,30 @@ describe("rhythm generator", () => {
       }
     }
   });
-  it("level 1 is all quarter notes", () => {
-    const p = generateRhythm(1, "q");
-    expect(p.notes.every((n) => n.beats === 1 && !n.rest)).toBe(true);
-    expect(expectedOnsetsMs(p)).toEqual([0, 1, 2, 3, 4, 5, 6, 7].map((b) => (b * 60_000) / p.bpm));
+  it("level 1 is quarter notes and quarter rests, and varies between seeds", () => {
+    const shapes = new Set<string>();
+    for (let s = 0; s < 40; s++) {
+      const p = generateRhythm(1, `q-${s}`);
+      expect(p.notes.every((n) => n.beats === 1)).toBe(true);
+      expect(p.notes).toHaveLength(8);
+      expect(expectedOnsetsMs(p).every((ms) => Number.isInteger(Math.round((ms * p.bpm) / 60_000)))).toBe(true);
+      shapes.add(p.notes.map((n) => (n.rest ? "r" : "x")).join(""));
+    }
+    expect(shapes.size).toBeGreaterThan(5);
+  });
+  it("every level can produce more than one rhythm", () => {
+    for (const { level } of RHYTHM_LEVELS) {
+      const shapes = new Set<string>();
+      for (let s = 0; s < 40; s++) shapes.add(generateRhythm(level, `v-${level}-${s}`).notes.map((n) => (n.rest ? "r" : "") + n.beats).join(","));
+      expect(shapes.size).toBeGreaterThan(1);
+    }
+  });
+  it("generateDifferent avoids repeating the current pattern", () => {
+    let i = 0;
+    const gen = () => generateRhythm(1, `d-${i++}`);
+    const current = gen();
+    for (let k = 0; k < 20; k++) expect(sameNotes(generateDifferent(gen, current), current)).toBe(false);
+    expect(generateDifferent(() => current, current)).toBe(current);
   });
   it("echo is one bar", () => {
     const e = generateEcho(5, "echo");

@@ -9,7 +9,7 @@ export class TapInputSource implements InputSource {
   private emitter = new Emitter();
   async start() {}
   stop() { this.emitter.clear(); }
-  tap() { this.emitter.emitOnset({ time: nowMs(), source: "tap" }); }
+  tap(time = nowMs()) { this.emitter.emitOnset({ time, source: "tap" }); }
   note(midi: number, kind: "on" | "off" = "on") {
     const t = nowMs();
     this.emitter.emitNote({ midi, velocity: kind === "on" ? 0.8 : 0, time: t, kind, confidence: 1 });

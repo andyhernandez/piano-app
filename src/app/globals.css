@@ -1,49 +1,67 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   KeyCadence design tokens — copied from design/_ds/.../tokens/*.css.
-   Every value in the UI is one of these custom properties. Never hard-code a
-   hex, a radius or a spacing step.
+   EasyKeys design tokens — direction 1a (design/EasyKeys All Screens.dc.html).
+   Warm cream paper, Fredoka for display, Nunito for body, chunky pressable
+   controls. Four accents, each with one job: indigo acts / is current, mint is
+   done, sunshine is a personal best or a teacher note, lilac is worth a look.
+   Nothing is ever red. No gradients, no blur.
+   Every value in the UI is one of these custom properties.
    ============================================================================ */
 :root {
-  /* ---- Surfaces. Four steps, darkest first. No gradients anywhere. ---- */
-  --kc-base:            #101326;
-  --kc-panel:           #1a1e35;
-  --kc-panel-alt:       #151935;
-  --kc-raised:          #242a4a;
-  --kc-canvas:          #0c0f20;
-  --kc-paper:           #f2f1ee;
-  --kc-paper-ink:       #101326;
-  --kc-paper-ink-dim:   #9296a6;
+  /* ---- Surfaces. ---- */
+  --kc-canvas:          #e4ded1;   /* behind screens */
+  --kc-base:            #fbf7ef;   /* screen / paper */
+  --kc-panel:           #ffffff;   /* card, header, rail */
+  --kc-panel-alt:       #ffffff;
+  --kc-raised:          #f6f1e6;   /* cream inset */
+  --kc-cream:           #f6f1e6;
+  --kc-paper:           #ffffff;   /* the staff card */
+  --kc-paper-ink:       #1f2140;
+  --kc-paper-ink-dim:   #6e7090;
 
-  /* ---- Ink. Four weights of the same neutral. ---- */
-  --kc-ink:             #eef0fb;
-  --kc-ink-muted:       #c6cbe6;
-  --kc-ink-dim:         #979ec2;
-  --kc-ink-faint:       #7b83ad;
+  /* ---- Ink. ---- */
+  --kc-ink:             #1f2140;
+  --kc-ink-muted:       #5b5e7e;
+  --kc-ink-dim:         #6e7090;
+  --kc-ink-faint:       #6e7090;
 
-  /* ---- Accents. Three, each with exactly one meaning. ---- */
-  --kc-mint:            #5ad1c0;
-  --kc-mint-wash:       #10302c;
-  --kc-mint-edge:       #2a7a6e;
-  --kc-mint-ink:        #042220;
-  --kc-amber:           #f0b866;
-  --kc-clay:            #e2705a;
+  /* ---- Accents. ---- */
+  --kc-indigo:          #4f46e5;   /* act / current */
+  --kc-indigo-wash:     #eeecff;
+  --kc-indigo-shadow:   #2f28a8;
+  --kc-indigo-hover:    #463dd9;
+  --kc-lilac:           #c9c4fb;   /* worth a look */
+  --kc-mint:            #06d6a0;   /* done / cleared */
+  --kc-mint-wash:       #e0faf2;
+  --kc-mint-edge:       #06d6a0;
+  --kc-mint-ink:        #03795c;
+  --kc-sun:             #ffc94d;   /* personal best / teacher note */
+  --kc-sun-wash:        #fff4d6;
+  --kc-sun-ink:         #7a5200;
+  --kc-sun-shadow:      #d9a52a;
+  --kc-sun-sticky-shadow: #f0ddaa;
+  --kc-plain-chip:      #f3eee2;
+  /* Old names kept as aliases so nothing goes red or orange. */
+  --kc-amber:           var(--kc-sun);
+  --kc-clay:            var(--kc-lilac);
 
-  /* ---- Borders. The weight carries the state. ---- */
-  --kc-border:          #2a3054;
-  --kc-border-active:   #3d4570;
-  --kc-border-dashed:   #3f4a82;
+  /* ---- Borders. ---- */
+  --kc-border:          #e6dfd0;   /* card border + press shadow */
+  --kc-border-active:   #e6dfd0;
+  --kc-hairline:        #efe8da;   /* dividers */
+  --kc-border-dashed:   #d8cfbd;   /* planned absence, rest days */
+  --kc-toggle-off:      #ddd5c4;
 
-  /* ---- Week strip. ---- */
-  --kc-cell-future:     #1e2442;
-  --kc-cell-future-bd:  #333c72;
-  --kc-cell-dash-mark:  #5d68a0;
-  --kc-cell-letter:     #8a92bd;
+  /* ---- Week keys. ---- */
+  --kc-cell-future:     #ffffff;
+  --kc-cell-future-bd:  #e6dfd0;
+  --kc-cell-dash-mark:  #d8cfbd;
+  --kc-cell-letter:     #6e7090;
 
   /* ---- Notation. ---- */
-  --kc-glyph:           #c6cbe6;
-  --kc-glyph-dim:       #5d6590;
+  --kc-glyph:           #1f2140;
+  --kc-glyph-dim:       #6e7090;
 
   /* ---- Semantic aliases. ---- */
   --kc-text-title:      var(--kc-ink);
@@ -54,37 +72,39 @@
   --kc-surface-card:    var(--kc-panel);
   --kc-surface-control: var(--kc-raised);
   --kc-surface-page:    var(--kc-paper);
-  --kc-state-current:   var(--kc-mint);
-  --kc-state-best:      var(--kc-amber);
-  --kc-state-attention: var(--kc-clay);
+  --kc-state-current:   var(--kc-indigo);
+  --kc-state-best:      var(--kc-sun);
+  --kc-state-attention: var(--kc-lilac);
 
-  /* ---- Type. Fonts are bound by next/font (sans, mono, music) and a link (icons). ---- */
-  --kc-font-sans:  var(--font-instrument-sans), "Instrument Sans", system-ui, -apple-system, sans-serif;
+  /* ---- Type. Fredoka for display, numbers, buttons and labels; Nunito for body. ---- */
+  --kc-font-display: var(--font-fredoka), "Fredoka", system-ui, sans-serif;
+  --kc-font-sans:  var(--font-nunito), "Nunito", system-ui, -apple-system, sans-serif;
   --kc-font-mono:  var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
   --kc-font-music: var(--font-noto-music), "Noto Music", serif;
   --kc-font-icon:  var(--font-material-symbols), "Material Symbols Rounded";
   --kc-font-dynamics: Georgia, serif;
 
-  --kc-text-display:   42px;
-  --kc-text-section:   26px;
-  --kc-text-screen:    19px;
-  --kc-text-row:       17px;
+  --kc-text-display:   46px;
+  --kc-text-section:   20px;
+  --kc-text-screen:    25px;
+  --kc-text-row:       18px;
   --kc-text-base:      15px;
-  --kc-text-small:     13px;
-  --kc-text-xsmall:    12px;
+  --kc-text-small:     14px;
+  --kc-text-xsmall:    13px;
   --kc-weight-regular: 400;
   --kc-weight-semibold: 600;
   --kc-weight-bold:    700;
-  --kc-track-display: -0.03em;
-  --kc-track-section: -0.02em;
-  --kc-track-title:   -0.01em;
-  --kc-track-label:    0.12em;
-  --kc-track-meta:     0.07em;
-  --kc-leading-display: 1.02;
-  --kc-leading-title:   1.05;
-  --kc-leading-tight:   1.3;
-  --kc-leading-body:    1.45;
-  --kc-leading-lede:    1.55;
+  --kc-weight-heavy:   800;
+  --kc-track-display: -0.01em;
+  --kc-track-section:  0;
+  --kc-track-title:    0;
+  --kc-track-label:    0.06em;
+  --kc-track-meta:     0;
+  --kc-leading-display: 1.04;
+  --kc-leading-title:   1.15;
+  --kc-leading-tight:   1.2;
+  --kc-leading-body:    1.4;
+  --kc-leading-lede:    1.45;
   --kc-mono-figure:  32px;
   --kc-mono-metric:  20px;
   --kc-mono-inline:  15px;
@@ -99,39 +119,51 @@
   --kc-music-cell:     17px;
   --kc-measure: 620px;
 
-  /* ---- Spacing. One scale, six steps. Applied with gap, never margin. ---- */
+  /* ---- Spacing. ---- */
   --kc-space-1:  6px;
   --kc-space-2: 10px;
   --kc-space-3: 14px;
   --kc-space-4: 22px;
   --kc-space-5: 32px;
   --kc-space-6: 38px;
-  --kc-pad-card:   16px 18px;
+  --kc-pad-card:   16px 20px;
   --kc-pad-panel:  20px 22px;
-  --kc-pad-roomy:  24px 26px;
-  --kc-pad-screen: 36px 38px;
-  --kc-h-primary:   48px;
-  --kc-h-touch:     44px;
-  --kc-h-control:   40px;
-  --kc-h-icon:      34px;
-  --kc-h-pill:      32px;
-  --kc-h-toggle:    26px;
-  --kc-h-header:    72px;
-  --kc-tile:        54px;
+  --kc-pad-roomy:  22px 24px;
+  --kc-pad-screen: 30px 32px;
+  --kc-h-primary:   72px;
+  --kc-h-bar:       60px;
+  --kc-h-touch:     46px;
+  --kc-h-control:   46px;
+  --kc-h-icon:      46px;
+  --kc-h-pill:      36px;
+  --kc-h-toggle:    34px;
+  --kc-h-header:    78px;
+  --kc-tile:        56px;
 
   /* ---- Radius by kind. ---- */
-  --kc-radius-cell:    7px;
-  --kc-radius-tile:    9px;
-  --kc-radius-control:10px;
-  --kc-radius-panel:  11px;
-  --kc-radius-screen: 12px;
-  --kc-radius-pill:  999px;
-  --kc-border-width:        1px;
-  --kc-border-width-current: 1.5px;
-  --kc-shadow-screen: 0 10px 32px rgba(16, 19, 38, 0.28);
+  --kc-radius-cell:    12px;
+  --kc-radius-tile:    16px;
+  --kc-radius-control: 18px;
+  --kc-radius-button:  22px;
+  --kc-radius-panel:   22px;
+  --kc-radius-soft:    20px;
+  --kc-radius-sheet:   26px;
+  --kc-radius-screen:  28px;
+  --kc-radius-pill:   999px;
+  --kc-border-width:         2px;
+  --kc-border-width-current: 3px;
+
+  /* ---- Press shadows. Hard, one colour, no blur. ---- */
+  --kc-shadow-press:        0 4px 0 0 var(--kc-border);
+  --kc-shadow-press-sheet:  0 5px 0 0 var(--kc-border);
+  --kc-shadow-press-indigo: 0 6px 0 0 var(--kc-indigo-shadow);
+  --kc-shadow-press-bar:    0 5px 0 0 var(--kc-indigo-shadow);
+  --kc-shadow-press-sun:    0 4px 0 0 var(--kc-sun-shadow);
+  --kc-shadow-screen:       0 10px 30px rgba(31, 33, 64, 0.10);
 }
 
 @theme inline {
+  --color-canvas: var(--kc-canvas);
   --color-base: var(--kc-base);
   --color-panel: var(--kc-panel);
   --color-raised: var(--kc-raised);
@@ -140,14 +172,20 @@
   --color-ink-muted: var(--kc-ink-muted);
   --color-ink-dim: var(--kc-ink-dim);
   --color-ink-faint: var(--kc-ink-faint);
+  --color-indigo: var(--kc-indigo);
+  --color-indigo-wash: var(--kc-indigo-wash);
+  --color-lilac: var(--kc-lilac);
   --color-mint: var(--kc-mint);
   --color-mint-wash: var(--kc-mint-wash);
   --color-mint-edge: var(--kc-mint-edge);
+  --color-sun: var(--kc-sun);
+  --color-sun-wash: var(--kc-sun-wash);
   --color-amber: var(--kc-amber);
   --color-clay: var(--kc-clay);
   --color-border: var(--kc-border);
   --color-border-active: var(--kc-border-active);
   --font-sans: var(--kc-font-sans);
+  --font-display: var(--kc-font-display);
   --font-mono: var(--kc-font-mono);
 }
 
@@ -158,18 +196,20 @@ body {
   background: var(--kc-base);
   color: var(--kc-ink);
   font-family: var(--kc-font-sans);
+  font-weight: 700;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
 }
-a { color: var(--kc-mint); text-decoration: none; border-bottom: 1px solid rgba(90, 209, 192, 0.4); }
-a:hover { color: #8fe4d6; border-bottom-color: #8fe4d6; }
+a { color: var(--kc-indigo); text-decoration: none; }
+a:hover { color: var(--kc-indigo-hover); text-decoration: underline; }
 button { font-family: inherit; }
-button:focus-visible, [role="switch"]:focus-visible { outline: 1.5px solid var(--kc-mint); outline-offset: 0; }
+button:focus-visible, [role="switch"]:focus-visible, [role="button"]:focus-visible { outline: 3px solid var(--kc-lilac); outline-offset: 2px; }
+input::placeholder { color: var(--kc-ink-faint); font-weight: 700; }
 
-/* Chrome icons: Material Symbols Rounded, weight 300, unfilled, 24px optical size. */
+/* Chrome icons: Material Symbols Rounded, unfilled, 24px optical size. */
 .kc-icon, [data-icon] {
   font-family: var(--kc-font-icon);
-  font-weight: 300;
+  font-weight: 400;
   font-style: normal;
   line-height: 1;
   letter-spacing: normal;
@@ -178,9 +218,22 @@ button:focus-visible, [role="switch"]:focus-visible { outline: 1.5px solid var(-
   direction: ltr;
   font-feature-settings: "liga";
   -webkit-font-feature-settings: "liga";
-  font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
   display: inline-block;
 }
 
-/* Timers and metronomes tick; they never animate their numbers. */
+/* Pressable controls: the hard bottom shadow collapses as the control moves down. */
+.kc-press { transition: transform 80ms ease-out, box-shadow 80ms ease-out, background 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out; }
+.kc-btn-primary:hover:not(:disabled) { background: var(--kc-indigo-hover) !important; }
+.kc-btn-primary:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 0 var(--kc-indigo-shadow) !important; }
+.kc-btn-secondary:hover:not(:disabled) { border-color: var(--kc-indigo) !important; color: var(--kc-indigo) !important; }
+.kc-btn-secondary:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--kc-border) !important; }
+.kc-btn-quiet:hover:not(:disabled) { color: var(--kc-indigo) !important; }
+.kc-btn-sun:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--kc-sun-shadow) !important; }
+
+/* Tick's pendulum swings at the session tempo. */
+@keyframes kc-swing { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+.kc-pendulum { transform-origin: 50% 0; animation: kc-swing var(--kc-swing, 0.8s) ease-in-out infinite alternate; }
+
+/* Timers and metronomes tick; they never animate their numbers. Tick stops swinging. */
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

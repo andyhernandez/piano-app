@@ -16,6 +16,9 @@ export const DEFAULT_ROADMAP: ScaleId[] = [
   { key: "E", mode: "natural-minor" },
 ];
 
+/** The keys a household or a teacher can pin for a week: the roadmap plus the two harmonic minors. */
+export const PICKABLE_SCALES: ScaleId[] = [...DEFAULT_ROADMAP, { key: "A", mode: "harmonic-minor" }, { key: "E", mode: "harmonic-minor" }];
+
 /** Minor weeks also cover the harmonic form. */
 export function companionScale(id: ScaleId): ScaleId | null {
   if (id.mode === "natural-minor") return { key: id.key, mode: "harmonic-minor" };

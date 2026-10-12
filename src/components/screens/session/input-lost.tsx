@@ -3,12 +3,14 @@ import * as React from "react";
 import type { BlockType, Child, InputMode, Session } from "@/lib/types";
 import { getInput } from "@/lib/input/manager";
 import { DISCIPLINE, fmtClock } from "@/lib/engine/record";
-import { Button, Headline, Icon, Panel, Pill } from "@/components/ds";
+import { STOP_SHORT } from "@/lib/engine/queue";
+import { Button, Headline, Icon, Panel, Pill, Small, Tick } from "@/components/ds";
 import { blockHeadline, capitalize, numberWord } from "./words";
 
 /**
- * E1 — the keyboard or microphone stopped answering mid-block. The clock is stopped; nothing is lost. Three
- * cards: look for the device again, listen with the microphone instead, or carry on with the timer.
+ * E1 — the keyboard or microphone stopped answering mid-stop. The clock is stopped; nothing is lost. Three
+ * cards: look for the device again, listen with the microphone instead (the recommended one), or carry on
+ * with the timer.
  */
 export function InputLost({ session, child, type, lostMode, lastNoteAt, onResolved }: { session: Session; child: Child; type: BlockType; lostMode: InputMode; lastNoteAt: number | null; onResolved: (mode: InputMode) => void }) {
   const input = React.useMemo(() => getInput(), []);
@@ -40,48 +42,62 @@ export function InputLost({ session, child, type, lostMode, lastNoteAt, onResolv
     onResolved("timer");
   };
 
+  const tile = (icon: string, on: boolean) => (
+    <span style={{ width: 52, height: 52, flex: "none", borderRadius: 16, background: on ? "var(--kc-indigo)" : "var(--kc-cream)", color: on ? "#ffffff" : "var(--kc-ink)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Icon name={icon} size={28} />
+    </span>
+  );
+  const cardTitle = (text: string) => <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 20, fontWeight: 600, lineHeight: 1.15 }}>{text}</div>;
+  const body: React.CSSProperties = { fontSize: 15, fontWeight: 700, lineHeight: 1.45, color: "var(--kc-ink-muted)" };
+
   return (
-    <div style={{ position: "absolute", inset: 0, background: "var(--kc-base)", padding: "34px 38px", display: "flex", flexDirection: "column", gap: 26, minHeight: 0, overflow: "auto" }}>
-      <Headline size={38} title={`The ${device} stopped answering.`} lede="Everything played so far is recorded. Keep playing either way — pick what should listen for the rest of the block." />
-      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
-        <Panel padding="roomy" style={{ minHeight: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 11 }}><Icon name="piano" size={26} color={lostMode === "mic" ? "var(--kc-ink-dim)" : "var(--kc-clay)"} /><span style={{ fontSize: 19, fontWeight: 600 }}>The keyboard</span></div>
-          <Pill tone={lostMode === "mic" ? "neutral" : "clay"}>{lostMode === "mic" ? "NOT PLUGGED IN" : "NOT RESPONDING"}</Pill>
-          <div style={{ fontSize: 15, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>
-            {ago != null ? `Last note heard ${ago} seconds ago. ` : ""}Usually the USB cable at the keyboard end, or the keyboard went to sleep.
+    <div style={{ position: "absolute", inset: 0, background: "var(--kc-base)", padding: "26px 32px", display: "flex", flexDirection: "column", gap: 20, minHeight: 0, overflow: "auto" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
+        <Tick />
+        <div style={{ flex: 1 }}>
+          <Headline size={44} title={`The ${device} stopped answering.`} lede={`Everything played so far is saved. Keep playing either way — pick what should listen for the rest of this stop.`} />
+        </div>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16 }}>
+        <Panel padding="roomy" style={{ minHeight: 0, borderRadius: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>{tile("piano", false)}{cardTitle("The keyboard")}</div>
+          <div><Pill tone="neutral" icon="link_off">{lostMode === "mic" ? "Not plugged in" : "Not responding"}</Pill></div>
+          <div style={body}>
+            {ago != null ? `Last note heard ${ago} seconds ago. ` : ""}Usually the USB cable at the keyboard end, or the keyboard went to sleep. Press a key and it reconnects on its own.
           </div>
-          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-            <Button variant="secondary" size="control" disabled={looking} onClick={() => void lookAgain()} style={{ width: "100%" }}>Look again</Button>
-            <span style={{ fontSize: 14, color: note && lostMode !== "mic" ? "var(--kc-clay)" : "var(--kc-ink-faint)" }}>{note && lostMode !== "mic" ? note : "Press a key and it reconnects on its own."}</span>
-          </div>
-        </Panel>
-        <Panel padding="roomy" state="current" style={{ minHeight: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 11 }}><Icon name="mic" size={26} color="var(--kc-mint)" /><span style={{ fontSize: 19, fontWeight: 600 }}>The microphone</span></div>
-          <Pill tone="mint" icon="hearing">{lostMode === "mic" ? "LISTEN AGAIN" : "READY TO LISTEN"}</Pill>
-          <div style={{ fontSize: 15, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>Pitch and pulse, one hand at a time. {DISCIPLINE[type].title} carries on; the block keeps its level and its minutes.</div>
-          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-            <Button size="control" disabled={looking} onClick={() => void (lostMode === "mic" ? lookAgain() : listenWithMic())} style={{ width: "100%" }}>Listen with the mic</Button>
-            {note && lostMode === "mic" && <span style={{ fontSize: 14, color: "var(--kc-clay)" }}>{note}</span>}
+          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+            <Button variant="secondary" size="control" icon="refresh" disabled={looking} onClick={() => void lookAgain()} style={{ alignSelf: "flex-start", height: 56 }}>Look again</Button>
+            {note && lostMode !== "mic" && <Small color="var(--kc-indigo)">{note}</Small>}
           </div>
         </Panel>
-        <Panel padding="roomy" style={{ minHeight: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 11 }}><Icon name="timer" size={26} color="var(--kc-ink-dim)" /><span style={{ fontSize: 19, fontWeight: 600 }}>Just the timer</span></div>
-          <Pill>MINUTES ONLY</Pill>
-          <div style={{ fontSize: 15, lineHeight: 1.45, color: "var(--kc-ink-muted)" }}>Nothing listens. You say when the block is done, and the record keeps the time and the page you read.</div>
+        <Panel padding="roomy" state="current" style={{ minHeight: 0, borderRadius: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>{tile("mic", true)}{cardTitle("The microphone")}</div>
+          <div><Pill tone="indigo-fill" icon="hearing">{lostMode === "mic" ? "Listen again" : "Ready to listen"}</Pill></div>
+          <div style={body}>Pitch and pulse, one hand at a time. {DISCIPLINE[type].title} carries on — the stop keeps its level and its minutes.</div>
+          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+            <Button size="control" icon="mic" disabled={looking} onClick={() => void (lostMode === "mic" ? lookAgain() : listenWithMic())} style={{ alignSelf: "flex-start" }}>Listen with the mic</Button>
+            {note && lostMode === "mic" && <Small color="var(--kc-indigo)">{note}</Small>}
+          </div>
+        </Panel>
+        <Panel padding="roomy" style={{ minHeight: 0, borderRadius: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>{tile("timer", false)}{cardTitle("Just the timer")}</div>
+          <div><Pill tone="neutral">Minutes only</Pill></div>
+          <div style={body}>Nothing listens. You say when the stop is done, and the record keeps the time and the page you read.</div>
           <div style={{ marginTop: "auto" }}>
-            <Button variant="secondary" size="control" onClick={() => void carryOnWithTimer()} style={{ width: "100%" }}>Carry on with the timer</Button>
+            <Button variant="secondary" size="control" onClick={() => void carryOnWithTimer()} style={{ alignSelf: "flex-start", height: 56 }}>Carry on with the timer</Button>
           </div>
         </Panel>
       </div>
-      <Panel style={{ flexDirection: "row", alignItems: "center", gap: 22, flex: "none" }}>
+      <Panel padding="card" style={{ flexDirection: "row", alignItems: "center", gap: 16, flex: "none" }}>
+        <Icon name="verified" size={30} color="var(--kc-mint-ink)" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 600 }}>{kept.length ? `${capitalize(numberWord(kept.length))} block${kept.length === 1 ? " is" : "s are"} already in the record` : "The clock is stopped"}</div>
-          <div style={{ fontSize: 14, color: "var(--kc-ink-dim)" }}>
-            {kept.length ? `${kept.map((b) => `${DISCIPLINE[b.type].short} ${fmtClock(b.durationSec)}${blockHeadline(b).text !== "DONE" ? ` · ${blockHeadline(b).text.toLowerCase()}` : ""}`).join(", ")}. ` : ""}
-            The rest of the block is marked as measured by whatever you pick.
-          </div>
+          <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 18, fontWeight: 600, lineHeight: 1.15 }}>{kept.length ? `${capitalize(numberWord(kept.length))} stop${kept.length === 1 ? "" : "s"} already in the record` : "The clock is stopped"}</div>
+          <Small>
+            {kept.length ? `${kept.map((b) => `${STOP_SHORT[b.type]} ${fmtClock(b.durationSec).replace(/^0/, "")}${blockHeadline(b).text !== "DONE" ? ` · ${blockHeadline(b).text.toLowerCase()}` : ""}`).join(". ")}. ` : ""}
+            The rest of this stop is marked as measured by whatever you pick.
+          </Small>
         </div>
-        <Pill>{kept.length ? `${kept.length} KEPT` : "NOTHING LOST"}</Pill>
+        <Pill tone="mint">Nothing lost</Pill>
       </Panel>
     </div>
   );
