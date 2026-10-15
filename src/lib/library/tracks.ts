@@ -1,12 +1,12 @@
 import type { PitchClass, ScaleId } from "../types";
 import { pcIndex } from "../music/notes";
+import { CLOUD_URL } from "../sync/defaults";
 
 /**
  * Backing tracks from the EasyKeys admin's music library: uploaded or Suno-generated audio that an admin
- * has published. Set NEXT_PUBLIC_LIBRARY_URL to the admin's address (no trailing slash) to turn it on;
- * without it the app shows only the built-in songs.
+ * has published. They come from the EasyKeys cloud; NEXT_PUBLIC_LIBRARY_URL points elsewhere for local work.
  */
-export const LIBRARY_URL = (process.env.NEXT_PUBLIC_LIBRARY_URL ?? "").replace(/\/+$/, "");
+export const LIBRARY_URL = (process.env.NEXT_PUBLIC_LIBRARY_URL || CLOUD_URL).replace(/\/+$/, "");
 
 export interface LibraryTrack {
   id: string;

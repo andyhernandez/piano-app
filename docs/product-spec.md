@@ -21,7 +21,7 @@ A gamified daily practice companion for young piano beginners (ages 6–12). The
 - **Phase 2:** Native wrapper (Capacitor or Expo) reusing the web core. Design the audio and MIDI layers behind interfaces so they can be swapped.
 - **Audio:** Tone.js over Web Audio. Sampled piano (Salamander or similar), metronome click, backing loops.
 - **Input:** Web MIDI API (Chrome/Edge/Android; Safari via polyfill or Phase 2 native). Microphone pitch detection is a stretch goal, not a requirement.
-- **Persistence:** Local-first (IndexedDB) with optional cloud sync (Supabase) for multi-device and parent/teacher views.
+- **Persistence:** Local-first (IndexedDB) with cloud sync (the EasyKeys cloud on Laravel Cloud) for multi-device and parent/teacher views.
 - **Accounts:** Child profile (no email) under a parent account. COPPA-aware: no chat, no public leaderboards.
 
 ---

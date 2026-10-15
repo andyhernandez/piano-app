@@ -1,11 +1,8 @@
 /**
- * The KeyCadence cloud project. The publishable key is safe to ship: every row is protected by
- * row-level security that only matches the family code sent with each request.
+ * The EasyKeys cloud: the admin app on Laravel Cloud (piano-app-admin), which stores each family's records
+ * behind its family code and serves the music library. NEXT_PUBLIC_CLOUD_URL overrides it for local work.
  */
-export const KEYCADENCE_CLOUD = {
-  url: "https://tfsqqbsnmllagsdiranr.supabase.co",
-  anonKey: "sb_publishable_8Z3tzkOn_lsST_YK0pQ73Q_62Nw1vMd",
-};
+export const CLOUD_URL = (process.env.NEXT_PUBLIC_CLOUD_URL || "https://piano-app-admin-production-7u1y3i.laravel.cloud").replace(/\/+$/, "");
 
 /** A family code: 24 URL-safe characters (~140 bits), generated once per family. */
 export function newFamilyCode(): string {

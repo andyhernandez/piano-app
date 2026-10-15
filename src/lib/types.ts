@@ -364,6 +364,9 @@ export interface Teacher {
   createdAt: string;
 }
 
+/** How sync was stored before the move to Laravel Cloud; such a device moves itself over on launch. */
+export interface LegacySupabaseSync { provider: "supabase"; url: string; anonKey: string; familyCode: string }
+
 export interface Parent {
   id: string;
   email: string | null;
@@ -377,7 +380,7 @@ export interface Parent {
    * Sync configuration; null = local-only. `familyCode` is the secret that scopes this family's rows in the
    * cloud (sent as the x-kc-owner header). Enter the same code on another device to share data.
    */
-  sync: { provider: "supabase"; url: string; anonKey: string; familyCode: string } | null;
+  sync: { provider: "easykeys"; url: string; familyCode: string } | LegacySupabaseSync | null;
   /** True once a grown-up turned sync off. Cloud sync is on by default; this keeps it off. */
   syncOff?: boolean;
 }

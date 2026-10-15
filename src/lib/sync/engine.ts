@@ -2,15 +2,16 @@ import { repo } from "../db/repo";
 import { db } from "../db/schema";
 import type { SyncProvider } from "./provider";
 import { NoopSyncProvider } from "./provider";
-import { SupabaseSyncProvider } from "./supabase";
+import { EasyKeysSyncProvider } from "./easykeys";
 import type { Parent } from "../types";
-import { KEYCADENCE_CLOUD, newFamilyCode } from "./defaults";
+import { CLOUD_URL, newFamilyCode } from "./defaults";
 
 let provider: SyncProvider = new NoopSyncProvider();
 let timer: ReturnType<typeof setInterval> | null = null;
 
 export function configureSync(parent: Parent | null) {
-  if (parent?.sync) provider = new SupabaseSyncProvider(parent.sync.url, parent.sync.anonKey, parent.sync.familyCode);
+  // A device still pointed at the old Supabase project stays quiet until ensureCloudSync moves it over.
+  if (parent?.sync?.provider === "easykeys") provider = new EasyKeysSyncProvider(parent.sync.url, parent.sync.familyCode);
   else provider = new NoopSyncProvider();
   // Keep the cloud digest subscription in step with the parent's toggle; best-effort.
   if (parent && provider.setDigestSubscription) void provider.setDigestSubscription(parent.email, parent.weeklyDigest).catch(() => {});
@@ -84,8 +85,8 @@ export async function enableSync(parent: Parent, sync: NonNullable<Parent["sync"
  * Join a family that already syncs from another device: switch to its code, pull everything, then push
  * anything local. Returns the number of rows pulled.
  */
-export async function joinFamily(parent: Parent, familyCode: string, cloud: { url: string; anonKey: string }): Promise<{ pulled: number; error?: string }> {
-  const next: Parent = { ...parent, sync: { provider: "supabase", url: cloud.url, anonKey: cloud.anonKey, familyCode }, syncOff: false };
+export async function joinFamily(parent: Parent, familyCode: string, url: string = CLOUD_URL): Promise<{ pulled: number; error?: string }> {
+  const next: Parent = { ...parent, sync: { provider: "easykeys", url, familyCode }, syncOff: false };
   await repo.putParent(next);
   configureSync(next);
   await repo.enqueueAll();
@@ -95,15 +96,20 @@ export async function joinFamily(parent: Parent, familyCode: string, cloud: { ur
 }
 
 /**
- * Cloud sync is on by default: a household that has never turned it off joins the KeyCadence cloud with a
+ * Cloud sync is on by default: a household that has never turned it off joins the EasyKeys cloud with a
  * fresh family code. Automated browsers (tests, screenshots) and builds with NEXT_PUBLIC_CLOUD_DEFAULT=off
  * stay local so they never write to the real database. Returns the parent as it now stands.
  */
 export async function ensureCloudSync(parent: Parent): Promise<Parent> {
+  // Moved off Supabase: keep the family code, point at the EasyKeys cloud, and upload everything again.
+  if (parent.sync?.provider === "supabase") {
+    await enableSync(parent, { provider: "easykeys", url: CLOUD_URL, familyCode: parent.sync.familyCode });
+    return (await repo.getParent(parent.id)) ?? parent;
+  }
   if (parent.sync || parent.syncOff) return parent;
   if (process.env.NEXT_PUBLIC_CLOUD_DEFAULT === "off") return parent;
   if (typeof navigator !== "undefined" && navigator.webdriver) return parent;
-  await enableSync(parent, { provider: "supabase", url: KEYCADENCE_CLOUD.url, anonKey: KEYCADENCE_CLOUD.anonKey, familyCode: newFamilyCode() });
+  await enableSync(parent, { provider: "easykeys", url: CLOUD_URL, familyCode: newFamilyCode() });
   return (await repo.getParent(parent.id)) ?? parent;
 }
 

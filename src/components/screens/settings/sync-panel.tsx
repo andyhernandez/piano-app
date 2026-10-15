@@ -4,7 +4,7 @@ import { SectionLabel, Button, Icon, Small } from "@/components/ds";
 import { useAppStore } from "@/lib/store/app-store";
 import { repo } from "@/lib/db/repo";
 import { enableSync, joinFamily, syncNow } from "@/lib/sync/engine";
-import { KEYCADENCE_CLOUD, newFamilyCode, isFamilyCode } from "@/lib/sync/defaults";
+import { CLOUD_URL, newFamilyCode, isFamilyCode } from "@/lib/sync/defaults";
 
 const inputStyle: React.CSSProperties = { height: 44, padding: "0 12px", borderRadius: 14, background: "var(--kc-base)", border: "2px solid var(--kc-border)", color: "var(--kc-ink)", fontFamily: "var(--kc-font-mono)", fontSize: 14, outline: "none", minWidth: 0, width: "100%", boxSizing: "border-box" };
 
@@ -26,7 +26,7 @@ export function SyncPanel() {
     if (!parent) return;
     setBusy(true);
     try {
-      const r = await enableSync(parent, { provider: "supabase", url: KEYCADENCE_CLOUD.url, anonKey: KEYCADENCE_CLOUD.anonKey, familyCode: newFamilyCode() });
+      const r = await enableSync(parent, { provider: "easykeys", url: CLOUD_URL, familyCode: newFamilyCode() });
       useAppStore.setState({ parent: (await repo.getParent(parent.id)) ?? parent });
       setResult(describe(r));
     } finally { setBusy(false); }
@@ -35,7 +35,7 @@ export function SyncPanel() {
     if (!parent || !isFamilyCode(code)) return;
     setBusy(true);
     try {
-      const r = await joinFamily(parent, code.trim(), KEYCADENCE_CLOUD);
+      const r = await joinFamily(parent, code.trim());
       const fresh = await repo.firstParent();
       if (fresh) useAppStore.setState({ parent: fresh });
       await useAppStore.getState().refreshChildren();

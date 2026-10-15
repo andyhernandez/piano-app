@@ -122,7 +122,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     set({ booted: true, parent, children, activeChildId, activeSession, plan, inputMode: activeSession?.inputMode ?? "timer" });
     startBackgroundSync();
-    if (parent && !parent.sync && !parent.syncOff) void ensureCloudSync(parent).then((p) => set({ parent: p }));
+    if (parent && ((!parent.sync && !parent.syncOff) || parent.sync?.provider === "supabase")) void ensureCloudSync(parent).then((p) => set({ parent: p }));
     else void syncNow();
   },
 

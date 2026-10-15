@@ -24,8 +24,8 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, the production
 - **GitHub Pages (live):** every push to `main` runs `.github/workflows/pages.yml`, which builds a static export under the repository path and publishes it. On an iPad, open the site in Safari, tap Share → **Add to Home Screen** to run it full-screen.
 - **Vercel / any Node host:** `npm run build && npm start`.
 - **Docker:** `docker build -t keycadence . && docker run -p 3000:3000 keycadence` (Next.js standalone output).
-- **Cloud sync (on by default) + weekly digest email:** see [supabase/README.md](supabase/README.md).
-- **Music library:** set `NEXT_PUBLIC_LIBRARY_URL` to the EasyKeys admin's address and its published backing tracks appear in the play-along list.
+- **Cloud sync (on by default) + weekly digest email:** served by the EasyKeys admin on Laravel Cloud ([piano-app-admin](https://github.com/andyhernandez/piano-app-admin)).
+- **Music library:** backing tracks published in the EasyKeys admin appear in the play-along list in the session key.
 
 ## Device checklist before a release
 
@@ -48,7 +48,7 @@ Audio and MIDI need a user gesture; the app unlocks the audio engine on the firs
 | Generators: sight-reading exercises (10 levels), rhythm patterns (10 levels) | `src/lib/generator/` |
 | Audio engine interface + Tone.js implementation (sampler, metronome, grooves) | `src/lib/audio/` |
 | Input layer: Web MIDI, microphone (YIN pitch, onset detection, expected-chord verification), tap pad, auto-detection | `src/lib/input/` |
-| Persistence: Dexie schema, repository, sync outbox, Supabase provider | `src/lib/db/`, `src/lib/sync/` |
+| Persistence: Dexie schema, repository, sync outbox, EasyKeys cloud provider | `src/lib/db/`, `src/lib/sync/` |
 | App state | `src/lib/store/app-store.ts` |
 | Session runner (six blocks, interstitials, hard-stop countdown, summary) | `src/app/session/page.tsx`, `src/components/session/` |
 | Blocks A–F | `src/components/blocks/` |
@@ -64,12 +64,12 @@ Audio and MIDI need a user gesture; the app unlocks the audio engine on the firs
 - Ear tasks always finish with "find it on the staff" (Theory & Chord Lab).
 - Sessions are short and hard-stopped: a bell rings, the kid finishes their thought, the block ends.
 - Input degrades gracefully: MIDI → microphone → timer + self-report, auto-detected at session start.
-- Local-first. Everything lives in IndexedDB; cloud sync (Supabase) is opt-in from the parent dashboard.
+- Local-first. Everything lives in IndexedDB first; cloud sync to the EasyKeys cloud is on by default and can be turned off in Settings.
 - No leaderboards, no comparison, no loss of earned rewards, no guilt mechanics.
 
 ## Cloud sync (optional)
 
-Grown-ups → Account → Cloud sync → **Turn on sync** mirrors the household to the hosted KeyCadence cloud and gives you a secret family code to enter on other devices. Rows are locked behind that code by row-level security. Details, the weekly digest email, and using your own Supabase project are in [`supabase/README.md`](supabase/README.md).
+Every household syncs to the EasyKeys cloud (the piano-app-admin app on Laravel Cloud) under a secret family code; enter that code on another device to share records. The server keeps each family's rows apart by that code. Settings → **Turn off** keeps a device local. Set `NEXT_PUBLIC_CLOUD_URL` to point a build at another server, or `NEXT_PUBLIC_CLOUD_DEFAULT=off` to keep it local.
 
 ## Native wrapper (Phase 2)
 
