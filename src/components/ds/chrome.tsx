@@ -125,12 +125,15 @@ export function Metric({ label, value, tone }: { label: string; value: React.Rea
   );
 }
 
-/** The white bottom bar of a block: stat chips on the left, the actions on the right. */
+/**
+ * The white bottom bar of a block: stat chips on the left, the actions on the right. The actions keep their
+ * full width whatever the chips add up to; a chip row that is too wide is clipped, never the Next stop button.
+ */
 export function BottomBar({ children, actions, style }: { children?: React.ReactNode; actions?: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div style={{ borderTop: "2px solid var(--kc-hairline)", background: "var(--kc-panel)", padding: "18px 32px", display: "flex", alignItems: "center", gap: 14, flex: "none", ...style }}>
-      {children}
-      <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>{actions}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 auto", minWidth: 0, overflow: "hidden" }}>{children}</div>
+      <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center", flex: "none" }}>{actions}</div>
     </div>
   );
 }

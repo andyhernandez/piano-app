@@ -86,11 +86,17 @@ export function Staff({ systems = [{ clef: "treble" }], notes = [], rests = [], 
   const rightPad = layout?.right ?? lineGap * 1.2;
   const barWidth = layout ? (width - leftPad - rightPad) / layout.bars : 0;
   type Positioned = { x?: number; bar?: number; beat?: number; system?: number; accidental?: Accidental };
-  const rawX = (item: Positioned) => (item.x != null ? item.x : leftPad + ((item.bar ?? 0) + (item.beat || 0) / beatsPerBar) * barWidth);
+  // Notes and rests start a little after the barline, so a bar's first note never touches it.
+  const inset = layout ? lineGap * 0.6 : 0;
+  const beatX = (item: Positioned) => (item.x != null ? item.x : leftPad + ((item.bar ?? 0) + (item.beat || 0) / beatsPerBar) * barWidth);
+  const rawX = (item: Positioned) => (item.x != null ? item.x : leftPad + (item.bar ?? 0) * barWidth + inset + ((item.beat || 0) / beatsPerBar) * (barWidth - inset));
 
+  // Onsets closer than a notehead and a bit get nudged apart, one bar at a time: a bar whose nudged notes
+  // would run past its end is squeezed back so nothing lands on a barline or in the next bar.
   const nudged = new Map<string, number>();
   if (layout) {
     const minGap = headW * 1.35;
+    const barOf = (x: number) => Math.min(layout.bars - 1, Math.max(0, Math.floor((x - leftPad) / barWidth + 1e-6)));
     laid.forEach((_, si) => {
       const items: Positioned[] = [...notes, ...rests].filter((i) => (i.system ?? 0) === si && i.x == null);
       const leftExtent = new Map<number, number>();
@@ -101,12 +107,17 @@ export function Staff({ systems = [{ clef: "treble" }], notes = [], rests = [], 
         leftExtent.set(x, Math.max(leftExtent.get(x) || 0, w));
       });
       const onsets = [...leftExtent.keys()].sort((a, b) => a - b);
-      let prev = -Infinity;
-      onsets.forEach((x) => {
-        const next = Math.max(x, prev + minGap + (leftExtent.get(x) ?? 0));
-        nudged.set(si + "@" + x, next);
-        prev = next;
-      });
+      for (let b = 0; b < layout.bars; b++) {
+        const inBar = onsets.filter((x) => barOf(x) === b);
+        if (!inBar.length) continue;
+        const barStart = leftPad + b * barWidth + inset;
+        let prev = -Infinity;
+        const spread = inBar.map((x) => { prev = Math.max(x, prev + minGap + (leftExtent.get(x) ?? 0)); return prev; });
+        const room = barWidth - inset - headW - lineGap * 0.4;
+        const span = spread[spread.length - 1] - barStart;
+        const k = span > room ? room / span : 1;
+        inBar.forEach((x, i) => nudged.set(si + "@" + x, barStart + (spread[i] - barStart) * k));
+      }
     });
   }
   const xOf = (item: Positioned) => {
@@ -221,11 +232,11 @@ export function Staff({ systems = [{ clef: "treble" }], notes = [], rests = [], 
       ))}
       {regions.map((r, i) => {
         const sys = laid[r.system ?? 0];
-        return <div key={"r" + i} style={{ position: "absolute", left: xOf(r), width: r.width ?? (layout ? barWidth * (r.bars ?? 1) : 40), top: r.top ?? sys.top - 14, height: r.height ?? 4 * lineGap + 28, background: "var(--kc-indigo-wash)", border: "2px solid var(--kc-lilac)", borderRadius: 3 }} />;
+        return <div key={"r" + i} style={{ position: "absolute", left: beatX(r), width: r.width ?? (layout ? barWidth * (r.bars ?? 1) : 40), top: r.top ?? sys.top - 14, height: r.height ?? 4 * lineGap + 28, background: "var(--kc-indigo-wash)", border: "2px solid var(--kc-lilac)", borderRadius: 3 }} />;
       })}
       {allBarlines.map((b, i) => {
         const sys = laid[b.system ?? 0];
-        const x = xOf(b);
+        const x = beatX(b);
         if (b.type && BARLINES[b.type]) return <div key={"bl" + i} style={{ position: "absolute", left: x, top: glyphTop(sys, 4), fontFamily: "var(--kc-font-music)", fontSize: em, lineHeight: 1, color: "var(--kc-paper-ink)" }}>{BARLINES[b.type]}</div>;
         return <div key={"bl" + i} style={{ position: "absolute", left: x, top: sys.top, width: 1, height: 4 * lineGap, background: "var(--kc-paper-ink)" }} />;
       })}

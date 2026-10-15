@@ -11,7 +11,7 @@ import { alignTaps, scoreRhythm, scoreTiming, timingWindowMs } from "@/lib/engin
 import { eventTimeMs } from "@/lib/input/source";
 import { expectedOnsetsMs, generateDifferent, generateEcho, generateRhythm, RHYTHM_LEVELS, type RhythmPattern } from "@/lib/generator/rhythm";
 import { startBeatClock, audioTimeToPerfMs, meanSd } from "./shared/beat-clock";
-import { CARD, CardTitle, MetronomeDots, NOTE, NextStopButton, PAGE, RecordControl, SMALL, useBlockRecorder } from "./shared/controls";
+import { CARD, CardTitle, MetronomeDots, NOTE, NextStopButton, PAGE, RecordControl, RoundButton, SMALL, useBlockRecorder } from "./shared/controls";
 
 /*
  * Timing (D2). A written rhythm on one line; the click plays it once, counts in, and the student taps it back —
@@ -336,6 +336,7 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
               regions={region}
               width={STAFF_W}
               height={150}
+              lineGap={pattern.bars > 2 ? 19 : 22}
             />
           )}
         </SheetPanel>
@@ -375,8 +376,8 @@ export function TimingBlock({ child, session, inputMode, timeUp, paused, nextTit
             {roundActive
               ? <Button variant="secondary" size="control" icon="stop" onClick={stopRound}>Stop</Button>
               : <Button variant="secondary" size="control" icon="hearing" onClick={() => void startRound({ ...pattern, bpm })} disabled={paused}>{rounds.length ? "Hear it again" : "Hear it first"}</Button>}
-            <Button variant="secondary" size="control" icon="slow_motion_video" onClick={slower} disabled={roundActive || paused || bpm <= 50}>Slower</Button>
-            <Button variant="secondary" size="control" icon="refresh" onClick={playNew} disabled={roundActive || paused}>New rhythm</Button>
+            <RoundButton icon="slow_motion_video" label="Slower" onClick={slower} disabled={roundActive || paused || bpm <= 50} />
+            <RoundButton icon="refresh" label="New rhythm" onClick={playNew} disabled={roundActive || paused} />
             <NextStopButton nextTitle={nextTitle} onClick={finishBlock} disabled={paused} />
           </>
         }
