@@ -14,7 +14,7 @@ import { currentScale, initialMapProgress, awardBadge, hasBadge, spendKeyAndAdva
 import { DEFAULT_ROADMAP } from "../music/roadmap";
 import { starsFor } from "../engine/scoring";
 import { orderedBlocks } from "../engine/queue";
-import { configureSync, syncNow } from "../sync/engine";
+import { configureSync, ensureCloudSync, startBackgroundSync, syncNow } from "../sync/engine";
 
 export interface SessionPlan {
   blockSeconds: Record<BlockType, number>;
@@ -121,7 +121,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     }
     set({ booted: true, parent, children, activeChildId, activeSession, plan, inputMode: activeSession?.inputMode ?? "timer" });
-    void syncNow();
+    startBackgroundSync();
+    if (parent && !parent.sync && !parent.syncOff) void ensureCloudSync(parent).then((p) => set({ parent: p }));
+    else void syncNow();
   },
 
   async refreshChildren() {
@@ -134,6 +136,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const parent: Parent = { id: newId("par"), email: null, pin, childIds: [], createdAt: new Date().toISOString(), weeklyDigest: false, sync: null };
     await repo.putParent(parent);
     set({ parent, parentUnlocked: true });
+    void ensureCloudSync(parent).then((p) => set({ parent: p }));
     return parent;
   },
 

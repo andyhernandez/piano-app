@@ -4,6 +4,7 @@ import type { SyncProvider } from "./provider";
 import { NoopSyncProvider } from "./provider";
 import { SupabaseSyncProvider } from "./supabase";
 import type { Parent } from "../types";
+import { KEYCADENCE_CLOUD, newFamilyCode } from "./defaults";
 
 let provider: SyncProvider = new NoopSyncProvider();
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -71,7 +72,7 @@ async function applyRemote(r: { table: string; key: string; payload: unknown; de
 
 /** Turn sync on for this device: configure the provider, upload everything local, then pull. */
 export async function enableSync(parent: Parent, sync: NonNullable<Parent["sync"]>): Promise<{ pushed: number; pulled: number; error?: string }> {
-  const next: Parent = { ...parent, sync };
+  const next: Parent = { ...parent, sync, syncOff: false };
   await repo.putParent(next);
   configureSync(next);
   await repo.enqueueAll();
@@ -84,13 +85,26 @@ export async function enableSync(parent: Parent, sync: NonNullable<Parent["sync"
  * anything local. Returns the number of rows pulled.
  */
 export async function joinFamily(parent: Parent, familyCode: string, cloud: { url: string; anonKey: string }): Promise<{ pulled: number; error?: string }> {
-  const next: Parent = { ...parent, sync: { provider: "supabase", url: cloud.url, anonKey: cloud.anonKey, familyCode } };
+  const next: Parent = { ...parent, sync: { provider: "supabase", url: cloud.url, anonKey: cloud.anonKey, familyCode }, syncOff: false };
   await repo.putParent(next);
   configureSync(next);
   await repo.enqueueAll();
   await repo.setKV("sync.cursor", null);
   const r = await syncNow();
   return { pulled: r.pulled, error: r.error };
+}
+
+/**
+ * Cloud sync is on by default: a household that has never turned it off joins the KeyCadence cloud with a
+ * fresh family code. Automated browsers (tests, screenshots) and builds with NEXT_PUBLIC_CLOUD_DEFAULT=off
+ * stay local so they never write to the real database. Returns the parent as it now stands.
+ */
+export async function ensureCloudSync(parent: Parent): Promise<Parent> {
+  if (parent.sync || parent.syncOff) return parent;
+  if (process.env.NEXT_PUBLIC_CLOUD_DEFAULT === "off") return parent;
+  if (typeof navigator !== "undefined" && navigator.webdriver) return parent;
+  await enableSync(parent, { provider: "supabase", url: KEYCADENCE_CLOUD.url, anonKey: KEYCADENCE_CLOUD.anonKey, familyCode: newFamilyCode() });
+  return (await repo.getParent(parent.id)) ?? parent;
 }
 
 export function startBackgroundSync(intervalMs = 60_000) {

@@ -47,7 +47,7 @@ export function SyncPanel() {
     setBusy(true);
     try { setResult(describe(await syncNow())); } finally { setBusy(false); }
   };
-  const turnOff = async () => { await updateParent({ sync: null }); setResult(null); };
+  const turnOff = async () => { await updateParent({ sync: null, syncOff: true }); setResult(null); };
   const copy = async () => {
     if (!sync) return;
     try { await navigator.clipboard.writeText(sync.familyCode); setCopied(true); window.setTimeout(() => setCopied(false), 1500); } catch { /* clipboard unavailable */ }

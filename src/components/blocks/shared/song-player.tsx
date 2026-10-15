@@ -3,11 +3,13 @@ import * as React from "react";
 import type { Scale } from "@/lib/types";
 import { Button, Pill } from "@/components/ds";
 import { parseYoutubeId, songsInKey, youtubeEmbedUrl, youtubeSearchUrl, type JamSong } from "@/lib/music/jam-songs";
+import { fetchLibrary, tracksInKey, type LibraryTrack } from "@/lib/library/tracks";
 
 /*
  * Play-along songs for "Your own": well-known tunes in the session key on the left, the video on the right.
  * Videos are not shipped with the app — the first time a song is chosen the parent finds it on YouTube and
  * pastes the link; from then on it opens straight into the player for that child.
+ * Backing tracks published in the KeyCadence music library come first, and play straight away.
  */
 
 const fieldStyle: React.CSSProperties = {
@@ -36,6 +38,35 @@ function SongRow({ song, selected, hasVideo, onClick }: { song: JamSong; selecte
   );
 }
 
+function CoverArt({ url }: { url: string | null }) {
+  if (!url) return <div style={{ width: "100%", height: 120, borderRadius: 16, background: "var(--kc-indigo-wash)", border: "2px solid var(--kc-border)", flex: "none" }} />;
+  // Remote cover art from the library; next/image has no optimizer in a static export.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt="" style={{ width: "100%", aspectRatio: "1 / 1", maxHeight: 220, objectFit: "cover", borderRadius: 16, border: "2px solid var(--kc-border)", flex: "none" }} />;
+}
+
+function TrackRow({ track, selected, onClick }: { track: LibraryTrack; selected: boolean; onClick: () => void }) {
+  const meta = [track.artist, track.genre, track.bpm ? `${track.bpm} bpm` : null].filter(Boolean).join(" · ");
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      style={{
+        display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "center", gap: 12, width: "100%", textAlign: "left", cursor: "pointer",
+        padding: "8px 12px", borderRadius: 14, background: selected ? "var(--kc-indigo-wash)" : "var(--kc-panel)",
+        border: selected ? "3px solid var(--kc-indigo)" : "2px solid var(--kc-hairline)", color: "var(--kc-ink)", font: "inherit", boxSizing: "border-box",
+      }}
+    >
+      <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+        <span style={{ fontFamily: "var(--kc-font-display)", fontSize: 16, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{track.title}</span>
+        {meta && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--kc-ink-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta}</span>}
+      </span>
+      <Pill tone="indigo" style={{ height: 30, fontSize: 13 }}>Backing track</Pill>
+    </button>
+  );
+}
+
 export function SongPlayer({ scale, videos, onSaveVideo, onPlay }: {
   scale: Scale;
   /** YouTube video ids by song id, remembered per child. */
@@ -45,9 +76,18 @@ export function SongPlayer({ scale, videos, onSaveVideo, onPlay }: {
   onPlay?: () => void;
 }) {
   const songs = React.useMemo(() => songsInKey(scale), [scale]);
+  const [library, setLibrary] = React.useState<LibraryTrack[]>([]);
+  React.useEffect(() => {
+    let live = true;
+    void fetchLibrary().then((t) => { if (live) setLibrary(t); });
+    return () => { live = false; };
+  }, []);
+  const tracks = React.useMemo(() => tracksInKey(library, scale), [library, scale]);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const track = tracks.find((t) => `lib:${t.id}` === selectedId) ?? null;
   // Falls back to the first song when the key changes and the chosen one is no longer in the list.
-  const selected = songs.find((s) => s.id === selectedId) ?? songs[0] ?? null;
+  const selected = track ? null : songs.find((s) => s.id === selectedId) ?? (tracks.length ? null : songs[0] ?? null);
+  const shownTrack = track ?? (!selected && !selectedId ? tracks[0] ?? null : null);
   const videoId = selected ? videos[selected.id] : undefined;
 
   const [draft, setDraft] = React.useState("");
@@ -64,7 +104,7 @@ export function SongPlayer({ scale, videos, onSaveVideo, onPlay }: {
   const choose = (song: JamSong) => { setSelectedId(song.id); setDraft(""); setBad(false); if (videos[song.id]) onPlay?.(); };
   const findOnYoutube = () => { if (selected) window.open(youtubeSearchUrl(selected), "_blank", "noopener"); };
 
-  if (!songs.length) {
+  if (!songs.length && !tracks.length) {
     return <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--kc-ink-muted)" }}>No songs listed for {scale.name} yet. The groove still works in every key.</p>;
   }
 
@@ -73,11 +113,21 @@ export function SongPlayer({ scale, videos, onSaveVideo, onPlay }: {
       <div style={{ minHeight: 0, display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "var(--kc-ink-faint)" }}>Songs in {scale.name}</div>
         <div style={{ minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, margin: "0 -6px", padding: "0 6px 6px" }}>
+          {tracks.map((t) => <TrackRow key={t.id} track={t} selected={t.id === shownTrack?.id} onClick={() => { setSelectedId(`lib:${t.id}`); setDraft(""); setBad(false); }} />)}
           {songs.map((s) => <SongRow key={s.id} song={s} selected={s.id === selected?.id} hasVideo={Boolean(videos[s.id])} onClick={() => choose(s)} />)}
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 0 }}>
-        {selected && videoId ? (
+        {shownTrack ? (
+          <>
+            <CoverArt url={shownTrack.cover_url} />
+            <div style={{ fontFamily: "var(--kc-font-display)", fontSize: 18, fontWeight: 600 }}>{shownTrack.title}</div>
+            <audio key={shownTrack.id} controls preload="none" src={shownTrack.audio_url} onPlay={() => onPlay?.()} style={{ width: "100%" }} />
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--kc-ink-muted)", lineHeight: 1.45, marginTop: "auto" }}>
+              Play along in {scale.name}{shownTrack.bpm ? ` at ${shownTrack.bpm} bpm` : ""}.
+            </div>
+          </>
+        ) : selected && videoId ? (
           <>
             <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", borderRadius: 16, overflow: "hidden", background: "var(--kc-ink)", flex: "none", border: "2px solid var(--kc-border)" }}>
               <iframe
