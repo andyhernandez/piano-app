@@ -2,7 +2,7 @@ import type { PitchClass, ScaleId } from "../types";
 import { pcIndex } from "../music/notes";
 
 /**
- * Backing tracks from the KeyCadence admin's music library: uploaded or Suno-generated audio that an admin
+ * Backing tracks from the EasyKeys admin's music library: uploaded or Suno-generated audio that an admin
  * has published. Set NEXT_PUBLIC_LIBRARY_URL to the admin's address (no trailing slash) to turn it on;
  * without it the app shows only the built-in songs.
  */

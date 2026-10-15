@@ -25,7 +25,7 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, the production
 - **Vercel / any Node host:** `npm run build && npm start`.
 - **Docker:** `docker build -t keycadence . && docker run -p 3000:3000 keycadence` (Next.js standalone output).
 - **Cloud sync (on by default) + weekly digest email:** see [supabase/README.md](supabase/README.md).
-- **Music library:** set `NEXT_PUBLIC_LIBRARY_URL` to the KeyCadence admin's address and its published backing tracks appear in the play-along list.
+- **Music library:** set `NEXT_PUBLIC_LIBRARY_URL` to the EasyKeys admin's address and its published backing tracks appear in the play-along list.
 
 ## Device checklist before a release
 

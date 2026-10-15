@@ -6,7 +6,7 @@ The hosted KeyCadence project is already set up, so families don't need to do an
 
 - `migrations/0001_keycadence.sql`: the `kc_rows` sync table, digest subscriptions, digest run lock, and the `recordings` bucket. Access is scoped by a **family code** sent as the `x-kc-owner` header; row-level security only matches rows with that code, so the publishable key alone reveals nothing.
 - `migrations/0002_digest_schedule.sql`: pg_cron job that calls the digest function every Sunday 18:00 UTC.
-- `migrations/0003_admin_views.sql`: read-only views in a `kc_admin` schema (families, children, sessions, blocks) and the `kc_admin_reader` login role, for the Laravel admin in `keycadence-admin`. They sit outside `public` so the REST API never serves them. Set the role's password after applying it.
+- `migrations/0003_admin_views.sql`: read-only views in a `kc_admin` schema (families, children, sessions, blocks) and the `kc_admin_reader` login role, for the Laravel admin in `piano-app-admin`. They sit outside `public` so the REST API never serves them. Set the role's password after applying it.
 - `functions/weekly-digest`: Deno edge function that summarises each child's last seven days and emails the parent via Resend. A run lock caps it at one send per six days.
 
 ## Using it from the app

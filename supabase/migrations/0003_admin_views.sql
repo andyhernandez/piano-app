@@ -1,4 +1,4 @@
--- Read-only views for the KeyCadence admin (the Laravel app in keycadence-admin).
+-- Read-only views for the KeyCadence admin (the Laravel app in piano-app-admin).
 --
 -- They live in their own schema on purpose. Supabase serves `public` over its REST API with the publishable
 -- key, and a plain view does not apply the row-level security of the table under it, so a view in `public`
